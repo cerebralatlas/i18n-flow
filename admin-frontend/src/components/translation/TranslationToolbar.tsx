@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import {
   Button,
   Input,
@@ -19,6 +19,7 @@ import {
 import { Project } from "../../types/project";
 import { TranslationResponse, Language } from "../../types/translation";
 import ColumnSelector from "./ColumnSelector";
+import debounce from "lodash/debounce";
 
 interface TranslationToolbarProps {
   projects: Project[];
@@ -59,6 +60,33 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   selectedLanguageColumns,
   onColumnSelectionChange,
 }) => {
+  const [localKeyword, setLocalKeyword] = useState(keyword);
+
+  useEffect(() => {
+    setLocalKeyword(keyword);
+  }, [keyword]);
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const debouncedSearch = useCallback(
+    debounce((value: string) => {
+      onKeywordChange(value);
+      onSearch();
+    }, 500),
+    [onKeywordChange, onSearch]
+  );
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setLocalKeyword(value);
+    debouncedSearch(value);
+  };
+
+  const handlePressEnter = () => {
+    debouncedSearch.cancel();
+    onKeywordChange(localKeyword);
+    onSearch();
+  };
+
   const handleProjectSelect = (value: number) => {
     onProjectChange(value);
   };
@@ -80,12 +108,13 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
           />
           <Input
             placeholder="Search key name or translation value"
-            value={keyword}
-            onChange={(e) => onKeywordChange(e.target.value)}
+            value={localKeyword}
+            onChange={handleInputChange}
             prefix={<SearchOutlined />}
             style={{ width: 250, marginRight: 16 }}
             allowClear
-            onPressEnter={onSearch}
+            onPressEnter={handlePressEnter}
+            onBlur={handlePressEnter}
           />
         </div>
       </div>
