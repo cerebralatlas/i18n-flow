@@ -97,6 +97,91 @@ i18n-flow consists of three main components:
 
 3. Follow the interactive setup to configure your project with i18n-flow.
 
+## 🐳 Docker Deployment
+
+You can easily deploy i18n-flow using Docker and Docker Compose.
+
+### Prerequisites
+
+- Docker 20.10+
+- Docker Compose v2+
+
+### Quick Deployment
+
+1. Clone the repository:
+
+   ```bash
+   git clone https://github.com/ilukemagic/i18n-flow.git
+   cd i18n-flow
+   ```
+
+2. Configure environment variables:
+
+   ```bash
+   cp .env.example .env
+   ```
+
+   Edit the `.env` file to set:
+
+   - Database credentials
+   - JWT secrets
+   - API keys
+   - Other configuration options
+
+3. Start the services:
+
+   ```bash
+   docker compose up -d
+   ```
+
+   This will start three services:
+
+   - **MySQL** database on port 3306
+   - **Backend API** on port 8080
+   - **Frontend admin panel** on port 80
+
+4. Access the application:
+
+   - Admin interface: <http://localhost>
+   - API & Swagger docs: <http://localhost/swagger/index.html>
+
+5. Initial login:
+   - Username: `admin`
+   - Password: `admin123`
+   - **Important**: Change the default password after first login!
+
+### Docker Compose Configuration
+
+The default `docker-compose.yml` includes:
+
+- **Database**: MySQL 8.0 with data persistence through Docker volumes
+- **Backend**: Go 1.23 API server with MySQL connection
+- **Frontend**: React SPA served through Nginx with API proxying
+
+### Custom Configuration
+
+You can adjust the deployment by:
+
+1. Modifying environment variables in the `.env` file
+2. Changing port mappings in `docker-compose.yml`
+3. Updating Docker build contexts or volumes as needed
+
+### Updating the Application
+
+To update to a new version:
+
+```bash
+git pull
+docker compose down
+docker compose up -d --build
+```
+
+### Troubleshooting
+
+- **Database connection issues**: Check your DB credentials in the `.env` file
+- **Frontend not loading**: Verify the nginx proxy configuration is correctly pointing to the backend
+- **Backend not starting**: Check the backend logs with `docker compose logs backend`
+
 ## 📚 Documentation
 
 ### API Documentation
@@ -167,7 +252,7 @@ The typical workflow in i18n-flow:
 6. Sync translations to your local project with `i18n-flow sync`
 7. Update translations as needed
 
-## �� Contributing
+## 📜 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
