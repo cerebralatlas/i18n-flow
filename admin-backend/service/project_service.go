@@ -191,3 +191,8 @@ func (s *ProjectService) DeleteProject(id uint) error {
 	}
 	return nil
 }
+
+// NewProjectService 创建一个新的项目服务
+func NewProjectService() ProjectService {
+	return ProjectService{}
+}

@@ -25,10 +25,16 @@ type JWTConfig struct {
 	RefreshExpirationHours int
 }
 
+// CLIConfig CLI配置
+type CLIConfig struct {
+	APIKey string
+}
+
 // Config 应用配置
 type Config struct {
 	DB  DBConfig
 	JWT JWTConfig
+	CLI CLIConfig
 }
 
 // GetConfig 获取配置
@@ -70,6 +76,9 @@ func GetConfig() *Config {
 			ExpirationHours:        jwtExpHours,
 			RefreshSecret:          getEnv("JWT_REFRESH_SECRET", "your-refresh-secret"),
 			RefreshExpirationHours: jwtRefreshExpHours,
+		},
+		CLI: CLIConfig{
+			APIKey: getEnv("CLI_API_KEY", "testapikey"),
 		},
 	}
 }

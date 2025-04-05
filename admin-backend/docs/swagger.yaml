@@ -56,6 +56,23 @@ definitions:
       user_count:
         type: integer
     type: object
+  service.KeysPushRequest:
+    properties:
+      defaults:
+        additionalProperties:
+          type: string
+        description: 默认值，通常是源语言文本
+        type: object
+      keys:
+        items:
+          type: string
+        type: array
+      project_id:
+        type: string
+    required:
+    - keys
+    - project_id
+    type: object
   service.LanguageRequest:
     properties:
       code:
@@ -261,6 +278,90 @@ info:
   title: i18n-flow API
   version: "1.0"
 paths:
+  /cli/auth:
+    get:
+      consumes:
+      - application/json
+      description: 用于CLI工具测试连接
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: 检查API Key是否有效
+      tags:
+      - CLI
+  /cli/keys:
+    post:
+      consumes:
+      - application/json
+      description: 推送新的翻译键到服务器
+      parameters:
+      - description: 键值请求
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/service.KeysPushRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: 推送新的翻译键
+      tags:
+      - CLI
+  /cli/translations:
+    get:
+      consumes:
+      - application/json
+      description: 获取所有翻译，供CLI工具使用
+      parameters:
+      - description: 项目ID
+        in: query
+        name: project_id
+        type: integer
+      - description: 语言代码
+        in: query
+        name: locale
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      summary: 获取所有翻译
+      tags:
+      - CLI
   /dashboard/stats:
     get:
       consumes:

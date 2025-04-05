@@ -4,6 +4,7 @@ import (
 	"errors"
 	"i18n-flow/model"
 	"i18n-flow/model/db"
+	"strconv"
 	"strings"
 
 	"gorm.io/gorm"
@@ -50,6 +51,20 @@ type TranslationMatrixItem struct {
 	KeyName   string            `json:"key_name"`
 	Context   string            `json:"context"`
 	Languages map[string]string `json:"languages"` // 语言代码到翻译值的映射
+}
+
+// KeysPushRequest CLI工具推送键的请求格式
+type KeysPushRequest struct {
+	ProjectID string            `json:"project_id" binding:"required"`
+	Keys      []string          `json:"keys" binding:"required"`
+	Defaults  map[string]string `json:"defaults"` // 默认值，通常是源语言文本
+}
+
+// KeyPushResult 推送键的结果
+type KeyPushResult struct {
+	Added   []string `json:"added"`
+	Existed []string `json:"existed"`
+	Failed  []string `json:"failed"`
 }
 
 // CreateTranslation 创建翻译
@@ -597,4 +612,117 @@ func (s *TranslationService) GetTranslationMatrix(projectID uint, page, pageSize
 	}
 
 	return matrix, total, nil
+}
+
+func (ts TranslationService) GetTranslationsForCLI(projectID, locale string) (map[string]interface{}, error) {
+	result := make(map[string]interface{})
+
+	// 如果有projectID筛选条件
+	if projectID != "" {
+		// 查询特定项目的翻译
+		pid, err := strconv.Atoi(projectID)
+		if err != nil {
+			return nil, err
+		}
+
+		// 创建查询对象，而不是变量
+		query := db.DB.Where("project_id = ?", pid)
+
+		// 如果有locale筛选条件
+		if locale != "" {
+			// 获取语言ID
+			var language model.Language
+			if err := db.DB.Where("code = ?", locale).First(&language).Error; err != nil {
+				return nil, err
+			}
+
+			query = query.Where("language_id = ?", language.ID)
+		}
+
+		// 查询翻译
+		var translations []model.Translation
+		if err := query.Find(&translations).Error; err != nil {
+			return nil, err
+		}
+
+		// 构建返回结构
+		for _, t := range translations {
+			if result[t.KeyName] == nil {
+				result[t.KeyName] = make(map[string]string)
+			}
+
+			// 获取语言代码
+			var lang model.Language
+			if err := db.DB.First(&lang, t.LanguageID).Error; err != nil {
+				return nil, err
+			}
+
+			result[t.KeyName].(map[string]string)[lang.Code] = t.Value
+		}
+	} else {
+		// 按项目分组返回所有翻译
+		// ... 实现查询所有项目的逻辑 ...
+	}
+
+	return result, nil
+}
+
+// PushKeysFromCLI 处理CLI工具推送的新键
+func (ts TranslationService) PushKeysFromCLI(request KeysPushRequest) (KeyPushResult, error) {
+	var result KeyPushResult
+
+	// 检查项目是否存在
+	pid, err := strconv.Atoi(request.ProjectID)
+	if err != nil {
+		return result, err
+	}
+
+	var project model.Project
+	if err := db.DB.First(&project, pid).Error; err != nil {
+		return result, err
+	}
+
+	// 获取默认语言
+	var defaultLang model.Language
+	if err := db.DB.Where("is_default = ?", true).First(&defaultLang).Error; err != nil {
+		return result, err
+	}
+
+	// 处理每个键
+	for _, key := range request.Keys {
+		// 检查键是否已存在
+		var count int64
+		db.DB.Model(&model.Translation{}).
+			Where("project_id = ? AND key_name = ?", pid, key).
+			Count(&count)
+
+		if count > 0 {
+			// 键已存在
+			result.Existed = append(result.Existed, key)
+			continue
+		}
+
+		// 创建新键的翻译
+		translation := model.Translation{
+			ProjectID:  uint(pid),
+			KeyName:    key,
+			LanguageID: defaultLang.ID,
+			Value:      request.Defaults[key], // 如果有默认值则使用，否则为空
+			Status:     "active",
+		}
+
+		if err := db.DB.Create(&translation).Error; err != nil {
+			result.Failed = append(result.Failed, key)
+			continue
+		}
+
+		result.Added = append(result.Added, key)
+	}
+
+	return result, nil
+}
+
+// NewTranslationService 创建一个新的翻译服务
+func NewTranslationService() TranslationService {
+	return TranslationService{}
 }

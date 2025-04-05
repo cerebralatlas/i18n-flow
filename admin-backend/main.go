@@ -57,6 +57,7 @@ func main() {
 	translationController := controller.NewTranslationController()
 	languageController := controller.NewLanguageController()
 	dashboardController := controller.NewDashboardController()
+	cliController := controller.NewCLIController()
 
 	// 公开路由
 	router.POST("/api/login", userController.Login)
@@ -96,6 +97,15 @@ func main() {
 
 		// 仪表板相关
 		authRoutes.GET("/dashboard/stats", dashboardController.GetDashboardStats)
+	}
+
+	// CLI 相关
+	cliRoutes := router.Group("/api/cli")
+	cliRoutes.Use(middleware.APIKeyAuthMiddleware())
+	{
+		cliRoutes.GET("/auth", cliController.CheckAPIKey)
+		cliRoutes.GET("/translations", cliController.GetAllTranslations)
+		cliRoutes.POST("/keys", cliController.PushKeys)
 	}
 
 	router.Run(":8080")
