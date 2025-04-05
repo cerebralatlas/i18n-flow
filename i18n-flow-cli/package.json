@@ -10,6 +10,7 @@
   "bin": {
     "i18n-flow": "./bin/i18n-flow"
   },
+  "license": "MIT",
   "scripts": {
     "build": "tsc",
     "dev": "ts-node src/index.ts",
