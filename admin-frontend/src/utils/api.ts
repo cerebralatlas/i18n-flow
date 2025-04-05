@@ -40,7 +40,6 @@ api.interceptors.response.use(
           // 清除用户信息并重定向到登录页
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
           break;
         case 403:
           message.error('没有权限访问该资源');

@@ -1,0 +1,81 @@
+version: "3.8"
+
+services:
+  # 数据库服务
+  db:
+    image: mysql:8.0
+    container_name: i18n_flow_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${DB_NAME:-i18n_flow}
+      MYSQL_USER: ${DB_USERNAME:-i18nflow}
+      MYSQL_PASSWORD: ${DB_PASSWORD:-password}
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    networks:
+      - i18n_flow_network
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-p${DB_ROOT_PASSWORD:-rootpassword}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # 后端服务
+  backend:
+    build:
+      context: ./admin-backend
+      dockerfile: Dockerfile
+    container_name: i18n_flow_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_USERNAME: ${DB_USERNAME:-i18nflow}
+      DB_PASSWORD: ${DB_PASSWORD:-password}
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: ${DB_NAME:-i18n_flow}
+      JWT_SECRET: ${JWT_SECRET:-your_secure_jwt_secret}
+      JWT_EXPIRATION_HOURS: ${JWT_EXPIRATION_HOURS:-24}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-your_secure_refresh_secret}
+      JWT_REFRESH_EXPIRATION_HOURS: ${JWT_REFRESH_EXPIRATION_HOURS:-168}
+      CLI_API_KEY: ${CLI_API_KEY:-your_secure_api_key}
+    ports:
+      - "8080:8080"
+    networks:
+      - i18n_flow_network
+
+  # 前端服务
+  frontend:
+    build:
+      context: ./admin-frontend
+      dockerfile: Dockerfile
+    container_name: i18n_flow_frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "80:80"
+    networks:
+      - i18n_flow_network
+
+networks:
+  i18n_flow_network:
+    driver: bridge
+
+volumes:
+  mysql_data:
