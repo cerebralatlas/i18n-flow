@@ -349,7 +349,6 @@ const TranslationManagement: React.FC = () => {
   const handleExcelFile = (file: File) => {
     parseExcelFile(
       file,
-      languages,
       (data: ExcelData | null) => {
         if (data) {
           setExcelData(data.jsonData);

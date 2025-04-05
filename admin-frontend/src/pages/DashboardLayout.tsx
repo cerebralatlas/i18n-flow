@@ -167,7 +167,7 @@ const DashboardLayout: React.FC = () => {
 
           <div className="flex items-center space-x-3">
             <Dropdown
-              menu={{ items: userMenuItems }}
+              menu={{ items: userMenuItems as any }}
               placement="bottomRight"
               arrow
             >

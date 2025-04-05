@@ -2,6 +2,7 @@ import * as XLSX from "xlsx";
 import { Language } from "../../types/translation";
 import { message } from "antd";
 
+
 export interface ExcelData {
   jsonData: any[];
   columns: any[];
@@ -13,7 +14,6 @@ export interface ExcelData {
  */
 export const parseExcelFile = (
   file: File,
-  languages: Language[],
   callback: (data: ExcelData | null) => void,
   setLoading: (loading: boolean) => void
 ) => {
