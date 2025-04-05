@@ -45,6 +45,13 @@ type TranslationResponse struct {
 	LanguageName string `json:"language_name" example:"简体中文"`             // 语言名称
 }
 
+// TranslationMatrixItem 翻译矩阵项
+type TranslationMatrixItem struct {
+	KeyName   string            `json:"key_name"`
+	Context   string            `json:"context"`
+	Languages map[string]string `json:"languages"` // 语言代码到翻译值的映射
+}
+
 // CreateTranslation 创建翻译
 func (s *TranslationService) CreateTranslation(req TranslationRequest) (*TranslationResponse, error) {
 	// 检查项目是否存在
@@ -517,4 +524,77 @@ func (s *TranslationService) BatchDeleteTranslations(ids []uint) (int, error) {
 
 	// 返回删除的记录数
 	return int(result.RowsAffected), nil
+}
+
+// GetTranslationMatrix 获取项目的翻译矩阵
+func (s *TranslationService) GetTranslationMatrix(projectID uint, page, pageSize int, keyword string) ([]TranslationMatrixItem, int64, error) {
+	var translations []model.Translation
+	var total int64
+
+	// 首先获取所有匹配的翻译
+	query := db.DB.Model(&model.Translation{}).Where("project_id = ?", projectID)
+
+	// 如果有关键字，添加搜索条件
+	if keyword != "" {
+		query = query.Where("key_name LIKE ? OR value LIKE ? OR context LIKE ?",
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
+	// 预加载关联对象
+	if err := query.Preload("Language").Find(&translations).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 按照key_name分组
+	keyGroups := make(map[string][]model.Translation)
+	uniqueKeyNames := make([]string, 0)
+
+	for _, t := range translations {
+		if _, exists := keyGroups[t.KeyName]; !exists {
+			keyGroups[t.KeyName] = []model.Translation{}
+			uniqueKeyNames = append(uniqueKeyNames, t.KeyName)
+		}
+		keyGroups[t.KeyName] = append(keyGroups[t.KeyName], t)
+	}
+
+	// 计算总记录数（唯一key_name的数量）
+	total = int64(len(uniqueKeyNames))
+
+	// 计算分页
+	startIndex := (page - 1) * pageSize
+	endIndex := startIndex + pageSize
+	if endIndex > int(total) {
+		endIndex = int(total)
+	}
+	if startIndex > int(total) {
+		startIndex = int(total)
+	}
+
+	// 只处理当前页的key_names
+	paginatedKeyNames := []string{}
+	if startIndex < len(uniqueKeyNames) {
+		paginatedKeyNames = uniqueKeyNames[startIndex:endIndex]
+	}
+
+	// 转换为矩阵格式
+	matrix := make([]TranslationMatrixItem, 0, len(paginatedKeyNames))
+
+	for _, keyName := range paginatedKeyNames {
+		keyTranslations := keyGroups[keyName]
+
+		matrixItem := TranslationMatrixItem{
+			KeyName:   keyName,
+			Context:   keyTranslations[0].Context,
+			Languages: make(map[string]string),
+		}
+
+		// 为每种语言添加翻译值
+		for _, translation := range keyTranslations {
+			matrixItem.Languages[translation.Language.Code] = translation.Value
+		}
+
+		matrix = append(matrix, matrixItem)
+	}
+
+	return matrix, total, nil
 }

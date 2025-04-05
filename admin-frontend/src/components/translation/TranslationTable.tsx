@@ -17,10 +17,13 @@ import { TranslationResponse, Language } from "../../types/translation";
 
 const { Text } = Typography;
 
+// 更新接口定义以匹配新的数据格式
 export interface TranslationMatrix {
   key_name: string;
   context?: string;
-  [languageCode: string]: string | undefined;
+  languages: {
+    [languageCode: string]: string;
+  };
 }
 
 interface TranslationTableProps {
@@ -80,7 +83,7 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
   );
 };
 
-// Helper function to generate table columns
+// 更新列生成逻辑以适配新的数据格式
 export const generateTableColumns = (
   languages: Language[],
   translations: TranslationResponse[],
@@ -127,20 +130,23 @@ export const generateTableColumns = (
         )}
       </div>
     ),
-    dataIndex: lang.code,
+    dataIndex: ["languages", lang.code], // 使用嵌套属性访问
     key: lang.code,
     width: 200,
     render: (text: string, record: TranslationMatrix) => {
+      // 从新的数据结构中获取语言值
+      const value = record.languages?.[lang.code];
+
       // If there's a translation value, show text; if not, show add button
-      if (text) {
-        // Get the translation ID and other info for this cell
+      if (value) {
+        // 查找匹配的翻译记录（用于编辑/删除操作）
         const translation = translations.find(
           (t) => t.key_name === record.key_name && t.language_code === lang.code
         );
 
         return (
           <div className="group relative">
-            <div className="min-h-[40px] whitespace-pre-wrap mb-2">{text}</div>
+            <div className="min-h-[40px] whitespace-pre-wrap mb-2">{value}</div>
             {translation && (
               <div className="absolute top-0 right-0 opacity-0 group-hover:opacity-100 transition-opacity">
                 <Space>

@@ -993,6 +993,54 @@ paths:
       summary: 获取项目翻译
       tags:
       - 翻译管理
+  /translations/matrix/by-project/{project_id}:
+    get:
+      consumes:
+      - application/json
+      description: 获取指定项目的翻译矩阵，按键名分组，每组包含各语言的翻译，支持分页和搜索
+      parameters:
+      - description: 项目ID
+        in: path
+        name: project_id
+        required: true
+        type: integer
+      - description: 页码，默认1
+        in: query
+        name: page
+        type: integer
+      - description: 每页数量，默认10
+        in: query
+        name: page_size
+        type: integer
+      - description: 搜索关键词
+        in: query
+        name: keyword
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取项目翻译矩阵
+      tags:
+      - 翻译管理
   /user/info:
     get:
       consumes:

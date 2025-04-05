@@ -407,7 +407,7 @@ const TranslationManagement: React.FC = () => {
           languages={languages}
           selectedKeys={selectedKeys}
           pagination={localPagination}
-          onTableChange={handleTableChange}
+          onTableChange={handleTableChange} // 确保这个函数被正确传递
           onRowSelectionChange={handleRowSelectionChange}
           onEditTranslation={showEditModal}
           onDeleteTranslation={handleDeleteTranslation}

@@ -71,5 +71,12 @@ export const translationService = {
   // 批量删除翻译
   batchDeleteTranslations: async (ids: number[]) => {
     return await api.post('/api/translations/batch-delete', ids);
+  },
+
+  // 获取翻译矩阵
+  getTranslationMatrix(projectId: number, page: number, pageSize: number, keyword: string = "") {
+    return api.get(`/api/translations/matrix/by-project/${projectId}`, {
+      params: { page, page_size: pageSize, keyword }
+    });
   }
 };

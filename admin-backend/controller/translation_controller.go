@@ -308,3 +308,44 @@ func (c *TranslationController) BatchDeleteTranslations(ctx *gin.Context) {
 		"count":   count,
 	})
 }
+
+// GetTranslationMatrix 获取项目的翻译矩阵
+// @Summary      获取项目翻译矩阵
+// @Description  获取指定项目的翻译矩阵，按键名分组，每组包含各语言的翻译，支持分页和搜索
+// @Tags         翻译管理
+// @Accept       json
+// @Produce      json
+// @Param        project_id  path      int     true   "项目ID"
+// @Param        page        query     int     false  "页码，默认1"
+// @Param        page_size   query     int     false  "每页数量，默认10"
+// @Param        keyword     query     string  false  "搜索关键词"
+// @Success      200         {object}  map[string]interface{}
+// @Failure      400         {object}  map[string]string
+// @Failure      500         {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /translations/matrix/by-project/{project_id} [get]
+func (c *TranslationController) GetTranslationMatrix(ctx *gin.Context) {
+	projectID, err := strconv.ParseUint(ctx.Param("project_id"), 10, 32)
+	if err != nil {
+		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		return
+	}
+
+	// 解析分页参数
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+	keyword := ctx.Query("keyword")
+
+	matrix, total, err := c.translationService.GetTranslationMatrix(uint(projectID), page, pageSize, keyword)
+	if err != nil {
+		ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+
+	ctx.JSON(http.StatusOK, gin.H{
+		"data":  matrix,
+		"total": total,
+		"page":  page,
+		"size":  pageSize,
+	})
+}

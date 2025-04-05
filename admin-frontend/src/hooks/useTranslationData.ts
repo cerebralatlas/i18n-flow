@@ -85,53 +85,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // New data transformation and pagination function
-  const transformAndPaginateData = (data: TranslationResponse[]) => {
-    // Group by key name
-    const keyGroups: { [key: string]: TranslationResponse[] } = {};
 
-    data.forEach((translation) => {
-      if (!keyGroups[translation.key_name]) {
-        keyGroups[translation.key_name] = [];
-      }
-      keyGroups[translation.key_name].push(translation);
-    });
-
-    // Convert to matrix format
-    const matrix: TranslationMatrix[] = Object.keys(keyGroups).map(
-      (keyName) => {
-        const keyTranslations = keyGroups[keyName];
-        const matrixRow: TranslationMatrix = {
-          key_name: keyName,
-          context: keyTranslations[0]?.context,
-        };
-
-        // Add translation value for each language
-        keyTranslations.forEach((translation) => {
-          matrixRow[translation.language_code] = translation.value;
-        });
-
-        return matrixRow;
-      }
-    );
-
-    // Update total to key name count
-    setLocalPagination((prev) => ({
-      ...prev,
-      total: matrix.length,
-    }));
-
-    // Calculate data to display based on current page and page size
-    const { current, pageSize } = localPagination;
-    const startIndex = (current - 1) * pageSize;
-    const endIndex = startIndex + pageSize;
-
-    // Set current page data
-    setPaginatedMatrix(matrix.slice(startIndex, endIndex));
-
-    // Also save the complete matrix for other processing
-    setTranslationMatrix(matrix);
-  };
 
   // Get translation list
   const fetchTranslations = async () => {
@@ -139,24 +93,21 @@ export const useTranslationData = (initialProjectId?: string) => {
 
     try {
       setLoading(true);
-
-      // Get all translations for the project, without backend pagination
-      const response = await translationService.getTranslationsByProject(
+      const response = await translationService.getTranslationMatrix(
         selectedProject,
-        1,
-        1000, // Get enough records for frontend grouping and pagination
+        localPagination.current,
+        localPagination.pageSize,
         keyword
       );
 
-      // Save original translation data
-      setAllTranslations(response.data || []);
-      setTranslations(response.data || []);
-
-      // Call data transformation function
-      transformAndPaginateData(response.data || []);
+      setPaginatedMatrix(response.data.data);
+      setLocalPagination({
+        ...localPagination,
+        total: response.data.total
+      });
     } catch (error) {
-      console.error("Failed to get translation list:", error);
-      message.error("获取翻译列表失败");
+      console.error("Failed to get translation matrix:", error);
+      message.error("获取翻译矩阵失败");
     } finally {
       setLoading(false);
     }
@@ -318,6 +269,12 @@ export const useTranslationData = (initialProjectId?: string) => {
 
     setSelectedTranslations(selected);
   };
+
+  useEffect(() => {
+    if (selectedProject) {
+      fetchTranslations();
+    }
+  }, [localPagination.current, localPagination.pageSize, selectedProject, keyword]);
 
   return {
     // State

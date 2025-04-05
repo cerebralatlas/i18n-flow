@@ -79,6 +79,7 @@ func main() {
 		authRoutes.POST("/translations", translationController.CreateTranslation)
 		authRoutes.POST("/translations/batch", translationController.BatchCreateTranslations)
 		authRoutes.GET("/translations/by-project/:project_id", translationController.GetTranslationsByProject)
+		authRoutes.GET("/translations/matrix/by-project/:project_id", translationController.GetTranslationMatrix)
 		authRoutes.GET("/translations/:id", translationController.GetTranslationByID)
 		authRoutes.PUT("/translations/:id", translationController.UpdateTranslation)
 		authRoutes.DELETE("/translations/:id", translationController.DeleteTranslation)
