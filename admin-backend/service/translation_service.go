@@ -691,14 +691,20 @@ func (ts TranslationService) PushKeysFromCLI(request KeysPushRequest) (KeyPushRe
 	// 处理每个键
 	for _, key := range request.Keys {
 		// 检查键是否已存在
-		var count int64
-		db.DB.Model(&model.Translation{}).
-			Where("project_id = ? AND key_name = ?", pid, key).
-			Count(&count)
-
-		if count > 0 {
-			// 键已存在
+		var existingTranslation model.Translation
+		if err := db.DB.Where("project_id = ? AND key_name = ? AND language_id = ?",
+			pid, key, defaultLang.ID).First(&existingTranslation).Error; err == nil {
+			// 键已存在，更新值
+			existingTranslation.Value = request.Defaults[key]
+			if err := db.DB.Save(&existingTranslation).Error; err != nil {
+				result.Failed = append(result.Failed, key)
+				continue
+			}
 			result.Existed = append(result.Existed, key)
+			continue
+		} else if err != gorm.ErrRecordNotFound {
+			// 数据库错误
+			result.Failed = append(result.Failed, key)
 			continue
 		}
 
