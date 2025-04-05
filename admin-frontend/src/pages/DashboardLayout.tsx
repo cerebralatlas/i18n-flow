@@ -63,9 +63,6 @@ const DashboardLayout: React.FC = () => {
                 navigate("/translations");
                 break;
               case "4":
-                navigate("/users");
-                break;
-              case "5":
                 navigate("/settings");
                 break;
             }
@@ -88,11 +85,6 @@ const DashboardLayout: React.FC = () => {
             },
             {
               key: "4",
-              icon: <TeamOutlined />,
-              label: "用户管理",
-            },
-            {
-              key: "5",
               icon: <SettingOutlined />,
               label: "系统设置",
             },

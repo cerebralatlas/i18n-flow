@@ -1,8 +1,9 @@
-import React from "react";
-import { Modal, Form, Input, Select, Upload, Table, Button, Tag } from "antd";
-import { UploadOutlined, FileExcelOutlined } from "@ant-design/icons";
+import React, { useEffect } from "react";
+import { Modal, Form, Input, Select, Upload, Table, Tag } from "antd";
+import { UploadOutlined } from "@ant-design/icons";
 import { Project } from "../../types/project";
 import { Language, TranslationResponse } from "../../types/translation";
+import { TranslationMatrix } from "./TranslationTable";
 
 const { TextArea } = Input;
 const { Dragger } = Upload;
@@ -99,6 +100,7 @@ interface BatchModalProps extends BaseModalProps {
   form: any;
   onOk: () => void;
   translations: TranslationResponse[];
+  paginatedMatrix: TranslationMatrix[];
 }
 
 export const BatchTranslationModal: React.FC<BatchModalProps> = ({
@@ -108,7 +110,45 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
   form,
   languages,
   translations,
+  paginatedMatrix,
 }) => {
+  // Add useEffect to ensure form values are set properly when the modal is shown
+  useEffect(() => {
+    if (visible && form) {
+      // 添加一个小延迟，确保表单已经完全初始化
+      setTimeout(() => {
+        // Get the current key name from the form
+        const keyName = form.getFieldValue("key_name");
+        console.log("Setting values for key:", keyName);
+
+        if (keyName && paginatedMatrix && paginatedMatrix.length > 0) {
+          // 创建一个包含所有值的对象，然后一次性设置
+          const formValues = { key_name: keyName };
+
+          // Set form values for each language that has a translation
+          languages.forEach((lang) => {
+            if (paginatedMatrix) {
+              const paginatedTranslation = paginatedMatrix.find(
+                (t) => t.key_name === keyName && t.languages[lang.code]
+              );
+              if (paginatedTranslation) {
+                const langKey = `lang_${lang.code}` as keyof typeof formValues;
+                formValues[langKey] = paginatedTranslation.languages[lang.code];
+                console.log(
+                  `Setting lang_${lang.code}:`,
+                  paginatedTranslation.languages[lang.code]
+                );
+              }
+            }
+          });
+
+          // 使用setFieldsValue一次性设置所有值
+          form.setFieldsValue(formValues);
+        }
+      }, 100); // 小延迟确保DOM已更新
+    }
+  }, [visible, form, paginatedMatrix, languages]);
+
   return (
     <Modal
       title="批量添加/更新翻译"
@@ -128,20 +168,12 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
         preserve={false}
       >
         <Form.Item
-          name="project_id"
-          label="项目"
-          rules={[{ required: true, message: "请选择项目" }]}
-          hidden
-        >
-          <Input />
-        </Form.Item>
-
-        <Form.Item
           name="key_name"
           label="键名"
           rules={[{ required: true, message: "请输入键名" }]}
+          initialValue={form.getFieldValue("key_name")}
         >
-          <Input placeholder="请输入键名" disabled={true} />
+          <Input placeholder="请输入键名" />
         </Form.Item>
 
         <Form.Item name="context" label="上下文说明">

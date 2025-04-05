@@ -220,10 +220,8 @@ const TranslationManagement: React.FC = () => {
         }
       });
 
-      // Make sure form values are set before showing modal
-      setTimeout(() => {
-        setBatchModalVisible(true);
-      }, 100);
+      // Show modal - don't need setTimeout anymore since we have useEffect in the modal
+      setBatchModalVisible(true);
     } catch (error) {
       console.error("加载现有翻译失败:", error);
       message.error("加载现有翻译失败");
@@ -493,6 +491,7 @@ const TranslationManagement: React.FC = () => {
         languages={languages}
         selectedProject={selectedProject}
         translations={translations}
+        paginatedMatrix={paginatedMatrix}
       />
 
       <EditTranslationModal
