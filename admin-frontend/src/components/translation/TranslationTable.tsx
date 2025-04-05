@@ -225,10 +225,10 @@ export const generateTableColumns = (
         <Button
           type="primary"
           size="small"
-          icon={<PlusOutlined />}
+          icon={<EditOutlined />}
           onClick={() => onShowBatchAddModal(record.key_name, record.context)}
         >
-          Batch add
+          Edit
         </Button>
       </Space>
     ),
