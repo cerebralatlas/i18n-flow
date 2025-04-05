@@ -189,23 +189,21 @@ const ProjectManagement: React.FC = () => {
     {
       title: "Action",
       key: "action",
-      width: 200,
+      width: 180,
       render: (_: unknown, record: Project) => (
-        <Space size="middle">
+        <Space size="small">
           <Button
             type="text"
             icon={<EyeOutlined />}
+            size="small"
             onClick={() => showProjectDetail(record)}
-          >
-            Details
-          </Button>
+          />
           <Button
             type="text"
             icon={<EditOutlined />}
+            size="small"
             onClick={() => showEditModal(record)}
-          >
-            Edit
-          </Button>
+          />
           <Popconfirm
             title="Are you sure you want to delete this project?"
             description="This action cannot be undone!"
@@ -213,9 +211,7 @@ const ProjectManagement: React.FC = () => {
             okText="Yes"
             cancelText="Cancel"
           >
-            <Button type="text" danger icon={<DeleteOutlined />}>
-              Delete
-            </Button>
+            <Button type="text" danger icon={<DeleteOutlined />} size="small" />
           </Popconfirm>
         </Space>
       ),
