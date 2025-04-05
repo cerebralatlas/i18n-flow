@@ -1,54 +1,117 @@
-# React + TypeScript + Vite
+# i18n-flow Admin Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern React-based admin panel for managing internationalization (i18n) projects and translations.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The i18n-flow Admin Frontend provides a user-friendly interface for managing multilingual content across projects. It allows users to:
 
-## Expanding the ESLint configuration
+- Manage i18n projects
+- Add and edit translation keys
+- Manage translations across multiple languages
+- Import/export translation data
+- Monitor translation status and progress
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tech Stack
 
-```js
-export default tseslint.config({
-  extends: [
-    // Remove ...tseslint.configs.recommended and replace with this
-    ...tseslint.configs.recommendedTypeChecked,
-    // Alternatively, use this for stricter rules
-    ...tseslint.configs.strictTypeChecked,
-    // Optionally, add this for stylistic rules
-    ...tseslint.configs.stylisticTypeChecked,
-  ],
-  languageOptions: {
-    // other options...
-    parserOptions: {
-      project: ['./tsconfig.node.json', './tsconfig.app.json'],
-      tsconfigRootDir: import.meta.dirname,
-    },
-  },
-})
+- **Framework**: React 19
+- **UI Library**: Ant Design 5
+- **Styling**: Tailwind CSS 4
+- **Routing**: React Router 7
+- **HTTP Client**: Axios
+- **Build Tool**: Vite
+- **Language**: TypeScript
+- **Data Export**: XLSX
+
+## Features
+
+### Authentication
+
+- Secure login system
+- Protected routes for authenticated users
+
+### Project Management
+
+- Create, view, edit, and delete i18n projects
+- Project details including name, description, and slug
+
+### Translation Management
+
+- Manage translation keys and their values across multiple languages
+- Filter and search for specific translations
+- Batch operations for translation updates
+- Context support for translations
+
+### Dashboard
+
+- Overview of translation progress
+- Project statistics and status
+
+## Getting Started
+
+### Prerequisites
+
+- Node.js (latest LTS version recommended)
+- pnpm
+
+### Installation
+
+```bash
+# Clone the repository
+git clone [repository-url]
+
+# Navigate to the project directory
+cd i18n-flow/admin-frontend
+
+# Install dependencies
+pnpm install
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+### Development
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
-
-export default tseslint.config({
-  plugins: {
-    // Add the react-x and react-dom plugins
-    'react-x': reactX,
-    'react-dom': reactDom,
-  },
-  rules: {
-    // other rules...
-    // Enable its recommended typescript rules
-    ...reactX.configs['recommended-typescript'].rules,
-    ...reactDom.configs.recommended.rules,
-  },
-})
+```bash
+# Start the development server
+pnpm dev
 ```
+
+The application will be available at <http://localhost:5173> by default.
+
+### Building for Production
+
+```bash
+# Build the application
+pnpm build
+
+# Preview the production build
+pnpm preview
+```
+
+## Project Structure
+
+```
+src/
+├── assets/       # Static assets like images
+├── components/   # Reusable UI components
+├── contexts/     # React context providers
+├── hooks/        # Custom React hooks
+├── pages/        # Application pages
+├── services/     # API service integrations
+├── types/        # TypeScript type definitions
+└── utils/        # Utility functions
+```
+
+## API Integration
+
+The frontend connects to a backend API for data operations. The API endpoints are abstracted through service modules:
+
+- `projectService`: Manages project CRUD operations
+- `translationService`: Handles translation-related operations
+- `dashboardService`: Provides dashboard statistics and data
+
+## Contributing
+
+1. Fork the repository
+2. Create your feature branch
+3. Commit your changes
+4. Push to the branch
+5. Open a Pull Request
