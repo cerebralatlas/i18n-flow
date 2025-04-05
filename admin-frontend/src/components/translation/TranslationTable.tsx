@@ -47,6 +47,7 @@ interface TranslationTableProps {
   onDeleteTranslation: (id: number) => void;
   onAddTranslation: (keyName: string, languageId: number) => void;
   onShowBatchAddModal: (keyName: string, context?: string) => void;
+  visibleLanguages?: string[];
 }
 
 const TranslationTable: React.FC<TranslationTableProps> = ({
@@ -57,11 +58,22 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
   selectedKeys,
   onTableChange,
   onRowSelectionChange,
+  visibleLanguages,
 }) => {
+  // 根据可见语言过滤列
+  const filteredColumns = visibleLanguages
+    ? columns.filter((col) => {
+        // 保留第一列(键名)和最后一列(操作)
+        if (col.key === "key_name" || col.key === "action") return true;
+        // 根据用户选择显示语言列
+        return visibleLanguages.includes(col.key);
+      })
+    : columns;
+
   return (
     <div className="overflow-auto">
       <Table
-        columns={columns}
+        columns={filteredColumns}
         dataSource={paginatedMatrix}
         rowKey="key_name"
         pagination={{
@@ -90,7 +102,8 @@ export const generateTableColumns = (
   onEditTranslation: (translation: TranslationResponse) => void,
   onDeleteTranslation: (id: number) => void,
   onAddTranslation: (keyName: string, languageId: number) => void,
-  onShowBatchAddModal: (keyName: string, context?: string) => void
+  onShowBatchAddModal: (keyName: string, context?: string) => void,
+  selectedLanguageCodes: string[] = []
 ) => {
   // Base columns: key name and context
   const baseColumns = [
@@ -117,8 +130,13 @@ export const generateTableColumns = (
     },
   ];
 
-  // Create a column for each language
-  const languageColumns = languages.map((lang) => ({
+  // Create a column for each language - filter by selected languages if provided
+  const filteredLanguages =
+    selectedLanguageCodes.length > 0
+      ? languages.filter((lang) => selectedLanguageCodes.includes(lang.code))
+      : languages;
+
+  const languageColumns = filteredLanguages.map((lang) => ({
     title: (
       <div>
         <div>{lang.name}</div>

@@ -21,6 +21,10 @@ import {
   autoMapLanguageColumns,
   ExcelData,
 } from "../components/translation/ExcelUtils";
+import {
+  loadSelectedColumns,
+  saveSelectedColumns,
+} from "../utils/localStorage";
 
 // Types
 import {
@@ -61,6 +65,11 @@ const TranslationManagement: React.FC = () => {
     handleRowSelectionChange,
   } = useTranslationData(projectId);
 
+  // Add state for selected language columns
+  const [selectedLanguageColumns, setSelectedLanguageColumns] = useState<
+    string[]
+  >([]);
+
   // Modal state
   const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
   const [batchModalVisible, setBatchModalVisible] = useState<boolean>(false);
@@ -85,6 +94,34 @@ const TranslationManagement: React.FC = () => {
   const [batchForm] = Form.useForm();
   const [editForm] = Form.useForm();
 
+  // Add state for visible languages
+  const [visibleLanguages, setVisibleLanguages] = useState<string[]>([]);
+
+  // Effect to initialize selected columns when languages load
+  useEffect(() => {
+    if (languages.length > 0) {
+      // Try to load saved preferences from localStorage first
+      const savedColumns = loadSelectedColumns();
+
+      if (savedColumns) {
+        // Filter saved columns to only include languages that still exist
+        const validSavedColumns = savedColumns.filter((code) =>
+          languages.some((lang) => lang.code === code)
+        );
+
+        if (validSavedColumns.length > 0) {
+          setSelectedLanguageColumns(validSavedColumns);
+        } else {
+          // If no valid saved columns, select all languages
+          setSelectedLanguageColumns(languages.map((lang) => lang.code));
+        }
+      } else {
+        // If no saved columns, select all languages
+        setSelectedLanguageColumns(languages.map((lang) => lang.code));
+      }
+    }
+  }, [languages]);
+
   // Effect to generate table columns when languages are loaded
   useEffect(() => {
     if (languages.length > 0) {
@@ -94,11 +131,26 @@ const TranslationManagement: React.FC = () => {
         showEditModal,
         handleDeleteTranslation,
         handleAddTranslation,
-        showBatchAddModal
+        showBatchAddModal,
+        selectedLanguageColumns // Pass selected columns to filter
       );
       setColumns(generatedColumns);
     }
-  }, [languages, translations]);
+  }, [languages, translations, selectedLanguageColumns]);
+
+  // Effect to initialize visible languages
+  useEffect(() => {
+    if (languages.length > 0 && visibleLanguages.length === 0) {
+      setVisibleLanguages(languages.map((lang) => lang.code));
+    }
+  }, [languages]);
+
+  // Handle column selection change with persistence
+  const handleColumnSelectionChange = (selectedCodes: string[]) => {
+    setSelectedLanguageColumns(selectedCodes);
+    // Save to localStorage whenever selection changes
+    saveSelectedColumns(selectedCodes);
+  };
 
   // Handlers for translation operations
   const handleAddTranslation = (keyName: string, languageId: number) => {
@@ -392,6 +444,9 @@ const TranslationManagement: React.FC = () => {
         selectedTranslations={selectedTranslations}
         onBatchDelete={batchDeleteTranslations}
         batchDeleteLoading={batchDeleteLoading}
+        languages={languages}
+        selectedLanguageColumns={selectedLanguageColumns}
+        onColumnSelectionChange={handleColumnSelectionChange}
       />
 
       {loading ? (
@@ -407,7 +462,7 @@ const TranslationManagement: React.FC = () => {
           languages={languages}
           selectedKeys={selectedKeys}
           pagination={localPagination}
-          onTableChange={handleTableChange} // 确保这个函数被正确传递
+          onTableChange={handleTableChange}
           onRowSelectionChange={handleRowSelectionChange}
           onEditTranslation={showEditModal}
           onDeleteTranslation={handleDeleteTranslation}

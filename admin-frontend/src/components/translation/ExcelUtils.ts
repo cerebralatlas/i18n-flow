@@ -69,6 +69,7 @@ export const parseExcelFile = (
           dataIndex: colName,
           key: colName,
           width: 200,
+          fixed: "left" as const,
         });
       });
 

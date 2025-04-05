@@ -17,7 +17,8 @@ import {
   FileExcelOutlined,
 } from "@ant-design/icons";
 import { Project } from "../../types/project";
-import { TranslationResponse } from "../../types/translation";
+import { TranslationResponse, Language } from "../../types/translation";
+import ColumnSelector from "./ColumnSelector";
 
 interface TranslationToolbarProps {
   projects: Project[];
@@ -34,6 +35,9 @@ interface TranslationToolbarProps {
   selectedTranslations: TranslationResponse[];
   onBatchDelete: () => void;
   batchDeleteLoading: boolean;
+  languages: Language[];
+  selectedLanguageColumns: string[];
+  onColumnSelectionChange: (selectedCodes: string[]) => void;
 }
 
 const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
@@ -51,6 +55,9 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   selectedTranslations,
   onBatchDelete,
   batchDeleteLoading,
+  languages,
+  selectedLanguageColumns,
+  onColumnSelectionChange,
 }) => {
   const handleProjectSelect = (value: number) => {
     onProjectChange(value);
@@ -83,8 +90,8 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
         </div>
       </div>
 
-      <div className="mb-4 flex justify-between">
-        <div>
+      <div className="mb-4 flex flex-wrap gap-2 items-center justify-between">
+        <div className="flex flex-wrap gap-2 items-center">
           {selectedTranslations.length > 0 && (
             <Popconfirm
               title={`确定要删除选中的 ${selectedTranslations.length} 条翻译吗？`}
@@ -103,50 +110,57 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
             </Popconfirm>
           )}
         </div>
-        <Space size="small">
-          <Button
-            type="primary"
-            icon={<PlusOutlined />}
-            onClick={() => {
-              if (!selectedProject) {
-                message.warning("请先选择项目");
-                return;
-              }
-              onAddTranslation();
-            }}
-          >
-            添加翻译
-          </Button>
+        <div className="flex flex-wrap gap-2 items-center">
+          <ColumnSelector
+            languages={languages}
+            selectedColumns={selectedLanguageColumns}
+            onChange={onColumnSelectionChange}
+          />
+          <Space size="small">
+            <Button
+              type="primary"
+              icon={<PlusOutlined />}
+              onClick={() => {
+                if (!selectedProject) {
+                  message.warning("请先选择项目");
+                  return;
+                }
+                onAddTranslation();
+              }}
+            >
+              添加翻译
+            </Button>
 
-          <Button
-            icon={<PlusOutlined />}
-            onClick={() => {
-              if (!selectedProject) {
-                message.warning("请先选择项目");
-                return;
-              }
-              onBatchAddTranslation();
-            }}
-          >
-            批量添加
-          </Button>
+            <Button
+              icon={<PlusOutlined />}
+              onClick={() => {
+                if (!selectedProject) {
+                  message.warning("请先选择项目");
+                  return;
+                }
+                onBatchAddTranslation();
+              }}
+            >
+              批量添加
+            </Button>
 
-          <Button icon={<ImportOutlined />} onClick={onImportJsonClick}>
-            导入JSON
-          </Button>
+            <Button icon={<ImportOutlined />} onClick={onImportJsonClick}>
+              导入JSON
+            </Button>
 
-          <Upload
-            beforeUpload={onExcelFileUpload}
-            showUploadList={false}
-            accept=".xlsx,.xls"
-          >
-            <Button icon={<FileExcelOutlined />}>导入Excel</Button>
-          </Upload>
+            <Upload
+              beforeUpload={onExcelFileUpload}
+              showUploadList={false}
+              accept=".xlsx,.xls"
+            >
+              <Button icon={<FileExcelOutlined />}>导入Excel</Button>
+            </Upload>
 
-          <Button icon={<ExportOutlined />} onClick={onExportClick}>
-            导出
-          </Button>
-        </Space>
+            <Button icon={<ExportOutlined />} onClick={onExportClick}>
+              导出
+            </Button>
+          </Space>
+        </div>
       </div>
     </>
   );
