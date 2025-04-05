@@ -15,6 +15,15 @@ A comprehensive internationalization (i18n) management platform designed to stre
 - **RESTful API**: Well-documented API for integration with your systems
 - **User Authentication**: Secure JWT-based authentication system
 - **Responsive UI**: Modern admin dashboard built with React and Ant Design
+- **CLI Integration**: Command-line tool for seamless integration with your development workflow
+
+## 📦 Components
+
+i18n-flow consists of three main components:
+
+1. **Admin Backend**: Go-based API server that manages all i18n data and provides RESTful endpoints
+2. **Admin Frontend**: React-based dashboard for visual management of translation projects
+3. **CLI Tool**: Command-line interface for developers to sync translations with their codebase
 
 ## 🚀 Getting Started
 
@@ -72,6 +81,22 @@ A comprehensive internationalization (i18n) management platform designed to stre
 
 4. The admin interface will be available at `http://localhost:5173`
 
+### CLI Tool Setup
+
+1. Install the CLI tool globally:
+
+   ```bash
+   npm install -g @i18n-flow/cli
+   ```
+
+2. Initialize i18n-flow in your project:
+
+   ```bash
+   i18n-flow init
+   ```
+
+3. Follow the interactive setup to configure your project with i18n-flow.
+
 ## 📚 Documentation
 
 ### API Documentation
@@ -89,6 +114,18 @@ The admin dashboard provides an intuitive interface for:
 - Entering and editing translations
 - Importing and exporting translations in various formats
 - User management and access control
+- Monitoring translation status and progress
+
+### CLI Tool
+
+The CLI tool provides the following commands:
+
+- `init`: Initialize i18n-flow in your project
+- `sync`: Sync translations from the server to your local project
+- `push`: Push translation keys to the server
+- `status`: Check translation status for your project
+
+Full CLI documentation is available by running `i18n-flow --help`.
 
 ## 🏗️ Architecture
 
@@ -99,30 +136,38 @@ i18n-flow is built with a modern tech stack and follows a clean architecture app
 - **Language**: Go
 - **Framework**: Gin
 - **Database**: MySQL with GORM ORM
-- **Authentication**: JWT
+- **Authentication**: JWT & API keys
 - **Documentation**: Swagger/OpenAPI
 
 ### Frontend
 
 - **Language**: TypeScript
-- **Framework**: React
-- **UI Library**: Ant Design
+- **Framework**: React 19
+- **UI Library**: Ant Design 5
 - **State Management**: React Context API
-- **Routing**: React Router
-- **Styling**: Tailwind CSS
+- **Routing**: React Router 7
+- **Styling**: Tailwind CSS 4
+- **Build Tool**: Vite
+
+### CLI Tool
+
+- **Language**: TypeScript/JavaScript
+- **Runtime**: Node.js
+- **Distribution**: npm package
 
 ## 🔄 Workflow
 
 The typical workflow in i18n-flow:
 
-1. Create a project
+1. Create a project through the admin dashboard
 2. Define languages you need to support
-3. Import existing translation keys or create new ones
-4. Translate keys into different languages
-5. Export translations to use in your application
-6. Update translations as needed
+3. Use the CLI to scan your source code for translation keys
+4. Push new keys to the translation server with `i18n-flow push --scan`
+5. Translate keys through the admin dashboard
+6. Sync translations to your local project with `i18n-flow sync`
+7. Update translations as needed
 
-## 🤝 Contributing
+## �� Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -143,6 +188,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - [React](https://reactjs.org/) - A JavaScript library for building user interfaces
 - [Ant Design](https://ant.design/) - A design system for enterprise-level products
 - [Tailwind CSS](https://tailwindcss.com/) - A utility-first CSS framework
+- [Vite](https://vitejs.dev/) - Next generation frontend build tool
 
 ## 📧 Contact
 
