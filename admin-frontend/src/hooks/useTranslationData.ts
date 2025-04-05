@@ -70,7 +70,7 @@ export const useTranslationData = (initialProjectId?: string) => {
       }
     } catch (error) {
       console.error("Failed to get project list:", error);
-      message.error("获取项目列表失败");
+      message.error("Get project list failed");
     }
   };
 
@@ -81,7 +81,7 @@ export const useTranslationData = (initialProjectId?: string) => {
       setLanguages(languages);
     } catch (error) {
       console.error("Failed to get language list:", error);
-      message.error("获取语言列表失败");
+      message.error("Get language list failed");
     }
   };
 
@@ -107,7 +107,7 @@ export const useTranslationData = (initialProjectId?: string) => {
       });
     } catch (error) {
       console.error("Failed to get translation matrix:", error);
-      message.error("获取翻译矩阵失败");
+      message.error("Get translation matrix failed");
     } finally {
       setLoading(false);
     }
@@ -128,12 +128,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   const createTranslation = async (values: any) => {
     try {
       await translationService.createTranslation(values);
-      message.success("创建翻译成功");
+      message.success("Create translation successfully");
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to create translation:", error);
-      message.error("创建翻译失败");
+      message.error("Create translation failed");
       return false;
     }
   };
@@ -142,12 +142,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   const batchCreateTranslations = async (request: BatchTranslationRequest) => {
     try {
       await translationService.batchCreateTranslations(request);
-      message.success("批量创建翻译成功");
+      message.success("Batch create translations successfully");
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to batch create translations:", error);
-      message.error("批量创建翻译失败");
+      message.error("Batch create translations failed");
       return false;
     }
   };
@@ -156,12 +156,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   const updateTranslation = async (id: number, values: any) => {
     try {
       await translationService.updateTranslation(id, values);
-      message.success("更新翻译成功");
+      message.success("Update translation successfully");
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to update translation:", error);
-      message.error("更新翻译失败");
+      message.error("Update translation failed");
       return false;
     }
   };
@@ -170,12 +170,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   const deleteTranslation = async (id: number) => {
     try {
       await translationService.deleteTranslation(id);
-      message.success("删除翻译成功");
+      message.success("Delete translation successfully");
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to delete translation:", error);
-      message.error("删除翻译失败");
+      message.error("Delete translation failed");
       return false;
     }
   };
@@ -183,7 +183,7 @@ export const useTranslationData = (initialProjectId?: string) => {
   // Export translations
   const exportTranslations = async (format: string = "json") => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return null;
     }
 
@@ -192,11 +192,11 @@ export const useTranslationData = (initialProjectId?: string) => {
         selectedProject,
         format
       );
-      message.success("导出翻译成功");
+      message.success("Export translations successfully");
       return data;
     } catch (error) {
       console.error("Failed to export translations:", error);
-      message.error("导出翻译失败");
+      message.error("Export translations failed");
       return null;
     }
   };
@@ -204,18 +204,18 @@ export const useTranslationData = (initialProjectId?: string) => {
   // Import translations from JSON
   const importTranslationsFromJson = async (data: any) => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return false;
     }
 
     try {
       await translationService.importTranslations(selectedProject, data);
-      message.success("导入翻译成功");
+      message.success("Import translations successfully");
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to import translations:", error);
-      message.error("导入翻译失败");
+      message.error("Import translations failed");
       return false;
     }
   };
@@ -223,7 +223,7 @@ export const useTranslationData = (initialProjectId?: string) => {
   // Batch delete translations
   const batchDeleteTranslations = async () => {
     if (selectedTranslations.length === 0) {
-      message.warning("请至少选择一条翻译记录");
+      message.warning("Please select at least one translation record");
       return false;
     }
 
@@ -235,14 +235,14 @@ export const useTranslationData = (initialProjectId?: string) => {
       // Call batch delete API
       await translationService.batchDeleteTranslations(ids);
 
-      message.success(`成功删除 ${ids.length} 条翻译`);
+      message.success(`Successfully deleted ${ids.length} translations`);
       setSelectedKeys([]);
       setSelectedTranslations([]);
       fetchTranslations();
       return true;
     } catch (error) {
       console.error("Failed to batch delete translations:", error);
-      message.error("批量删除翻译失败");
+      message.error("Batch delete translations failed");
       return false;
     } finally {
       setBatchDeleteLoading(false);

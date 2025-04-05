@@ -13,11 +13,11 @@ const Login: React.FC = () => {
     try {
       setLoading(true);
       await login(values.username, values.password);
-      message.success("登录成功");
-      navigate("/dashboard"); // 登录成功后重定向到仪表板
+      message.success("Login successful");
+      navigate("/dashboard"); // redirect to dashboard after login
     } catch (error) {
-      console.error("登录失败:", error);
-      message.error("用户名或密码错误，请重试");
+      console.error("Login failed:", error);
+      message.error("Invalid username or password, please try again");
     } finally {
       setLoading(false);
     }
@@ -28,9 +28,9 @@ const Login: React.FC = () => {
       <Card className="w-96 shadow-md">
         <div className="text-center mb-6">
           <h1 className="text-2xl font-bold text-gray-800">
-            i18n-flow 管理系统
+            i18n-flow management system
           </h1>
-          <p className="text-gray-600">请登录您的账户</p>
+          <p className="text-gray-600">Please login to your account</p>
         </div>
 
         <Form
@@ -41,22 +41,22 @@ const Login: React.FC = () => {
         >
           <Form.Item
             name="username"
-            rules={[{ required: true, message: "请输入您的用户名!" }]}
+            rules={[{ required: true, message: "Please enter your username!" }]}
           >
             <Input
               prefix={<UserOutlined />}
-              placeholder="用户名"
+              placeholder="Username"
               size="large"
             />
           </Form.Item>
 
           <Form.Item
             name="password"
-            rules={[{ required: true, message: "请输入您的密码!" }]}
+            rules={[{ required: true, message: "Please enter your password!" }]}
           >
             <Input.Password
               prefix={<LockOutlined />}
-              placeholder="密码"
+              placeholder="Password"
               size="large"
             />
           </Form.Item>
@@ -69,7 +69,7 @@ const Login: React.FC = () => {
               size="large"
               loading={loading}
             >
-              登录
+              Login
             </Button>
           </Form.Item>
         </Form>

@@ -32,25 +32,25 @@ export const parseExcelFile = (
       const data = new Uint8Array(e.target.result as ArrayBuffer);
       const workbook = XLSX.read(data, { type: "array" });
 
-      // 获取第一个工作表
+      // Get the first sheet
       const firstSheetName = workbook.SheetNames[0];
       const worksheet = workbook.Sheets[firstSheetName];
 
-      // 转换为JSON
+      // Convert to JSON
       const jsonData = XLSX.utils.sheet_to_json(worksheet);
 
       if (jsonData.length === 0) {
-        message.error("Excel文件中没有找到数据");
+        message.error("No data found in the Excel file");
         setLoading(false);
         callback(null);
         return;
       }
 
-      // 生成预览表格列
+      // Generate preview table columns
       const sampleRow = jsonData[0] as Record<string, unknown>;
       const previewColumns = [
         {
-          title: "键名",
+          title: "Key Name",
           dataIndex: "key",
           key: "key",
           fixed: "left" as const,
@@ -58,7 +58,7 @@ export const parseExcelFile = (
         },
       ];
 
-      // 获取除了第一列(假设第一列是键名)外的所有列作为可能的语言列
+      // Get all columns except the first one (assuming the first column is the key name) as possible language columns
       const possibleLanguageColumns = Object.keys(sampleRow).filter(
         (key) => key !== "key"
       );
@@ -73,7 +73,7 @@ export const parseExcelFile = (
         });
       });
 
-      // 转换数据为表格可用格式
+      // Convert data to table available format
       const previewData = jsonData.map((row, index) => ({
         key: index.toString(),
         ...row as Record<string, unknown>,
@@ -85,8 +85,8 @@ export const parseExcelFile = (
         previewData,
       });
     } catch (error) {
-      console.error("解析Excel文件失败:", error);
-      message.error("解析Excel文件失败，请确保文件格式正确");
+      console.error("Parse Excel file failed:", error);
+      message.error("Parse Excel file failed, please ensure the file format is correct");
       callback(null);
     } finally {
       setLoading(false);
@@ -103,24 +103,24 @@ export const formatExcelDataForImport = (
   excelData: any[],
   selectedLanguages: { [key: string]: string }
 ) => {
-  // 将Excel数据转换为后端接受的格式
-  // 格式: { "zh-CN": { "key1": "value1", "key2": "value2" }, "en": { ... } }
+  // Convert Excel data to the format accepted by the backend
+  // Format: { "zh-CN": { "key1": "value1", "key2": "value2" }, "en": { ... } }
   const importData: { [langCode: string]: { [key: string]: string } } = {};
 
-  // 初始化语言对象
+  // Initialize language objects
   Object.values(selectedLanguages).forEach((langCode) => {
     importData[langCode] = {};
   });
 
-  // 填充翻译数据
+  // Fill translation data
   excelData.forEach((row) => {
-    const keyName = row["key"]; // 假设Excel中的键名列是 'key'
-    if (!keyName) return; // 跳过没有键名的行
+    const keyName = row["key"]; // Assuming the key column in Excel is 'key'
+    if (!keyName) return; // Skip rows without key names
 
-    // 为每个选定的语言列添加翻译
+    // Add translations for each selected language column
     Object.entries(selectedLanguages).forEach(([excelCol, langCode]) => {
       if (row[excelCol] !== undefined && row[excelCol] !== null) {
-        // 确保所有值都转换为字符串
+        // Ensure all values are converted to strings
         importData[langCode][keyName] = String(row[excelCol]);
       }
     });

@@ -17,7 +17,7 @@ import { TranslationResponse, Language } from "../../types/translation";
 
 const { Text } = Typography;
 
-// 更新接口定义以匹配新的数据格式
+// Update interface definition to match new data format
 export interface TranslationMatrix {
   key_name: string;
   context?: string;
@@ -60,12 +60,12 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
   onRowSelectionChange,
   visibleLanguages,
 }) => {
-  // 根据可见语言过滤列
+  // Filter columns based on visible languages
   const filteredColumns = visibleLanguages
     ? columns.filter((col) => {
-        // 保留第一列(键名)和最后一列(操作)
+        // Keep the first column (key name) and the last column (action)
         if (col.key === "key_name" || col.key === "action") return true;
-        // 根据用户选择显示语言列
+        // Display language columns based on user selection
         return visibleLanguages.includes(col.key);
       })
     : columns;
@@ -78,7 +78,7 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
         rowKey="key_name"
         pagination={{
           ...pagination,
-          showTotal: (total) => `共 ${total} 条记录`,
+          showTotal: (total) => `Total ${total} records`,
         }}
         onChange={onTableChange}
         scroll={{ x: "max-content" }}
@@ -95,7 +95,7 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
   );
 };
 
-// 更新列生成逻辑以适配新的数据格式
+// Update column generation logic to adapt to new data format
 export const generateTableColumns = (
   languages: Language[],
   translations: TranslationResponse[],
@@ -108,7 +108,7 @@ export const generateTableColumns = (
   // Base columns: key name and context
   const baseColumns = [
     {
-      title: "键名",
+      title: "Key Name",
       dataIndex: "key_name",
       key: "key_name",
       fixed: "left" as const,
@@ -121,7 +121,7 @@ export const generateTableColumns = (
           {record.context && (
             <Tooltip title={record.context}>
               <Tag icon={<InfoCircleOutlined />} color="blue">
-                有上下文说明
+                Has context
               </Tag>
             </Tooltip>
           )}
@@ -143,21 +143,21 @@ export const generateTableColumns = (
         <div className="text-xs text-gray-500">[{lang.code}]</div>
         {lang.is_default && (
           <Tag color="green" className="mt-1">
-            默认
+            Default
           </Tag>
         )}
       </div>
     ),
-    dataIndex: ["languages", lang.code], // 使用嵌套属性访问
+    dataIndex: ["languages", lang.code], // Access nested property
     key: lang.code,
     width: 200,
     render: (text: string, record: TranslationMatrix) => {
-      // 从新的数据结构中获取语言值
+      // Get language value from new data structure
       const value = record.languages?.[lang.code];
 
       // If there's a translation value, show text; if not, show add button
       if (value) {
-        // 查找匹配的翻译记录（用于编辑/删除操作）
+        // Find matching translation record (for edit/delete operations)
         const translation = translations.find(
           (t) => t.key_name === record.key_name && t.language_code === lang.code
         );
@@ -178,13 +178,13 @@ export const generateTableColumns = (
                     }}
                   />
                   <Popconfirm
-                    title="确定要删除该翻译吗？"
+                    title="Are you sure you want to delete this translation?"
                     onConfirm={(e) => {
                       e?.stopPropagation();
                       onDeleteTranslation(translation.id);
                     }}
-                    okText="确定"
-                    cancelText="取消"
+                    okText="Yes"
+                    cancelText="Cancel"
                   >
                     <Button
                       type="text"
@@ -207,7 +207,7 @@ export const generateTableColumns = (
             icon={<PlusOutlined />}
             onClick={() => onAddTranslation(record.key_name, lang.id)}
           >
-            添加翻译
+            Add translation
           </Button>
         );
       }
@@ -216,7 +216,7 @@ export const generateTableColumns = (
 
   // Action column
   const actionColumn = {
-    title: "操作",
+    title: "Action",
     key: "action",
     fixed: "right" as const,
     width: 120,
@@ -228,7 +228,7 @@ export const generateTableColumns = (
           icon={<PlusOutlined />}
           onClick={() => onShowBatchAddModal(record.key_name, record.context)}
         >
-          批量添加
+          Batch add
         </Button>
       </Space>
     ),

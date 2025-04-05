@@ -33,22 +33,22 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
 }) => {
   return (
     <Modal
-      title="添加翻译"
+      title="Add Translation"
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
-      okText="创建"
-      cancelText="取消"
+      okText="Create"
+      cancelText="Cancel"
       maskClosable={false}
     >
       <Form form={form} layout="vertical" name="translationForm">
         <Form.Item
           name="project_id"
-          label="项目"
-          rules={[{ required: true, message: "请选择项目" }]}
+          label="Project"
+          rules={[{ required: true, message: "Please select a project" }]}
         >
           <Select
-            placeholder="请选择项目"
+            placeholder="Please select a project"
             options={projects.map((project) => ({
               value: project.id,
               label: project.name,
@@ -59,23 +59,23 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
 
         <Form.Item
           name="key_name"
-          label="键名"
-          rules={[{ required: true, message: "请输入键名" }]}
+          label="Key Name"
+          rules={[{ required: true, message: "Please enter the key name" }]}
         >
-          <Input placeholder="请输入键名" />
+          <Input placeholder="Please enter the key name" />
         </Form.Item>
 
-        <Form.Item name="context" label="上下文说明">
-          <Input placeholder="请输入上下文说明（可选）" />
+        <Form.Item name="context" label="Context">
+          <Input placeholder="Please enter the context (optional)" />
         </Form.Item>
 
         <Form.Item
           name="language_id"
-          label="语言"
-          rules={[{ required: true, message: "请选择语言" }]}
+          label="Language"
+          rules={[{ required: true, message: "Please select a language" }]}
         >
           <Select
-            placeholder="请选择语言"
+            placeholder="Please select a language"
             options={languages.map((lang) => ({
               value: lang.id,
               label: `${lang.name} [${lang.code}]`,
@@ -85,10 +85,12 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
 
         <Form.Item
           name="value"
-          label="翻译值"
-          rules={[{ required: true, message: "请输入翻译值" }]}
+          label="Translation Value"
+          rules={[
+            { required: true, message: "Please enter the translation value" },
+          ]}
         >
-          <TextArea rows={4} placeholder="请输入翻译值" />
+          <TextArea rows={4} placeholder="Please enter the translation value" />
         </Form.Item>
       </Form>
     </Modal>
@@ -119,7 +121,6 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
       setTimeout(() => {
         // Get the current key name from the form
         const keyName = form.getFieldValue("key_name");
-        console.log("Setting values for key:", keyName);
 
         if (keyName && paginatedMatrix && paginatedMatrix.length > 0) {
           // 创建一个包含所有值的对象，然后一次性设置
@@ -151,12 +152,12 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
 
   return (
     <Modal
-      title="批量添加/更新翻译"
+      title="Batch Add/Update Translations"
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
-      okText="保存"
-      cancelText="取消"
+      okText="Save"
+      cancelText="Cancel"
       maskClosable={false}
       width={700}
       destroyOnClose={true}
@@ -169,21 +170,24 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
       >
         <Form.Item
           name="key_name"
-          label="键名"
-          rules={[{ required: true, message: "请输入键名" }]}
+          label="Key Name"
+          rules={[{ required: true, message: "Please enter the key name" }]}
           initialValue={form.getFieldValue("key_name")}
         >
-          <Input placeholder="请输入键名" />
+          <Input placeholder="Please enter the key name" />
         </Form.Item>
 
-        <Form.Item name="context" label="上下文说明">
-          <Input placeholder="请输入上下文说明（可选）" />
+        <Form.Item name="context" label="Context">
+          <Input placeholder="Please enter the context (optional)" />
         </Form.Item>
 
         <div className="bg-gray-50 p-3 mb-4 rounded">
-          <h5 className="text-lg font-medium">各语言的翻译值</h5>
+          <h5 className="text-lg font-medium">
+            Translation Values for Each Language
+          </h5>
           <p className="text-gray-500">
-            已有的翻译值已自动填充，您可以修改或补充其他语言的翻译
+            Existing translations have been automatically filled, you can modify
+            or supplement translations for other languages
           </p>
         </div>
 
@@ -201,11 +205,11 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
               label={
                 <div className="flex items-center">
                   <span>{`${lang.name} [${lang.code}]${
-                    lang.is_default ? " (默认语言)" : ""
+                    lang.is_default ? " (Default language)" : ""
                   }`}</span>
                   {existingTranslation && (
                     <Tag color="blue" className="ml-2">
-                      已有翻译
+                      Existing translation
                     </Tag>
                   )}
                 </div>
@@ -213,8 +217,12 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
             >
               <TextArea
                 rows={2}
-                placeholder={`请输入 ${lang.name} 的翻译值${
-                  existingTranslation ? "（已有翻译）" : "（可选）"
+                placeholder={`Please enter the translation value for ${
+                  lang.name
+                }${
+                  existingTranslation
+                    ? "（Existing translation）"
+                    : "（Optional）"
                 }`}
               />
             </Form.Item>

@@ -24,6 +24,40 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/dashboard/stats": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "获取系统的各种统计数据，包括项目总数、翻译总数、语言总数和用户总数",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Dashboard"
+                ],
+                "summary": "获取仪表板统计数据",
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/service.DashboardStats"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/controller.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/exports/project/{project_id}": {
             "get": {
                 "security": [
@@ -1305,6 +1339,15 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "controller.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "type": "string",
+                    "example": "错误信息"
+                }
+            }
+        },
         "model.User": {
             "type": "object",
             "properties": {
@@ -1357,6 +1400,23 @@ const docTemplate = `{
                         "'en'": "'Welcome'}",
                         "{'zh-CN'": "'欢迎'"
                     }
+                }
+            }
+        },
+        "service.DashboardStats": {
+            "type": "object",
+            "properties": {
+                "language_count": {
+                    "type": "integer"
+                },
+                "project_count": {
+                    "type": "integer"
+                },
+                "translation_count": {
+                    "type": "integer"
+                },
+                "user_count": {
+                    "type": "integer"
                 }
             }
         },

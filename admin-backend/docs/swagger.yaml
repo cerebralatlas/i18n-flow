@@ -1,5 +1,11 @@
 basePath: /api
 definitions:
+  controller.ErrorResponse:
+    properties:
+      error:
+        example: 错误信息
+        type: string
+    type: object
   model.User:
     properties:
       created_at:
@@ -38,6 +44,17 @@ definitions:
     required:
     - key_name
     - project_id
+    type: object
+  service.DashboardStats:
+    properties:
+      language_count:
+        type: integer
+      project_count:
+        type: integer
+      translation_count:
+        type: integer
+      user_count:
+        type: integer
     type: object
   service.LanguageRequest:
     properties:
@@ -244,6 +261,27 @@ info:
   title: i18n-flow API
   version: "1.0"
 paths:
+  /dashboard/stats:
+    get:
+      consumes:
+      - application/json
+      description: 获取系统的各种统计数据，包括项目总数、翻译总数、语言总数和用户总数
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/service.DashboardStats'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/controller.ErrorResponse'
+      security:
+      - BearerAuth: []
+      summary: 获取仪表板统计数据
+      tags:
+      - Dashboard
   /exports/project/{project_id}:
     get:
       consumes:

@@ -9,7 +9,7 @@ interface ErrorAlertProps {
 
 const ErrorAlert: React.FC<ErrorAlertProps> = ({
   message,
-  description = "请稍后重试或联系管理员",
+  description = "Please try again later or contact the administrator",
   onRetry,
 }) => {
   return (
@@ -18,7 +18,7 @@ const ErrorAlert: React.FC<ErrorAlertProps> = ({
       description={
         <Space direction="vertical">
           <span>{description}</span>
-          {onRetry && <a onClick={onRetry}>重试</a>}
+          {onRetry && <a onClick={onRetry}>Retry</a>}
         </Space>
       }
       type="error"

@@ -38,13 +38,13 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         label: (
           <div className="p-2" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex justify-between">
-              <Text strong>显示列</Text>
+              <Text strong>Show Columns</Text>
               <Space>
                 <Button size="small" onClick={handleSelectAll}>
-                  全选
+                  Select All
                 </Button>
                 <Button size="small" onClick={handleSelectNone}>
-                  清除
+                  Clear
                 </Button>
               </Space>
             </div>
@@ -60,7 +60,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
                     <Space>
                       {lang.name}
                       <Text type="secondary">[{lang.code}]</Text>
-                      {lang.is_default && <Text type="success">(默认)</Text>}
+                      {lang.is_default && <Text type="success">(Default)</Text>}
                     </Space>
                   </Checkbox>
                 </div>
@@ -75,7 +75,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   return (
     <Dropdown menu={menu} trigger={["click"]} placement="bottomRight">
       <Button icon={<ColumnHeightOutlined />}>
-        显示列 ({selectedColumns.length}/{languages.length})
+        Show Columns ({selectedColumns.length}/{languages.length})
       </Button>
     </Dropdown>
   );

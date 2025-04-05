@@ -155,7 +155,7 @@ const TranslationManagement: React.FC = () => {
   // Handlers for translation operations
   const handleAddTranslation = (keyName: string, languageId: number) => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return;
     }
 
@@ -182,13 +182,13 @@ const TranslationManagement: React.FC = () => {
         singleForm.resetFields();
       }
     } catch (error) {
-      console.error("创建翻译失败:", error);
+      console.error("Create translation failed:", error);
     }
   };
 
   const showBatchAddModal = async (keyName: string, context?: string) => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return;
     }
 
@@ -223,8 +223,8 @@ const TranslationManagement: React.FC = () => {
       // Show modal - don't need setTimeout anymore since we have useEffect in the modal
       setBatchModalVisible(true);
     } catch (error) {
-      console.error("加载现有翻译失败:", error);
-      message.error("加载现有翻译失败");
+      console.error("Load existing translations failed:", error);
+      message.error("Load existing translations failed");
     }
   };
 
@@ -256,10 +256,10 @@ const TranslationManagement: React.FC = () => {
           batchForm.resetFields();
         }
       } else {
-        message.warning("请至少添加一种语言的翻译");
+        message.warning("Please add at least one language translation");
       }
     } catch (error) {
-      console.error("批量创建翻译失败:", error);
+      console.error("Batch create translations failed:", error);
     }
   };
 
@@ -285,7 +285,7 @@ const TranslationManagement: React.FC = () => {
         setEditModalVisible(false);
       }
     } catch (error) {
-      console.error("更新翻译失败:", error);
+      console.error("Update translation failed:", error);
     }
   };
 
@@ -316,7 +316,7 @@ const TranslationManagement: React.FC = () => {
   // Import translations from JSON
   const handleImportTranslations = (file: File) => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return false;
     }
 
@@ -332,15 +332,15 @@ const TranslationManagement: React.FC = () => {
             setImportModalVisible(false);
           }
         } catch (error) {
-          console.error("解析文件失败:", error);
-          message.error("导入失败：文件格式错误");
+          console.error("Import failed: File format error", error);
+          message.error("Import failed: File format error");
         }
       };
       reader.readAsText(file);
       return false; // Prevent default upload behavior
     } catch (error) {
-      console.error("导入翻译失败:", error);
-      message.error("导入翻译失败");
+      console.error("Import translations failed:", error);
+      message.error("Import translations failed");
       return false;
     }
   };
@@ -380,12 +380,12 @@ const TranslationManagement: React.FC = () => {
 
   const handleExcelImport = async () => {
     if (!selectedProject) {
-      message.warning("请先选择项目");
+      message.warning("Please select a project first");
       return;
     }
 
     if (Object.keys(selectedLanguages).length === 0) {
-      message.warning("请至少选择一种语言映射");
+      message.warning("Please select at least one language mapping");
       return;
     }
 
@@ -401,10 +401,10 @@ const TranslationManagement: React.FC = () => {
         setExcelImportModalVisible(false);
       }
     } catch (error) {
-      console.error("导入Excel翻译失败:", error);
+      console.error("Import Excel translations failed:", error);
       message.error(
-        "导入Excel翻译失败: " +
-          (error instanceof Error ? error.message : "未知错误")
+        "Import Excel translations failed: " +
+          (error instanceof Error ? error.message : "Unknown error")
       );
     } finally {
       setExcelImportLoading(false);
@@ -422,7 +422,7 @@ const TranslationManagement: React.FC = () => {
         onSearch={fetchTranslations}
         onAddTranslation={() => {
           if (!selectedProject) {
-            message.warning("请先选择项目");
+            message.warning("Please select a project first");
             return;
           }
           singleForm.setFieldsValue({ project_id: selectedProject });
@@ -430,7 +430,7 @@ const TranslationManagement: React.FC = () => {
         }}
         onBatchAddTranslation={() => {
           if (!selectedProject) {
-            message.warning("请先选择项目");
+            message.warning("Please select a project first");
             return;
           }
           batchForm.setFieldsValue({ project_id: selectedProject });
@@ -449,7 +449,7 @@ const TranslationManagement: React.FC = () => {
 
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <Spin size="large" tip="加载中..." />
+          <Spin size="large" tip="Loading..." />
         </div>
       ) : paginatedMatrix.length > 0 ? (
         <TranslationTable
@@ -468,7 +468,7 @@ const TranslationManagement: React.FC = () => {
           onShowBatchAddModal={showBatchAddModal}
         />
       ) : (
-        <Empty description="暂无翻译数据" />
+        <Empty description="No translations data" />
       )}
 
       {/* Modals */}

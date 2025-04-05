@@ -66,11 +66,11 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   return (
     <>
       <div className="mb-6 flex justify-between items-center">
-        <h3 className="text-xl font-bold m-0">翻译管理</h3>
+        <h3 className="text-xl font-bold m-0">Translation Management</h3>
         <div>
           <Select
             style={{ width: 200, marginRight: 16 }}
-            placeholder="请选择项目"
+            placeholder="Please select a project"
             value={selectedProject}
             onChange={handleProjectSelect}
             options={projects.map((project) => ({
@@ -79,7 +79,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
             }))}
           />
           <Input
-            placeholder="搜索键名或翻译值"
+            placeholder="Search key name or translation value"
             value={keyword}
             onChange={(e) => onKeywordChange(e.target.value)}
             prefix={<SearchOutlined />}
@@ -94,10 +94,10 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
         <div className="flex flex-wrap gap-2 items-center">
           {selectedTranslations.length > 0 && (
             <Popconfirm
-              title={`确定要删除选中的 ${selectedTranslations.length} 条翻译吗？`}
+              title={`Are you sure you want to delete the selected ${selectedTranslations.length} translations?`}
               onConfirm={onBatchDelete}
-              okText="确定"
-              cancelText="取消"
+              okText="Yes"
+              cancelText="Cancel"
             >
               <Button
                 type="primary"
@@ -105,7 +105,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
                 icon={<DeleteOutlined />}
                 loading={batchDeleteLoading}
               >
-                批量删除
+                Batch delete
               </Button>
             </Popconfirm>
           )}
@@ -122,30 +122,30 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
               icon={<PlusOutlined />}
               onClick={() => {
                 if (!selectedProject) {
-                  message.warning("请先选择项目");
+                  message.warning("Please select a project");
                   return;
                 }
                 onAddTranslation();
               }}
             >
-              添加翻译
+              Add translation
             </Button>
 
             <Button
               icon={<PlusOutlined />}
               onClick={() => {
                 if (!selectedProject) {
-                  message.warning("请先选择项目");
+                  message.warning("Please select a project");
                   return;
                 }
                 onBatchAddTranslation();
               }}
             >
-              批量添加
+              Batch add
             </Button>
 
             <Button icon={<ImportOutlined />} onClick={onImportJsonClick}>
-              导入JSON
+              Import JSON
             </Button>
 
             <Upload
@@ -153,11 +153,11 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
               showUploadList={false}
               accept=".xlsx,.xls"
             >
-              <Button icon={<FileExcelOutlined />}>导入Excel</Button>
+              <Button icon={<FileExcelOutlined />}>Import Excel</Button>
             </Upload>
 
             <Button icon={<ExportOutlined />} onClick={onExportClick}>
-              导出
+              Export
             </Button>
           </Space>
         </div>

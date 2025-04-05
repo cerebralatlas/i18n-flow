@@ -56,6 +56,7 @@ func main() {
 	projectController := controller.NewProjectController()
 	translationController := controller.NewTranslationController()
 	languageController := controller.NewLanguageController()
+	dashboardController := controller.NewDashboardController()
 
 	// 公开路由
 	router.POST("/api/login", userController.Login)
@@ -92,6 +93,9 @@ func main() {
 		authRoutes.POST("/languages", languageController.CreateLanguage)
 		authRoutes.PUT("/languages/:id", languageController.UpdateLanguage)
 		authRoutes.DELETE("/languages/:id", languageController.DeleteLanguage)
+
+		// 仪表板相关
+		authRoutes.GET("/dashboard/stats", dashboardController.GetDashboardStats)
 	}
 
 	router.Run(":8080")

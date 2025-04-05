@@ -1,60 +1,76 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
+import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
 
 interface User {
   id: number;
   username: string;
-  created_at: string;
-  updated_at: string;
+  // Other user attributes...
 }
 
 interface AuthContextType {
-  isAuthenticated: boolean;
   user: User | null;
-  token: string | null;
+  loading: boolean;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    // 从localStorage检查现有的token
-    const storedToken = localStorage.getItem("token");
-    const storedUser = localStorage.getItem("user");
+  // Add a method to check user authentication status
+  const checkAuthStatus = async () => {
+    try {
+      setLoading(true);
+      // Get token from localStorage
+      const token = localStorage.getItem("authToken");
 
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-      setIsAuthenticated(true);
+      if (!token) {
+        setLoading(false);
+        return;
+      }
 
-      // 配置axios默认头部
-      axios.defaults.headers.common["Authorization"] = `Bearer ${storedToken}`;
+      // Set axios default request header with token
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // Call API to validate current user
+      const response = await axios.get("/api/user/info");
+      setUser(response.data);
+    } catch (error) {
+      console.error("Validate user session failed:", error);
+      // Clear invalid token
+      localStorage.removeItem("authToken");
+      delete axios.defaults.headers.common["Authorization"];
+    } finally {
+      setLoading(false);
     }
+  };
+
+  // Check authentication status when component mounts
+  useEffect(() => {
+    checkAuthStatus();
   }, []);
 
   const login = async (username: string, password: string) => {
     try {
-      const response = await axios.post("/api/login", { username, password });
-      const { token, refresh_token, user } = response.data;
+      const response = await axios.post("/api/login", {
+        username,
+        password,
+      });
+      const { token, user: userData } = response.data;
 
-      // 存储token和用户信息
-      localStorage.setItem("token", token);
-      localStorage.setItem("refresh_token", refresh_token);
-      localStorage.setItem("user", JSON.stringify(user));
+      // Save token to localStorage
+      localStorage.setItem("authToken", token);
 
-      // 更新状态
-      setToken(token);
-      setUser(user);
-      setIsAuthenticated(true);
-
-      // 设置axios默认头部
+      // Set axios default request header
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      setUser(userData);
     } catch (error) {
       console.error("Login failed:", error);
       throw error;
@@ -62,33 +78,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = () => {
-    // 清除本地存储
-    localStorage.removeItem("token");
-    localStorage.removeItem("refresh_token");
-    localStorage.removeItem("user");
+    // Clear authentication information in localStorage
+    localStorage.removeItem("authToken");
 
-    // 重置状态
-    setToken(null);
-    setUser(null);
-    setIsAuthenticated(false);
-
-    // 清除axios头部
+    // Clear axios default request header
     delete axios.defaults.headers.common["Authorization"];
+
+    setUser(null);
   };
 
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, user, token, login, logout }}
+      value={{
+        user,
+        loading,
+        login,
+        logout,
+        isAuthenticated: !!user,
+      }}
     >
       {children}
     </AuthContext.Provider>
   );
-}
+};
 
-export function useAuth() {
+export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
     throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
-}
+};

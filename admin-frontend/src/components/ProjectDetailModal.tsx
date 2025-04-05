@@ -21,15 +21,15 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
 
   return (
     <Modal
-      title="项目详情"
+      title="Project Details"
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="close" onClick={onClose}>
-          关闭
+          Close
         </Button>,
         <Button key="edit" type="primary" onClick={() => onEdit(project)}>
-          编辑项目
+          Edit project
         </Button>,
       ]}
       width={700}
@@ -40,25 +40,29 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
         </div>
       ) : (
         <Descriptions bordered column={1}>
-          <Descriptions.Item label="项目ID">{project.id}</Descriptions.Item>
-          <Descriptions.Item label="项目名称">{project.name}</Descriptions.Item>
-          <Descriptions.Item label="项目标识">{project.slug}</Descriptions.Item>
-          <Descriptions.Item label="项目描述">
-            {project.description || "无"}
+          <Descriptions.Item label="Project ID">{project.id}</Descriptions.Item>
+          <Descriptions.Item label="Project Name">
+            {project.name}
           </Descriptions.Item>
-          <Descriptions.Item label="状态">
+          <Descriptions.Item label="Project Slug">
+            {project.slug}
+          </Descriptions.Item>
+          <Descriptions.Item label="Project Description">
+            {project.description || "No description"}
+          </Descriptions.Item>
+          <Descriptions.Item label="Status">
             <span
               style={{
                 color: project.status === "active" ? "green" : "orange",
               }}
             >
-              {project.status === "active" ? "活跃" : "归档"}
+              {project.status === "active" ? "Active" : "Archived"}
             </span>
           </Descriptions.Item>
-          <Descriptions.Item label="创建时间">
+          <Descriptions.Item label="Created at">
             {project.created_at}
           </Descriptions.Item>
-          <Descriptions.Item label="更新时间">
+          <Descriptions.Item label="Updated at">
             {project.updated_at}
           </Descriptions.Item>
         </Descriptions>
