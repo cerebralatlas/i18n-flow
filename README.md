@@ -86,7 +86,7 @@ i18n-flow consists of three main components:
 1. Install the CLI tool globally:
 
    ```bash
-   npm install -g @i18n-flow/cli
+   npm install -g i18n-flow-cli
    ```
 
 2. Initialize i18n-flow in your project:

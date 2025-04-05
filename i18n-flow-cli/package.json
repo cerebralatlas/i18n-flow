@@ -1,8 +1,12 @@
 {
-  "name": "@i18n-flow/cli",
-  "version": "1.0.0",
+  "name": "i18n-flow-cli",
+  "version": "0.0.2",
   "description": "CLI tool for i18n-flow translation management",
   "main": "dist/index.js",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ilukemagic/i18n-flow/tree/master/i18n-flow-cli"
+  },
   "bin": {
     "i18n-flow": "./bin/i18n-flow"
   },

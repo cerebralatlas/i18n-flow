@@ -2,8 +2,7 @@
 
 A powerful CLI tool for managing your application's translations with ease.
 
-[![npm version](https://img.shields.io/npm/v/@i18n-flow/cli.svg)](https://www.npmjs.com/package/@i18n-flow/cli)
-[![License](https://img.shields.io/npm/l/@i18n-flow/cli.svg)](https://github.com/i18n-flow/cli/blob/main/LICENSE)
+[![npm version](https://img.shields.io/npm/v/@i18n-flow/cli.svg)](https://www.npmjs.com/package/i18n-flow-cli)
 
 ## Features
 
@@ -17,10 +16,10 @@ A powerful CLI tool for managing your application's translations with ease.
 
 ```bash
 # Install globally
-npm install -g @i18n-flow/cli
+npm install -g i18n-flow-cli
 
 # Or use with npx
-npx @i18n-flow/cli <command>
+npx i18n-flow-cli <command>
 ```
 
 ## Quick Start
