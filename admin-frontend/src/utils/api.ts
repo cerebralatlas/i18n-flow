@@ -11,7 +11,7 @@ const api = axios.create({
 api.interceptors.request.use(
   (config) => {
     // 从 localStorage 获取 token
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem("authToken");
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -36,10 +36,10 @@ api.interceptors.response.use(
           message.error(data.error || '请求参数错误');
           break;
         case 401:
-          message.error('登录已过期，请重新登录');
+          message.error("登录已过期，请重新登录");
           // 清除用户信息并重定向到登录页
-          localStorage.removeItem('token');
-          localStorage.removeItem('user');
+          localStorage.removeItem("authToken");
+          localStorage.removeItem("user");
           break;
         case 403:
           message.error('没有权限访问该资源');
