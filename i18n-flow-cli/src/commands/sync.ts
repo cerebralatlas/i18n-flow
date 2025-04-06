@@ -15,7 +15,7 @@ export default function syncCommand(program: Command): void {
     .option('-f, --force', 'Force overwrite local translations')
     .option('-n, --nested', 'Use nested directory structure (one folder per locale, split by first key part)')
     .action(async (options) => {
-      // 验证配置
+      // validate the config
       const { valid, missing } = validateConfig();
       if (!valid) {
         logger.error(`Missing configuration: ${missing.join(', ')}`);
@@ -27,17 +27,17 @@ export default function syncCommand(program: Command): void {
       const spinner = ora('Syncing translations').start();
 
       try {
-        // 解析要同步的语言
+        // parse the locales to sync
         const locales = options.locale ? options.locale.split(',') : [];
 
-        // 从服务器获取翻译
+        // get the translations from the server
         const translations = await apiClient.getTranslations(config.projectId);
 
-        // 准备本地文件路径
+        // prepare the local file path
         const localesDir = path.resolve(process.cwd(), config.localesDir);
         fs.ensureDirSync(localesDir);
 
-        // 获取翻译中的语言列表
+        // get the list of languages from the translations
         const availableLocales = new Set<string>();
         Object.values(translations).forEach(translationObj => {
           Object.keys(translationObj as Record<string, any>).forEach(locale => {
@@ -45,7 +45,7 @@ export default function syncCommand(program: Command): void {
           });
         });
 
-        // 过滤要处理的语言
+        // filter the locales to process
         const localesToProcess = locales.length > 0
           ? Array.from(availableLocales).filter(locale => locales.includes(locale))
           : Array.from(availableLocales);
@@ -55,12 +55,12 @@ export default function syncCommand(program: Command): void {
           return;
         }
 
-        // 按语言处理翻译
+        // process translations by language
         for (const locale of localesToProcess) {
-          // 构建该语言的翻译对象
+          // build the translation object for the language
           const localeTranslations: Record<string, string> = {};
 
-          // 填充翻译数据
+          // fill the translation data
           Object.entries(translations).forEach(([key, translationObj]) => {
             const localeValue = (translationObj as Record<string, any>)[locale];
             if (localeValue) {
@@ -69,12 +69,12 @@ export default function syncCommand(program: Command): void {
           });
 
           if (options.nested) {
-            // 使用嵌套目录结构
+            // use nested directory structure
             const localeDir = path.join(localesDir, locale);
             fs.ensureDirSync(localeDir);
 
-            // 根据key的第一部分分组
-            const groupedTranslations: Record<string, Record<string, string>> = {};
+            // group by the first part of the key
+            const groupedTranslations: Record<string, Record<string, any>> = {};
 
             Object.entries(localeTranslations).forEach(([key, value]) => {
               const [namespace, ...rest] = key.split('.');
@@ -84,40 +84,60 @@ export default function syncCommand(program: Command): void {
                 groupedTranslations[namespace] = {};
               }
 
-              // 剩余部分作为新的key
+              // rest part become new key
               const newKey = rest.join('.');
               if (newKey) {
-                groupedTranslations[namespace][newKey] = value;
+                // For keys like "common.signinSuccess" (simple case)
+                if (!newKey.includes('.')) {
+                  groupedTranslations[namespace][newKey] = value;
+                } else {
+                  // For keys like "banner.info.title" (nested case)
+                  const parts = newKey.split('.');
+                  let current = groupedTranslations[namespace];
+
+                  // Create nested objects for all parts except the last one
+                  for (let i = 0; i < parts.length - 1; i++) {
+                    const part = parts[i];
+                    if (!current[part]) {
+                      current[part] = {};
+                    }
+                    current = current[part];
+                  }
+
+                  // Set the value at the deepest level
+                  const lastPart = parts[parts.length - 1];
+                  current[lastPart] = value;
+                }
               }
             });
 
-            // 保存每个分组到独立文件
+            // save each group to a separate file
             for (const [namespace, namespaceTranslations] of Object.entries(groupedTranslations)) {
               const namespaceFilePath = path.join(localeDir, `${namespace}.json`);
 
-              // 处理已存在的文件
+              // handle existing files
               if (fs.existsSync(namespaceFilePath) && !options.force) {
-                // 合并现有翻译
+                // merge the existing translations
                 const existingTranslations = fs.readJSONSync(namespaceFilePath, { throws: false }) || {};
                 const mergedTranslations = { ...existingTranslations, ...namespaceTranslations };
                 fs.writeJSONSync(namespaceFilePath, mergedTranslations, { spaces: 2 });
               } else {
-                // 创建新文件
+                // create new file
                 fs.writeJSONSync(namespaceFilePath, namespaceTranslations, { spaces: 2 });
               }
             }
           } else {
-            // 使用传统的单文件结构
+            // use the traditional single file structure
             const localeFilePath = path.join(localesDir, `${locale}.json`);
 
-            // 处理已存在的文件
+            // handle existing files
             if (fs.existsSync(localeFilePath) && !options.force) {
-              // 合并现有翻译
+              // merge the existing translations
               const existingTranslations = fs.readJSONSync(localeFilePath, { throws: false }) || {};
               const mergedTranslations = { ...existingTranslations, ...localeTranslations };
               fs.writeJSONSync(localeFilePath, mergedTranslations, { spaces: 2 });
             } else {
-              // 创建新文件
+              // create new file
               fs.writeJSONSync(localeFilePath, localeTranslations, { spaces: 2 });
             }
           }
@@ -130,7 +150,7 @@ export default function syncCommand(program: Command): void {
           logger.info(`Used nested structure: ${chalk.cyan('Each locale has its own folder with namespace files')}`);
         }
 
-        // 统计信息
+        // statistics
         const keyCount = Object.keys(translations).length;
         logger.info(`Total keys: ${chalk.cyan(keyCount.toString())}`);
         logger.info(`Locales: ${chalk.cyan(localesToProcess.join(', '))}`);

@@ -76,12 +76,24 @@ export default function pushCommand(program: Command): void {
                   continue;
                 }
 
-                // 将命名空间前缀添加回键名
-                Object.entries(namespaceTranslations).forEach(([key, value]) => {
-                  const fullKey = `${namespace}.${key}`;
-                  keys.push(fullKey);
-                  defaults[fullKey] = String(value);
-                });
+                // 递归处理嵌套结构并添加命名空间前缀
+                function processNestedObject(obj: any, currentPath: string) {
+                  for (const [key, value] of Object.entries(obj)) {
+                    const fullPath = currentPath ? `${currentPath}.${key}` : key;
+
+                    if (value && typeof value === 'object' && !Array.isArray(value)) {
+                      // 递归处理嵌套对象
+                      processNestedObject(value, fullPath);
+                    } else {
+                      // 将完整路径的键添加到keys数组
+                      const fullKey = `${namespace}.${fullPath}`;
+                      keys.push(fullKey);
+                      defaults[fullKey] = String(value);
+                    }
+                  }
+                }
+
+                processNestedObject(namespaceTranslations, '');
               } catch (error) {
                 logger.warn(`Could not read ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
               }
