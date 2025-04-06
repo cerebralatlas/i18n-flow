@@ -242,9 +242,10 @@ const TranslationManagement: React.FC = () => {
 
       // Process language fields in the form
       Object.keys(values).forEach((key) => {
-        if (key.startsWith("lang_") && values[key]) {
+        if (key.startsWith("lang_")) {
           const langCode = key.replace("lang_", "");
-          request.translations[langCode] = values[key];
+          // Include empty string values as well, not just truthy values
+          request.translations[langCode] = values[key] || "";
         }
       });
 
