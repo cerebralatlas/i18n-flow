@@ -67,7 +67,6 @@ const DashboardHome: React.FC = () => {
             <Statistic
               title="User Count"
               value={stats?.user_count || 0}
-              suffix="人"
               loading={loading}
             />
           </Card>
