@@ -2,7 +2,12 @@ import React, { useEffect } from "react";
 import { Modal, Form, Input, Select, Upload, Table, Tag } from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { Project } from "../../types/project";
-import { Language, TranslationResponse } from "../../types/translation";
+import {
+  ExcelData,
+  ExcelPreviewColumns,
+  Language,
+  TranslationResponse,
+} from "../../types/translation";
 import { TranslationMatrix } from "./TranslationTable";
 
 const { TextArea } = Input;
@@ -292,13 +297,13 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
 };
 
 // Import JSON Modal
-interface ImportModalProps {
+interface JSONImportModalProps {
   visible: boolean;
   onCancel: () => void;
   onImport: (file: File) => boolean;
 }
 
-export const ImportTranslationModal: React.FC<ImportModalProps> = ({
+export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
   visible,
   onCancel,
   onImport,
@@ -343,8 +348,8 @@ interface ExcelModalProps {
   visible: boolean;
   onCancel: () => void;
   onOk: () => void;
-  excelPreviewColumns: any[];
-  excelPreviewData: any[];
+  excelPreviewColumns: ExcelPreviewColumns[];
+  excelPreviewData: ExcelData[];
   selectedLanguages: { [key: string]: string };
   onLanguageSelect: (columnKey: string, languageCode: string) => void;
   languages: Language[];
@@ -408,7 +413,7 @@ export const ExcelImportModal: React.FC<ExcelModalProps> = ({
         </div>
 
         <Table
-          columns={excelPreviewColumns}
+          columns={excelPreviewColumns as any}
           dataSource={excelPreviewData.slice(0, 10)}
           bordered
           size="small"
@@ -429,6 +434,6 @@ export default {
   CreateTranslationModal,
   BatchTranslationModal,
   EditTranslationModal,
-  ImportTranslationModal,
+  ImportTranslationModal: JSONImportTranslationModal,
   ExcelImportModal,
 };

@@ -17,7 +17,7 @@ import {
   FileExcelOutlined,
 } from "@ant-design/icons";
 import { Project } from "../../types/project";
-import { TranslationResponse, Language } from "../../types/translation";
+import { Language } from "../../types/translation";
 import ColumnSelector from "./ColumnSelector";
 import debounce from "lodash/debounce";
 
@@ -33,7 +33,7 @@ interface TranslationToolbarProps {
   onImportJsonClick: () => void;
   onExportClick: () => void;
   onExcelFileUpload: (file: File) => boolean;
-  selectedTranslations: TranslationResponse[];
+  selectedTranslations: number[];
   onBatchDelete: () => void;
   batchDeleteLoading: boolean;
   languages: Language[];

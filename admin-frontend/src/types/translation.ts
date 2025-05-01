@@ -1,3 +1,17 @@
+// excel导入数据
+export interface ExcelData {
+  key: string;
+  [languageCode: string]: string;
+}
+
+export interface ExcelPreviewColumns {
+  title: string;
+  dataIndex: string;
+  key: string;
+  fixed: string;
+  width: number;
+}
+
 // 翻译请求参数
 export interface TranslationRequest {
   project_id: number;
@@ -40,4 +54,11 @@ export interface Language {
   status: string;
   created_at: string;
   updated_at: string;
+}
+
+// 表格分页
+export interface TranslationTablePagination {
+  current: number,
+  pageSize: number,
+  total: number
 }

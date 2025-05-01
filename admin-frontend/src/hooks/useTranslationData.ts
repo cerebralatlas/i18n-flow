@@ -3,20 +3,19 @@ import { message } from "antd";
 import { translationService } from "../services/translationService";
 import { projectService } from "../services/projectService";
 import {
-  TranslationResponse,
   Language,
   BatchTranslationRequest,
+  TranslationTablePagination,
+  TranslationRequest,
 } from "../types/translation";
 import { Project } from "../types/project";
 import { TranslationMatrix } from "../components/translation/TranslationTable";
+import { ColumnProps } from "antd/es/table";
 
 export const useTranslationData = (initialProjectId?: string) => {
-  // State variables
-  const [translations, setTranslations] = useState<TranslationResponse[]>([]);
-  const [translationMatrix, setTranslationMatrix] = useState<TranslationMatrix[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [languages, setLanguages] = useState<Language[]>([]);
-  const [columns, setColumns] = useState<any[]>([]);
+  const [columns, setColumns] = useState<ColumnProps[]>([]);
   const [selectedProject, setSelectedProject] = useState<number | null>(initialProjectId ? parseInt(initialProjectId) : null);
   const [loading, setLoading] = useState<boolean>(false);
   const [keyword, setKeyword] = useState<string>("");
@@ -28,15 +27,14 @@ export const useTranslationData = (initialProjectId?: string) => {
     total: 0,
   });
 
-  const [allTranslations, setAllTranslations] = useState<TranslationResponse[]>([]);
   const [paginatedMatrix, setPaginatedMatrix] = useState<TranslationMatrix[]>([]);
 
   // Selected items for batch operations
   const [selectedKeys, setSelectedKeys] = useState<string[]>([]);
-  const [selectedTranslations, setSelectedTranslations] = useState<TranslationResponse[]>([]);
+  const [selectedTranslations, setSelectedTranslations] = useState<number[]>([]);
   const [batchDeleteLoading, setBatchDeleteLoading] = useState<boolean>(false);
 
-  // Initialize
+  // 初始化
   useEffect(() => {
     fetchProjects();
     fetchLanguages();
@@ -48,23 +46,15 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   }, [selectedProject, keyword]);
 
-  // When local pagination parameters change, recalculate data to display
-  useEffect(() => {
-    if (translationMatrix.length > 0) {
-      const { current, pageSize } = localPagination;
-      const startIndex = (current - 1) * pageSize;
-      const endIndex = startIndex + pageSize;
-      setPaginatedMatrix(translationMatrix.slice(startIndex, endIndex));
-    }
-  }, [localPagination.current, localPagination.pageSize, translationMatrix]);
 
-  // Get project list
+
+  // 请求项目列表
   const fetchProjects = async () => {
     try {
       const { data } = await projectService.getProjects();
       setProjects(data);
 
-      // If no project is selected but there is a project list, select the first one by default
+      // 如果未选择项目，但有项目列表，则默认选择第一个项目
       if (!selectedProject && data.length > 0) {
         setSelectedProject(data[0].id);
       }
@@ -74,7 +64,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Get language list
+  // 请求语言列表
   const fetchLanguages = async () => {
     try {
       const languages = await translationService.getLanguages();
@@ -86,8 +76,7 @@ export const useTranslationData = (initialProjectId?: string) => {
   };
 
 
-
-  // Get translation list
+  // 请求翻译列表
   const fetchTranslations = async () => {
     if (!selectedProject) return;
 
@@ -113,8 +102,8 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Handle pagination change
-  const handleTableChange = (newPagination: any) => {
+  // 表格分页
+  const handleTableChange = (newPagination: TranslationTablePagination) => {
     const updatedPagination = {
       ...localPagination,
       current: newPagination.current,
@@ -124,8 +113,8 @@ export const useTranslationData = (initialProjectId?: string) => {
     setLocalPagination(updatedPagination);
   };
 
-  // Create a single translation
-  const createTranslation = async (values: any) => {
+  // 创建单条翻译
+  const createTranslation = async (values: TranslationRequest) => {
     try {
       await translationService.createTranslation(values);
       message.success("Create translation successfully");
@@ -138,7 +127,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Batch create translations
+  // 批量创建翻译
   const batchCreateTranslations = async (request: BatchTranslationRequest) => {
     try {
       await translationService.batchCreateTranslations(request);
@@ -152,8 +141,8 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Update translation
-  const updateTranslation = async (id: number, values: any) => {
+  // 更新翻译
+  const updateTranslation = async (id: number, values: TranslationRequest) => {
     try {
       await translationService.updateTranslation(id, values);
       message.success("Update translation successfully");
@@ -166,7 +155,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Delete translation
+  // 删除翻译
   const deleteTranslation = async (id: number) => {
     try {
       await translationService.deleteTranslation(id);
@@ -180,7 +169,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Export translations
+  // 导出翻译
   const exportTranslations = async (format: string = "json") => {
     if (!selectedProject) {
       message.warning("Please select a project first");
@@ -201,8 +190,8 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Import translations from JSON
-  const importTranslationsFromJson = async (data: any) => {
+  // 从JSON导入翻译
+  const importTranslationsFromJson = async (data: Record<string, Record<string, string>>) => {
     if (!selectedProject) {
       message.warning("Please select a project first");
       return false;
@@ -220,7 +209,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Batch delete translations
+  // 批量删除翻译
   const batchDeleteTranslations = async () => {
     if (selectedTranslations.length === 0) {
       message.warning("Please select at least one translation record");
@@ -229,13 +218,9 @@ export const useTranslationData = (initialProjectId?: string) => {
 
     try {
       setBatchDeleteLoading(true);
-      // Extract IDs of selected translations
-      const ids = selectedTranslations.map((item) => item.id);
+      await translationService.batchDeleteTranslations(selectedTranslations);
 
-      // Call batch delete API
-      await translationService.batchDeleteTranslations(ids);
-
-      message.success(`Successfully deleted ${ids.length} translations`);
+      message.success(`Successfully deleted ${selectedTranslations.length} translations`);
       setSelectedKeys([]);
       setSelectedTranslations([]);
       fetchTranslations();
@@ -249,22 +234,17 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // Handle row selection change
+  // 处理行选择变化
   const handleRowSelectionChange = (
     selectedRowKeys: React.Key[],
     selectedRows: TranslationMatrix[]
   ) => {
     setSelectedKeys(selectedRowKeys as string[]);
 
-    // Find all corresponding translation records based on selected rows
-    const selected: TranslationResponse[] = [];
+    const selected: number[] = [];
 
     selectedRows.forEach((row) => {
-      // For each key name, collect all language translation records from allTranslations
-      const keyTranslations = allTranslations.filter(
-        (t) => t.key_name === row.key_name
-      );
-      selected.push(...keyTranslations);
+      selected.push(...Object.values(row.languages).map(item => item.id))
     });
 
     setSelectedTranslations(selected);
@@ -278,7 +258,6 @@ export const useTranslationData = (initialProjectId?: string) => {
 
   return {
     // State
-    translations,
     projects,
     languages,
     columns,

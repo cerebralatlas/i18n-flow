@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Layout, Menu, Avatar, Dropdown } from "antd";
+import { Button, Layout, Menu, Avatar, Dropdown, MenuProps } from "antd";
 import {
   DashboardOutlined,
   TranslationOutlined,
@@ -167,7 +167,7 @@ const DashboardLayout: React.FC = () => {
 
           <div className="flex items-center space-x-3">
             <Dropdown
-              menu={{ items: userMenuItems as any }}
+              menu={{ items: userMenuItems as MenuProps["items"] }}
               placement="bottomRight"
               arrow
             >

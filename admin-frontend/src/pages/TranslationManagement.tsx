@@ -1,25 +1,22 @@
 import React, { useState, useEffect } from "react";
-import { Empty, Form, message, Spin } from "antd";
+import { Empty, Form, message, PaginationProps, Spin } from "antd";
 import { useParams } from "react-router-dom";
 
 // Custom hooks and components
 import { useTranslationData } from "../hooks/useTranslationData";
-import TranslationTable, {
-  generateTableColumns,
-} from "../components/translation/TranslationTable";
+import TranslationTable from "../components/translation/TranslationTable";
 import TranslationToolbar from "../components/translation/TranslationToolbar";
 import {
   CreateTranslationModal,
   BatchTranslationModal,
-  EditTranslationModal,
-  ImportTranslationModal,
+  JSONImportTranslationModal,
   ExcelImportModal,
 } from "../components/translation/TranslationModal";
 import {
+  ExcelData as ExcelDataUtil,
   parseExcelFile,
   formatExcelDataForImport,
   autoMapLanguageColumns,
-  ExcelData,
 } from "../components/translation/ExcelUtils";
 import {
   loadSelectedColumns,
@@ -28,16 +25,19 @@ import {
 
 // Types
 import {
-  TranslationResponse,
   BatchTranslationRequest,
+  ExcelPreviewColumns,
+  ExcelData as ExcelDataPreview,
 } from "../types/translation";
+import { generateTableColumns } from "../components/translation/TranslationTableUtil";
+import { ColumnProps, ColumnsType } from "antd/es/table";
+import { AnyObject } from "antd/es/_util/type";
 
 const TranslationManagement: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
 
   // Use the custom hook to handle translation data
   const {
-    translations,
     projects,
     languages,
     columns,
@@ -47,8 +47,8 @@ const TranslationManagement: React.FC = () => {
     paginatedMatrix,
     localPagination,
     selectedKeys,
-    selectedTranslations,
     batchDeleteLoading,
+    selectedTranslations,
 
     setColumns,
     setSelectedProject,
@@ -57,7 +57,6 @@ const TranslationManagement: React.FC = () => {
     fetchTranslations,
     createTranslation,
     batchCreateTranslations,
-    updateTranslation,
     deleteTranslation,
     exportTranslations,
     importTranslationsFromJson,
@@ -65,36 +64,43 @@ const TranslationManagement: React.FC = () => {
     handleRowSelectionChange,
   } = useTranslationData(projectId);
 
-  // Add state for selected language columns
+  // 选择语言列
   const [selectedLanguageColumns, setSelectedLanguageColumns] = useState<
     string[]
   >([]);
 
-  // Modal state
+  // 创建翻译模态框
   const [createModalVisible, setCreateModalVisible] = useState<boolean>(false);
+  // 批量翻译模态框
   const [batchModalVisible, setBatchModalVisible] = useState<boolean>(false);
-  const [editModalVisible, setEditModalVisible] = useState<boolean>(false);
+  // 导入翻译模态框
   const [importModalVisible, setImportModalVisible] = useState<boolean>(false);
-  const [currentTranslation, setCurrentTranslation] =
-    useState<TranslationResponse | null>(null);
 
-  // Excel import state
+  // excel导入模态框
   const [excelImportModalVisible, setExcelImportModalVisible] =
     useState<boolean>(false);
-  const [excelData, setExcelData] = useState<any[]>([]);
-  const [excelPreviewColumns, setExcelPreviewColumns] = useState<any[]>([]);
-  const [excelPreviewData, setExcelPreviewData] = useState<any[]>([]);
+  // excel导入数据
+  const [excelData, setExcelData] = useState<ExcelDataUtil[]>([]);
+  // excel导入预览列
+  const [excelPreviewColumns, setExcelPreviewColumns] = useState<
+    ExcelPreviewColumns[]
+  >([]);
+  // excel导入预览数据
+  const [excelPreviewData, setExcelPreviewData] = useState<ExcelDataPreview[]>(
+    []
+  );
+  // 选择语言
   const [selectedLanguages, setSelectedLanguages] = useState<{
     [key: string]: string;
   }>({});
+  // excel导入loading
   const [excelImportLoading, setExcelImportLoading] = useState<boolean>(false);
 
   // Forms
   const [singleForm] = Form.useForm();
   const [batchForm] = Form.useForm();
-  const [editForm] = Form.useForm();
 
-  // Add state for visible languages
+  // 可见语言
   const [visibleLanguages, setVisibleLanguages] = useState<string[]>([]);
 
   // Effect to initialize selected columns when languages load
@@ -122,44 +128,45 @@ const TranslationManagement: React.FC = () => {
     }
   }, [languages]);
 
-  // Effect to generate table columns when languages are loaded
+  // Effect to生成表格列
   useEffect(() => {
     if (languages.length > 0) {
       const generatedColumns = generateTableColumns(
         languages,
-        translations,
-        showEditModal,
+        [],
+        () => {},
         handleDeleteTranslation,
         handleAddTranslation,
         showBatchAddModal,
-        selectedLanguageColumns // Pass selected columns to filter
+        selectedLanguageColumns // 传递选中的列到过滤
       );
-      setColumns(generatedColumns);
+      console.log(generatedColumns, 999);
+      setColumns(generatedColumns as unknown as ColumnProps<AnyObject>[]);
     }
-  }, [languages, translations, selectedLanguageColumns]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [languages, selectedLanguageColumns]);
 
-  // Effect to initialize visible languages
+  // 初始化可见语言
   useEffect(() => {
     if (languages.length > 0 && visibleLanguages.length === 0) {
       setVisibleLanguages(languages.map((lang) => lang.code));
     }
-  }, [languages]);
+  }, [languages, visibleLanguages.length]);
 
-  // Handle column selection change with persistence
+  // 列选择
   const handleColumnSelectionChange = (selectedCodes: string[]) => {
     setSelectedLanguageColumns(selectedCodes);
-    // Save to localStorage whenever selection changes
     saveSelectedColumns(selectedCodes);
   };
 
-  // Handlers for translation operations
+  // 增加翻译
   const handleAddTranslation = (keyName: string, languageId: number) => {
     if (!selectedProject) {
       message.warning("Please select a project first");
       return;
     }
 
-    // Get context info for the key name
+    // 获取上下文信息
     const context = paginatedMatrix.find(
       (m) => m.key_name === keyName
     )?.context;
@@ -186,6 +193,7 @@ const TranslationManagement: React.FC = () => {
     }
   };
 
+  // 展示批量翻译模态框
   const showBatchAddModal = async (keyName: string, context?: string) => {
     if (!selectedProject) {
       message.warning("Please select a project first");
@@ -193,34 +201,14 @@ const TranslationManagement: React.FC = () => {
     }
 
     try {
-      // Clear previous form data
       batchForm.resetFields();
 
-      // Set basic info
       batchForm.setFieldsValue({
         project_id: selectedProject,
         key_name: keyName,
         context: context,
       });
 
-      // Find all existing translations for the key name
-      const existingTranslations = translations.filter(
-        (t) => t.key_name === keyName
-      );
-
-      // Set values for each language
-      languages.forEach((lang) => {
-        const translation = existingTranslations.find(
-          (t) => t.language_code === lang.code
-        );
-        if (translation) {
-          batchForm.setFieldsValue({
-            [`lang_${lang.code}`]: translation.value,
-          });
-        }
-      });
-
-      // Show modal - don't need setTimeout anymore since we have useEffect in the modal
       setBatchModalVisible(true);
     } catch (error) {
       console.error("Load existing translations failed:", error);
@@ -228,11 +216,11 @@ const TranslationManagement: React.FC = () => {
     }
   };
 
+  // 创建批量翻译
   const handleBatchCreateTranslations = async () => {
     try {
       const values = await batchForm.validateFields();
 
-      // Build request data
       const request: BatchTranslationRequest = {
         project_id: selectedProject!,
         key_name: values.key_name,
@@ -240,16 +228,15 @@ const TranslationManagement: React.FC = () => {
         translations: {},
       };
 
-      // Process language fields in the form
+      // 处理表单中的语言字段
       Object.keys(values).forEach((key) => {
         if (key.startsWith("lang_")) {
           const langCode = key.replace("lang_", "");
-          // Include empty string values as well, not just truthy values
           request.translations[langCode] = values[key] || "";
         }
       });
 
-      // Only send request if there are values
+      // 只有当有值时才发送请求
       if (Object.keys(request.translations).length > 0) {
         const success = await batchCreateTranslations(request);
         if (success) {
@@ -264,41 +251,16 @@ const TranslationManagement: React.FC = () => {
     }
   };
 
-  const showEditModal = (translation: TranslationResponse) => {
-    setCurrentTranslation(translation);
-    editForm.setFieldsValue({
-      project_id: translation.project_id,
-      key_name: translation.key_name,
-      context: translation.context,
-      language_id: translation.language_id,
-      value: translation.value,
-    });
-    setEditModalVisible(true);
-  };
-
-  const handleEditTranslation = async () => {
-    if (!currentTranslation) return;
-
-    try {
-      const values = await editForm.validateFields();
-      const success = await updateTranslation(currentTranslation.id, values);
-      if (success) {
-        setEditModalVisible(false);
-      }
-    } catch (error) {
-      console.error("Update translation failed:", error);
-    }
-  };
-
+  // 删除翻译
   const handleDeleteTranslation = async (id: number) => {
     await deleteTranslation(id);
   };
 
-  // Export translations
+  // 导出翻译
   const handleExportTranslations = async (format: string = "json") => {
     const data = await exportTranslations(format);
     if (data) {
-      // Create and download file
+      // 创建和下载文件
       const fileName = `translations_${selectedProject}_${new Date().toISOString()}.json`;
       const jsonStr = JSON.stringify(data, null, 2);
       const blob = new Blob([jsonStr], { type: "application/json" });
@@ -314,7 +276,7 @@ const TranslationManagement: React.FC = () => {
     }
   };
 
-  // Import translations from JSON
+  // 导入翻译
   const handleImportTranslations = (file: File) => {
     if (!selectedProject) {
       message.warning("Please select a project first");
@@ -326,7 +288,10 @@ const TranslationManagement: React.FC = () => {
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
-          const data = JSON.parse(content);
+          const data = JSON.parse(content) as Record<
+            string,
+            Record<string, string>
+          >;
 
           const success = await importTranslationsFromJson(data);
           if (success) {
@@ -338,7 +303,7 @@ const TranslationManagement: React.FC = () => {
         }
       };
       reader.readAsText(file);
-      return false; // Prevent default upload behavior
+      return false; // 阻止默认上传行为
     } catch (error) {
       console.error("Import translations failed:", error);
       message.error("Import translations failed");
@@ -346,17 +311,19 @@ const TranslationManagement: React.FC = () => {
     }
   };
 
-  // Excel processing functions
+  // Excel处理函数
   const handleExcelFile = (file: File) => {
     parseExcelFile(
       file,
-      (data: ExcelData | null) => {
+      (data: ExcelDataUtil | null) => {
         if (data) {
           setExcelData(data.jsonData);
           setExcelPreviewColumns(data.columns);
-          setExcelPreviewData(data.previewData);
+          setExcelPreviewData(
+            data.previewData as unknown as ExcelDataPreview[]
+          );
 
-          // Auto-map columns to languages
+          // 自动映射列到语言
           const initialMapping = autoMapLanguageColumns(
             data.columns,
             languages
@@ -368,9 +335,10 @@ const TranslationManagement: React.FC = () => {
       },
       setExcelImportLoading
     );
-    return false; // Prevent default upload behavior
+    return false; // 阻止默认上传行为
   };
 
+  // 选择语言
   const handleLanguageSelect = (columnKey: string, languageCode: string) => {
     setSelectedLanguages((prev) => ({
       ...prev,
@@ -378,6 +346,7 @@ const TranslationManagement: React.FC = () => {
     }));
   };
 
+  // excel导入
   const handleExcelImport = async () => {
     if (!selectedProject) {
       message.warning("Please select a project first");
@@ -413,6 +382,7 @@ const TranslationManagement: React.FC = () => {
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">
+      {/* 翻译工具按钮 */}
       <TranslationToolbar
         projects={projects}
         selectedProject={selectedProject}
@@ -447,6 +417,7 @@ const TranslationManagement: React.FC = () => {
         onColumnSelectionChange={handleColumnSelectionChange}
       />
 
+      {/* 表格 */}
       {loading ? (
         <div className="flex justify-center items-center py-12">
           <Spin size="large" tip="Loading..." />
@@ -455,14 +426,15 @@ const TranslationManagement: React.FC = () => {
         <TranslationTable
           loading={loading}
           paginatedMatrix={paginatedMatrix}
-          columns={columns}
-          translations={translations}
+          columns={columns as unknown as ColumnsType<AnyObject>}
+          translations={[]}
           languages={languages}
           selectedKeys={selectedKeys}
           pagination={localPagination}
-          onTableChange={handleTableChange}
+          onTableChange={
+            handleTableChange as (pagination: PaginationProps) => void
+          }
           onRowSelectionChange={handleRowSelectionChange}
-          onEditTranslation={showEditModal}
           onDeleteTranslation={handleDeleteTranslation}
           onAddTranslation={handleAddTranslation}
           onShowBatchAddModal={showBatchAddModal}
@@ -471,7 +443,7 @@ const TranslationManagement: React.FC = () => {
         <Empty description="No translations data" />
       )}
 
-      {/* Modals */}
+      {/* 创建翻译弹窗 */}
       <CreateTranslationModal
         visible={createModalVisible}
         onCancel={() => setCreateModalVisible(false)}
@@ -482,6 +454,7 @@ const TranslationManagement: React.FC = () => {
         selectedProject={selectedProject}
       />
 
+      {/* 批量创建翻译弹窗 */}
       <BatchTranslationModal
         visible={batchModalVisible}
         onCancel={() => setBatchModalVisible(false)}
@@ -490,11 +463,12 @@ const TranslationManagement: React.FC = () => {
         projects={projects}
         languages={languages}
         selectedProject={selectedProject}
-        translations={translations}
+        translations={[]}
         paginatedMatrix={paginatedMatrix}
       />
 
-      <EditTranslationModal
+      {/* 编辑翻译弹窗 */}
+      {/* <EditTranslationModal
         visible={editModalVisible}
         onCancel={() => setEditModalVisible(false)}
         onOk={handleEditTranslation}
@@ -502,20 +476,22 @@ const TranslationManagement: React.FC = () => {
         projects={projects}
         languages={languages}
         selectedProject={selectedProject}
-      />
+      /> */}
 
-      <ImportTranslationModal
+      {/* json导入翻译弹窗 */}
+      <JSONImportTranslationModal
         visible={importModalVisible}
         onCancel={() => setImportModalVisible(false)}
         onImport={handleImportTranslations}
       />
 
+      {/* excel导入弹窗 */}
       <ExcelImportModal
         visible={excelImportModalVisible}
         onCancel={() => setExcelImportModalVisible(false)}
         onOk={handleExcelImport}
         excelPreviewColumns={excelPreviewColumns}
-        excelPreviewData={excelPreviewData}
+        excelPreviewData={excelPreviewData as ExcelDataPreview[]}
         selectedLanguages={selectedLanguages}
         onLanguageSelect={handleLanguageSelect}
         languages={languages}

@@ -46,11 +46,17 @@ type TranslationResponse struct {
 	LanguageName string `json:"language_name" example:"简体中文"`             // 语言名称
 }
 
+// TranslationLanguageInfo 翻译语言信息
+type TranslationLanguageInfo struct {
+	ID    uint   `json:"id"`
+	Value string `json:"value"`
+}
+
 // TranslationMatrixItem 翻译矩阵项
 type TranslationMatrixItem struct {
-	KeyName   string            `json:"key_name"`
-	Context   string            `json:"context"`
-	Languages map[string]string `json:"languages"` // 语言代码到翻译值的映射
+	KeyName   string                             `json:"key_name"`
+	Context   string                             `json:"context"`
+	Languages map[string]TranslationLanguageInfo `json:"languages"`
 }
 
 // KeysPushRequest CLI工具推送键的请求格式
@@ -600,12 +606,15 @@ func (s *TranslationService) GetTranslationMatrix(projectID uint, page, pageSize
 		matrixItem := TranslationMatrixItem{
 			KeyName:   keyName,
 			Context:   keyTranslations[0].Context,
-			Languages: make(map[string]string),
+			Languages: make(map[string]TranslationLanguageInfo),
 		}
 
-		// 为每种语言添加翻译值
+		// 为每种语言添加翻译值和ID
 		for _, translation := range keyTranslations {
-			matrixItem.Languages[translation.Language.Code] = translation.Value
+			matrixItem.Languages[translation.Language.Code] = TranslationLanguageInfo{
+				ID:    translation.ID,
+				Value: translation.Value,
+			}
 		}
 
 		matrix = append(matrix, matrixItem)
