@@ -38,6 +38,7 @@ interface CreateModalProps extends BaseModalProps {
   onOk: () => void;
 }
 
+// 单个添加翻译的modal
 export const CreateTranslationModal: React.FC<CreateModalProps> = ({
   visible,
   onCancel,
@@ -153,6 +154,7 @@ interface BatchModalProps extends BaseModalProps {
   paginatedMatrix: TranslationMatrix[];
 }
 
+// 批量添加翻译的modal
 export const BatchTranslationModal: React.FC<BatchModalProps> = ({
   visible,
   onCancel,
@@ -163,19 +165,19 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
   paginatedMatrix,
 }) => {
   const { t } = useTranslation();
-  // Add useEffect to ensure form values are set properly when the modal is shown
+  // 当modal显示时，确保form的值被正确设置
   useEffect(() => {
     if (visible && form) {
       // 添加一个小延迟，确保表单已经完全初始化
       setTimeout(() => {
-        // Get the current key name from the form
+        // 得到当前的key name
         const keyName = form.getFieldValue("key_name");
 
         if (keyName && paginatedMatrix && paginatedMatrix.length > 0) {
           // 创建一个包含所有值的对象，然后一次性设置
           const formValues = { key_name: keyName };
 
-          // Set form values for each language that has a translation
+          // 遍历所有语言，设置form的值
           languages.forEach((lang) => {
             if (paginatedMatrix) {
               const paginatedTranslation = paginatedMatrix.find(
@@ -183,11 +185,8 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
               );
               if (paginatedTranslation) {
                 const langKey = `lang_${lang.code}` as keyof typeof formValues;
-                formValues[langKey] = paginatedTranslation.languages[lang.code];
-                console.log(
-                  `Setting lang_${lang.code}:`,
-                  paginatedTranslation.languages[lang.code]
-                );
+                formValues[langKey] =
+                  paginatedTranslation.languages[lang.code].value;
               }
             }
           });
@@ -195,7 +194,7 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
           // 使用setFieldsValue一次性设置所有值
           form.setFieldsValue(formValues);
         }
-      }, 100); // 小延迟确保DOM已更新
+      }, 100);
     }
   }, [visible, form, paginatedMatrix, languages]);
 
@@ -300,12 +299,12 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
   );
 };
 
-// Edit Modal
 interface EditModalProps extends BaseModalProps {
   form: FormInstance;
   onOk: () => void;
 }
 
+// 编辑翻译的modal
 export const EditTranslationModal: React.FC<EditModalProps> = ({
   visible,
   onCancel,
@@ -314,6 +313,7 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
   languages,
 }) => {
   const { t } = useTranslation();
+
   return (
     <Modal
       title={t("translation.modal.edit.title")}
@@ -364,13 +364,13 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
   );
 };
 
-// Import JSON Modal
 interface JSONImportModalProps {
   visible: boolean;
   onCancel: () => void;
   onImport: (file: File) => boolean;
 }
 
+// 导入json的modal
 export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
   visible,
   onCancel,
@@ -421,7 +421,7 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
   );
 };
 
-// Excel Import Modal
+// 导入excel的modal
 interface ExcelModalProps {
   visible: boolean;
   onCancel: () => void;
@@ -514,7 +514,7 @@ export const ExcelImportModal: React.FC<ExcelModalProps> = ({
   );
 };
 
-// Export all modals
+// 导出所有modal
 export default {
   CreateTranslationModal,
   BatchTranslationModal,
