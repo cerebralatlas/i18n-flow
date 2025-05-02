@@ -1,12 +1,13 @@
-import React, { useState } from "react";
+import React from "react";
 import { Select } from "antd";
 import { GlobalOutlined } from "@ant-design/icons";
 import i18n from "../i18n";
+import { useLanguageStore } from "../stores/langugageStore";
 
 const { Option } = Select;
 
 const LanguageSelector: React.FC = () => {
-  const [language, setLanguage] = useState(i18n.language);
+  const { language, setLanguage } = useLanguageStore();
 
   const handleLanguageChange = (value: string) => {
     i18n.changeLanguage(value);

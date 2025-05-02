@@ -11,8 +11,19 @@ import Dashboard from "./pages/Dashboard";
 import ProjectManagement from "./pages/ProjectManagement";
 import TranslationManagement from "./pages/TranslationManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
+import { useEffect } from "react";
+import i18n from "./i18n";
+import { useLanguageStore } from "./stores/langugageStore";
 
 function App() {
+  const { setLanguage } = useLanguageStore();
+
+  // 设置语言
+  useEffect(() => {
+    i18n.changeLanguage(localStorage.getItem("language") || i18n.language);
+    setLanguage(localStorage.getItem("language") || i18n.language);
+  }, [setLanguage]);
+
   return (
     <AuthProvider>
       <Router>
