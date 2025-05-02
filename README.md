@@ -2,6 +2,8 @@
 
 [![MIT License](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
+[简体中文](README-zh.md) | English
+
 A comprehensive internationalization (i18n) management platform designed to streamline the translation workflow for development teams, content creators, and localization specialists.
 
 ## 🌟 Features
