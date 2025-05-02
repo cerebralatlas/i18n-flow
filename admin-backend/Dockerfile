@@ -5,9 +5,17 @@ WORKDIR /app
 # 设置GOTOOLCHAIN以允许使用较低版本的依赖
 ENV GOTOOLCHAIN=auto
 
+# 设置GOPROXY和更长的超时时间
+ENV GOPROXY=https://goproxy.cn,direct
+ENV GO111MODULE=on
+ENV GOSUMDB=off
+ENV GOTIMEOUT=120s
+
 # 安装依赖
 COPY go.mod go.sum ./
-RUN go mod download
+# 添加重试逻辑
+RUN apk add --no-cache ca-certificates git && \
+    for i in $(seq 1 3); do go mod download && break || sleep 5; done
 
 # 复制源代码
 COPY . .
