@@ -1,0 +1,109 @@
+{
+  "login": {
+    "title": "i18n-flow",
+    "subtitle": "Translation Management System",
+    "secureLogin": "Secure Login",
+    "username": {
+      "placeholder": "Username",
+      "required": "Please enter your username!"
+    },
+    "password": {
+      "placeholder": "Password",
+      "required": "Please enter your password!"
+    },
+    "rememberMe": "Remember me",
+    "signIn": "Sign In",
+    "loggingIn": "Logging in...",
+    "success": "Login successful",
+    "error": "Invalid username or password, please try again",
+    "copyright": "© {{year}} i18n-flow. All rights reserved."
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to i18n-flow management system!",
+    "stats": {
+      "projectCount": "Project Count",
+      "translationCount": "Translation Key Count",
+      "languageCount": "Language Count",
+      "userCount": "User Count"
+    }
+  },
+  "layout": {
+    "menu": {
+      "dashboard": "Dashboard",
+      "projectManagement": "Project Management",
+      "translationManagement": "Translation Management"
+    },
+    "user": {
+      "profile": "Profile",
+      "logout": "Logout",
+      "role": "Admin"
+    }
+  },
+  "project": {
+    "title": "Project Management",
+    "search": "Search projects",
+    "create": "Create Project",
+    "edit": "Edit Project",
+    "delete": {
+      "title": "Are you sure you want to delete this project?",
+      "description": "This action cannot be undone!",
+      "confirm": "Yes",
+      "cancel": "Cancel"
+    },
+    "form": {
+      "name": {
+        "label": "Project Name",
+        "placeholder": "Please enter project name",
+        "required": "Please enter project name"
+      },
+      "description": {
+        "label": "Project Description",
+        "placeholder": "Please enter project description"
+      },
+      "slug": {
+        "label": "Project Slug",
+        "placeholder": "For example: my-project",
+        "help": "For URL-friendly identifier, leave blank to generate automatically based on project name"
+      }
+    },
+    "table": {
+      "id": "ID",
+      "name": "Project Name",
+      "slug": "Project Slug",
+      "description": "Description",
+      "statusTitle": "Status",
+      "createdAt": "Created At",
+      "action": "Action",
+      "total": "Total {{count}} records",
+      "status": {
+        "active": "Active",
+        "archived": "Archived"
+      }
+    },
+    "message": {
+      "updateSuccess": "Project updated successfully",
+      "createSuccess": "Project created successfully",
+      "deleteSuccess": "Project deleted successfully",
+      "saveFailed": "Save project failed",
+      "deleteFailed": "Delete project failed",
+      "getDetailsFailed": "Get project details failed",
+      "getListFailed": "Get project list failed"
+    },
+    "detail": {
+      "title": "Project Details",
+      "close": "Close",
+      "editButton": "Edit project",
+      "noDescription": "No description",
+      "fields": {
+        "id": "Project ID",
+        "name": "Project Name",
+        "slug": "Project Slug",
+        "description": "Project Description",
+        "status": "Status",
+        "createdAt": "Created at",
+        "updatedAt": "Updated at"
+      }
+    }
+  }
+}

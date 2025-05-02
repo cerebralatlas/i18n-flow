@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Button, Layout, Menu, Avatar, Dropdown, MenuProps } from "antd";
+import { Button, Layout, Menu, Avatar, Dropdown, MenuProps, Space } from "antd";
 import {
   DashboardOutlined,
   TranslationOutlined,
@@ -12,6 +12,8 @@ import {
 } from "@ant-design/icons";
 import { useAuth } from "../contexts/AuthContext";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
+import LanguageSelector from "../components/LanguageSelector";
+import { useTranslation } from "react-i18next";
 
 const { Header, Sider, Content } = Layout;
 
@@ -20,6 +22,7 @@ const DashboardLayout: React.FC = () => {
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const { t } = useTranslation();
 
   // Determine the selected menu item based on the current path
   const getSelectedKey = () => {
@@ -33,7 +36,7 @@ const DashboardLayout: React.FC = () => {
     {
       key: "profile",
       icon: <UserOutlined />,
-      label: "Profile",
+      label: t("layout.user.profile"),
     },
     {
       type: "divider",
@@ -41,7 +44,7 @@ const DashboardLayout: React.FC = () => {
     {
       key: "logout",
       icon: <LogoutOutlined />,
-      label: "Logout",
+      label: t("layout.user.logout"),
       onClick: logout,
     },
   ];
@@ -93,17 +96,17 @@ const DashboardLayout: React.FC = () => {
             {
               key: "1",
               icon: <DashboardOutlined />,
-              label: "Dashboard",
+              label: t("layout.menu.dashboard"),
             },
             {
               key: "2",
               icon: <ProjectOutlined />,
-              label: "Project Management",
+              label: t("layout.menu.projectManagement"),
             },
             {
               key: "3",
               icon: <TranslationOutlined />,
-              label: "Translation Management",
+              label: t("layout.menu.translationManagement"),
             },
           ]}
           style={{
@@ -127,7 +130,9 @@ const DashboardLayout: React.FC = () => {
                   <span className="text-white text-sm block">
                     {user?.username}
                   </span>
-                  <span className="text-gray-400 text-xs">Admin</span>
+                  <span className="text-gray-400 text-xs">
+                    {t("layout.user.role")}
+                  </span>
                 </div>
               </div>
             </div>
@@ -158,14 +163,18 @@ const DashboardLayout: React.FC = () => {
               style={{ fontSize: "16px" }}
             />
             <span className="font-medium text-gray-800">
-              {location.pathname.includes("/projects") && "Project Management"}
+              {location.pathname.includes("/projects") &&
+                t("layout.menu.projectManagement")}
               {location.pathname.includes("/translations") &&
-                "Translation Management"}
-              {location.pathname === "/dashboard" && "Dashboard"}
+                t("layout.menu.translationManagement")}
+              {location.pathname === "/dashboard" && t("layout.menu.dashboard")}
             </span>
           </div>
 
           <div className="flex items-center space-x-3">
+            <Space>
+              <LanguageSelector />
+            </Space>
             <Dropdown
               menu={{ items: userMenuItems as MenuProps["items"] }}
               placement="bottomRight"

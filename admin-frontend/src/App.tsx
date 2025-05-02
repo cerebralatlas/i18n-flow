@@ -26,7 +26,6 @@ function App() {
               </ProtectedRoute>
             }
           >
-            {/* 嵌套路由 */}
             <Route index element={<Navigate to="dashboard" />} />
             <Route path="dashboard" element={<Dashboard />} />
             <Route path="projects" element={<ProjectManagement />} />
@@ -35,7 +34,6 @@ function App() {
               path="translations/project/:projectId"
               element={<TranslationManagement />}
             />
-            {/* 其他路由可以在这里添加 */}
           </Route>
         </Routes>
       </Router>

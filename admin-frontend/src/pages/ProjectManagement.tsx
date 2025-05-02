@@ -21,6 +21,7 @@ import axios from "axios";
 import ErrorAlert from "../components/ErrorAlert";
 import ProjectDetailModal from "../components/ProjectDetailModal";
 import { Project } from "../types/project";
+import { useTranslation } from "react-i18next";
 
 const { Title } = Typography;
 
@@ -37,6 +38,7 @@ const ProjectManagement: React.FC = () => {
   const [currentProject, setCurrentProject] = useState<Project | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form] = Form.useForm();
+  const { t } = useTranslation();
 
   // Get project list
   const fetchProjects = useCallback(async () => {
@@ -55,11 +57,11 @@ const ProjectManagement: React.FC = () => {
       setTotal(response.data.total);
     } catch (error) {
       console.error("Get project list failed:", error);
-      setError("Get project list failed");
+      setError(t("project.message.getListFailed"));
     } finally {
       setLoading(false);
     }
-  }, [page, pageSize, keyword]);
+  }, [page, pageSize, keyword, t]);
 
   // Get data when initial load and condition changes
   useEffect(() => {
@@ -74,11 +76,11 @@ const ProjectManagement: React.FC = () => {
       if (currentProject) {
         // Update project
         await axios.put(`/api/projects/update/${currentProject.id}`, values);
-        message.success("Project updated successfully");
+        message.success(t("project.message.updateSuccess"));
       } else {
         // Create project
         await axios.post("/api/projects", values);
-        message.success("Project created successfully");
+        message.success(t("project.message.createSuccess"));
       }
 
       setModalVisible(false);
@@ -86,7 +88,7 @@ const ProjectManagement: React.FC = () => {
       fetchProjects();
     } catch (error) {
       console.error("Save project failed:", error);
-      message.error("Save project failed");
+      message.error(t("project.message.saveFailed"));
     }
   };
 
@@ -94,11 +96,11 @@ const ProjectManagement: React.FC = () => {
   const handleDeleteProject = async (id: number) => {
     try {
       await axios.delete(`/api/projects/delete/${id}`);
-      message.success("Project deleted successfully");
+      message.success(t("project.message.deleteSuccess"));
       fetchProjects();
     } catch (error) {
       console.error("Delete project failed:", error);
-      message.error("Delete project failed");
+      message.error(t("project.message.deleteFailed"));
     }
   };
 
@@ -126,7 +128,7 @@ const ProjectManagement: React.FC = () => {
       setDetailVisible(false); // Close detail modal if it is open
     } catch (error) {
       console.error("Get project details failed:", error);
-      message.error("Get project details failed");
+      message.error(t("project.message.getDetailsFailed"));
     }
   };
 
@@ -141,7 +143,7 @@ const ProjectManagement: React.FC = () => {
       setCurrentProject(response.data);
     } catch (error) {
       console.error("Get project details failed:", error);
-      message.error("Get project details failed");
+      message.error(t("project.message.getDetailsFailed"));
     } finally {
       setDetailLoading(false);
     }
@@ -150,44 +152,46 @@ const ProjectManagement: React.FC = () => {
   // Table column definition
   const columns = [
     {
-      title: "ID",
+      title: t("project.table.id"),
       dataIndex: "id",
       key: "id",
       width: 80,
     },
     {
-      title: "Project Name",
+      title: t("project.table.name"),
       dataIndex: "name",
       key: "name",
     },
     {
-      title: "Project Slug",
+      title: t("project.table.slug"),
       dataIndex: "slug",
       key: "slug",
     },
     {
-      title: "Description",
+      title: t("project.table.description"),
       dataIndex: "description",
       key: "description",
       ellipsis: true,
     },
     {
-      title: "Status",
+      title: t("project.table.statusTitle"),
       dataIndex: "status",
       key: "status",
       render: (status: string) => (
         <span style={{ color: status === "active" ? "green" : "orange" }}>
-          {status === "active" ? "Active" : "Archived"}
+          {status === "active"
+            ? t("project.table.status.active")
+            : t("project.table.status.archived")}
         </span>
       ),
     },
     {
-      title: "Created At",
+      title: t("project.table.createdAt"),
       dataIndex: "created_at",
       key: "created_at",
     },
     {
-      title: "Action",
+      title: t("project.table.action"),
       key: "action",
       width: 180,
       render: (_: unknown, record: Project) => (
@@ -205,11 +209,11 @@ const ProjectManagement: React.FC = () => {
             onClick={() => showEditModal(record)}
           />
           <Popconfirm
-            title="Are you sure you want to delete this project?"
-            description="This action cannot be undone!"
+            title={t("project.delete.title")}
+            description={t("project.delete.description")}
             onConfirm={() => handleDeleteProject(record.id)}
-            okText="Yes"
-            cancelText="Cancel"
+            okText={t("project.delete.confirm")}
+            cancelText={t("project.delete.cancel")}
           >
             <Button type="text" danger icon={<DeleteOutlined />} size="small" />
           </Popconfirm>
@@ -221,10 +225,10 @@ const ProjectManagement: React.FC = () => {
   return (
     <div className="bg-white p-6 rounded-lg shadow">
       <div className="mb-6 flex justify-between items-center">
-        <Title level={3}>Project Management</Title>
+        <Title level={3}>{t("project.title")}</Title>
         <Space size="middle">
           <Input
-            placeholder="Search projects"
+            placeholder={t("project.search")}
             value={keyword}
             onChange={(e) => setKeyword(e.target.value)}
             prefix={<SearchOutlined />}
@@ -236,14 +240,17 @@ const ProjectManagement: React.FC = () => {
             icon={<PlusOutlined />}
             onClick={showCreateModal}
           >
-            Create Project
+            {t("project.create")}
           </Button>
         </Space>
       </div>
 
       {error && (
         <div className="mb-4">
-          <ErrorAlert message={error} onRetry={fetchProjects} />
+          <ErrorAlert
+            message={t("project.message.getListFailed")}
+            onRetry={fetchProjects}
+          />
         </div>
       )}
 
@@ -258,7 +265,7 @@ const ProjectManagement: React.FC = () => {
           total: total,
           showSizeChanger: true,
           showQuickJumper: true,
-          showTotal: (total) => `Total ${total} records`,
+          showTotal: (total) => t("project.table.total", { count: total }),
           onChange: (page, pageSize) => {
             setPage(page);
             setPageSize(pageSize);
@@ -268,36 +275,41 @@ const ProjectManagement: React.FC = () => {
 
       {/* Create/Edit project modal */}
       <Modal
-        title={currentProject ? "Edit Project" : "Create Project"}
+        title={currentProject ? t("project.edit") : t("project.create")}
         open={modalVisible}
         onOk={handleSaveProject}
         onCancel={() => setModalVisible(false)}
-        okText={currentProject ? "Update" : "Create"}
-        cancelText="Cancel"
+        okText={currentProject ? t("project.edit") : t("project.create")}
+        cancelText={t("project.delete.cancel")}
         maskClosable={false}
       >
         <Form form={form} layout="vertical" name="projectForm">
           <Form.Item
             name="name"
-            label="Project Name"
-            rules={[{ required: true, message: "Please enter project name" }]}
+            label={t("project.form.name.label")}
+            rules={[
+              { required: true, message: t("project.form.name.required") },
+            ]}
           >
-            <Input placeholder="Please enter project name" />
+            <Input placeholder={t("project.form.name.placeholder")} />
           </Form.Item>
 
-          <Form.Item name="description" label="Project Description">
+          <Form.Item
+            name="description"
+            label={t("project.form.description.label")}
+          >
             <Input.TextArea
               rows={4}
-              placeholder="Please enter project description"
+              placeholder={t("project.form.description.placeholder")}
             />
           </Form.Item>
 
           <Form.Item
             name="slug"
-            label="Project Slug"
-            help="For URL-friendly identifier, leave blank to generate automatically based on project name"
+            label={t("project.form.slug.label")}
+            help={t("project.form.slug.help")}
           >
-            <Input placeholder="For example: my-project" />
+            <Input placeholder={t("project.form.slug.placeholder")} />
           </Form.Item>
         </Form>
       </Modal>

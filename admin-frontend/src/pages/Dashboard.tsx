@@ -4,10 +4,14 @@ import {
   getDashboardStats,
   DashboardStats,
 } from "../services/dashboardService";
+import { useTranslation } from "react-i18next";
 
 const DashboardHome: React.FC = () => {
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const { t } = useTranslation();
+
+  console.log(t("Welcome to React"));
 
   useEffect(() => {
     const fetchDashboardStats = async () => {
@@ -30,15 +34,15 @@ const DashboardHome: React.FC = () => {
   return (
     <div>
       <div className="bg-white rounded-lg shadow p-6 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Dashboard</h2>
-        <p>Welcome to i18n-flow management system!</p>
+        <h2 className="text-xl font-semibold mb-4">{t("dashboard.title")}</h2>
+        <p>{t("dashboard.welcome")}</p>
       </div>
 
       <Row gutter={16}>
         <Col span={6}>
           <Card>
             <Statistic
-              title="Project Count"
+              title={t("dashboard.stats.projectCount")}
               value={stats?.project_count || 0}
               loading={loading}
             />
@@ -47,7 +51,7 @@ const DashboardHome: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Translation Key Count"
+              title={t("dashboard.stats.translationCount")}
               value={stats?.translation_count || 0}
               loading={loading}
             />
@@ -56,7 +60,7 @@ const DashboardHome: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="Language Count"
+              title={t("dashboard.stats.languageCount")}
               value={stats?.language_count || 0}
               loading={loading}
             />
@@ -65,7 +69,7 @@ const DashboardHome: React.FC = () => {
         <Col span={6}>
           <Card>
             <Statistic
-              title="User Count"
+              title={t("dashboard.stats.userCount")}
               value={stats?.user_count || 0}
               loading={loading}
             />

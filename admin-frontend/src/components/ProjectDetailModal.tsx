@@ -1,6 +1,7 @@
 import React from "react";
 import { Modal, Descriptions, Button, Spin } from "antd";
 import { Project } from "../types/project";
+import { useTranslation } from "react-i18next";
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -17,19 +18,21 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
   onClose,
   onEdit,
 }) => {
+  const { t } = useTranslation();
+
   if (!project) return null;
 
   return (
     <Modal
-      title="Project Details"
+      title={t("project.detail.title")}
       open={visible}
       onCancel={onClose}
       footer={[
         <Button key="close" onClick={onClose}>
-          Close
+          {t("project.detail.close")}
         </Button>,
         <Button key="edit" type="primary" onClick={() => onEdit(project)}>
-          Edit project
+          {t("project.detail.editButton")}
         </Button>,
       ]}
       width={700}
@@ -40,29 +43,33 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
         </div>
       ) : (
         <Descriptions bordered column={1}>
-          <Descriptions.Item label="Project ID">{project.id}</Descriptions.Item>
-          <Descriptions.Item label="Project Name">
+          <Descriptions.Item label={t("project.detail.fields.id")}>
+            {project.id}
+          </Descriptions.Item>
+          <Descriptions.Item label={t("project.detail.fields.name")}>
             {project.name}
           </Descriptions.Item>
-          <Descriptions.Item label="Project Slug">
+          <Descriptions.Item label={t("project.detail.fields.slug")}>
             {project.slug}
           </Descriptions.Item>
-          <Descriptions.Item label="Project Description">
-            {project.description || "No description"}
+          <Descriptions.Item label={t("project.detail.fields.description")}>
+            {project.description || t("project.detail.noDescription")}
           </Descriptions.Item>
-          <Descriptions.Item label="Status">
+          <Descriptions.Item label={t("project.detail.fields.status")}>
             <span
               style={{
                 color: project.status === "active" ? "green" : "orange",
               }}
             >
-              {project.status === "active" ? "Active" : "Archived"}
+              {project.status === "active"
+                ? t("project.table.status.active")
+                : t("project.table.status.archived")}
             </span>
           </Descriptions.Item>
-          <Descriptions.Item label="Created at">
+          <Descriptions.Item label={t("project.detail.fields.createdAt")}>
             {project.created_at}
           </Descriptions.Item>
-          <Descriptions.Item label="Updated at">
+          <Descriptions.Item label={t("project.detail.fields.updatedAt")}>
             {project.updated_at}
           </Descriptions.Item>
         </Descriptions>

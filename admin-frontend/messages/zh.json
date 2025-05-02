@@ -1,0 +1,109 @@
+{
+  "login": {
+    "title": "i18n-flow",
+    "subtitle": "翻译管理系统",
+    "secureLogin": "安全登录",
+    "username": {
+      "placeholder": "用户名",
+      "required": "请输入用户名！"
+    },
+    "password": {
+      "placeholder": "密码",
+      "required": "请输入密码！"
+    },
+    "rememberMe": "记住我",
+    "signIn": "登录",
+    "loggingIn": "登录中...",
+    "success": "登录成功",
+    "error": "用户名或密码错误，请重试",
+    "copyright": "© {{year}} i18n-flow. 保留所有权利。"
+  },
+  "dashboard": {
+    "title": "仪表盘",
+    "welcome": "欢迎使用 i18n-flow 管理系统！",
+    "stats": {
+      "projectCount": "项目数量",
+      "translationCount": "翻译键数量",
+      "languageCount": "语言数量",
+      "userCount": "用户数量"
+    }
+  },
+  "layout": {
+    "menu": {
+      "dashboard": "仪表盘",
+      "projectManagement": "项目管理",
+      "translationManagement": "翻译管理"
+    },
+    "user": {
+      "profile": "个人信息",
+      "logout": "退出登录",
+      "role": "管理员"
+    }
+  },
+  "project": {
+    "title": "项目管理",
+    "search": "搜索项目",
+    "create": "创建项目",
+    "edit": "编辑项目",
+    "delete": {
+      "title": "确定要删除这个项目吗？",
+      "description": "此操作无法撤销！",
+      "confirm": "确定",
+      "cancel": "取消"
+    },
+    "form": {
+      "name": {
+        "label": "项目名称",
+        "placeholder": "请输入项目名称",
+        "required": "请输入项目名称"
+      },
+      "description": {
+        "label": "项目描述",
+        "placeholder": "请输入项目描述"
+      },
+      "slug": {
+        "label": "项目标识",
+        "placeholder": "例如：my-project",
+        "help": "用于URL友好的标识符，留空将根据项目名称自动生成"
+      }
+    },
+    "table": {
+      "id": "ID",
+      "name": "项目名称",
+      "slug": "项目标识",
+      "description": "描述",
+      "statusTitle": "状态",
+      "createdAt": "创建时间",
+      "action": "操作",
+      "total": "共 {{count}} 条记录",
+      "status": {
+        "active": "活跃",
+        "archived": "已归档"
+      }
+    },
+    "message": {
+      "updateSuccess": "项目更新成功",
+      "createSuccess": "项目创建成功",
+      "deleteSuccess": "项目删除成功",
+      "saveFailed": "保存项目失败",
+      "deleteFailed": "删除项目失败",
+      "getDetailsFailed": "获取项目详情失败",
+      "getListFailed": "获取项目列表失败"
+    },
+    "detail": {
+      "title": "项目详情",
+      "close": "关闭",
+      "editButton": "编辑项目",
+      "noDescription": "暂无描述",
+      "fields": {
+        "id": "项目ID",
+        "name": "项目名称",
+        "slug": "项目标识",
+        "description": "项目描述",
+        "status": "状态",
+        "createdAt": "创建时间",
+        "updatedAt": "更新时间"
+      }
+    }
+  }
+}
