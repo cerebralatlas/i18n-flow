@@ -3,7 +3,7 @@ import { message } from 'antd';
 
 // 创建 axios 实例
 const api = axios.create({
-  baseURL: 'http://localhost:8080', // 根据您的后端配置调整
+  baseURL: import.meta.env.VITE_API_URL,
   timeout: 10000,
 });
 

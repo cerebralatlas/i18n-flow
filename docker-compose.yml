@@ -72,6 +72,8 @@ services:
       - backend
     env_file:
       - .env
+    environment:
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:8080}
     ports:
       - "80:80"
     networks:
