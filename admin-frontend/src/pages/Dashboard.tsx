@@ -11,8 +11,6 @@ const DashboardHome: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { t } = useTranslation();
 
-  console.log(t("Welcome to React"));
-
   useEffect(() => {
     const fetchDashboardStats = async () => {
       try {
@@ -28,8 +26,6 @@ const DashboardHome: React.FC = () => {
 
     fetchDashboardStats();
   }, []);
-
-  console.log(stats);
 
   return (
     <div>

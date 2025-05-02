@@ -142,7 +142,6 @@ const TranslationManagement: React.FC = () => {
         showBatchAddModal,
         selectedLanguageColumns // 传递选中的列到过滤
       );
-      console.log(generatedColumns, 999);
       setColumns(generatedColumns as unknown as ColumnProps<AnyObject>[]);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
