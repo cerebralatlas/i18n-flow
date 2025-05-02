@@ -2,7 +2,7 @@
 
 A powerful CLI tool for managing your application's translations with ease.
 
-[![npm version](https://img.shields.io/npm/v/@i18n-flow/cli.svg)](https://www.npmjs.com/package/i18n-flow-cli)
+[![npm version](https://img.shields.io/npm/v/i18n-flow-cli.svg)](https://www.npmjs.com/package/i18n-flow-cli)
 
 [简体中文](README-zh.md) | English
 

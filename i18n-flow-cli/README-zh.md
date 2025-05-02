@@ -2,7 +2,7 @@
 
 一个强大的 CLI 工具，轻松管理您应用程序的翻译内容。
 
-[![npm version](https://img.shields.io/npm/v/@i18n-flow/cli.svg)](https://www.npmjs.com/package/i18n-flow-cli)
+[![npm version](https://img.shields.io/npm/v/i18n-flow-cli.svg)](https://www.npmjs.com/package/i18n-flow-cli)
 
 简体中文 | [English](README.md)
 
