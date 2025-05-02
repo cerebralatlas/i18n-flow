@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import { Empty, Form, message, PaginationProps, Spin } from "antd";
 import { useParams } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 
 // Custom hooks and components
 import { useTranslationData } from "../hooks/useTranslationData";
@@ -35,6 +36,7 @@ import { AnyObject } from "antd/es/_util/type";
 
 const TranslationManagement: React.FC = () => {
   const { projectId } = useParams<{ projectId: string }>();
+  const { t } = useTranslation();
 
   // Use the custom hook to handle translation data
   const {
@@ -162,7 +164,7 @@ const TranslationManagement: React.FC = () => {
   // 增加翻译
   const handleAddTranslation = (keyName: string, languageId: number) => {
     if (!selectedProject) {
-      message.warning("Please select a project first");
+      message.warning(t("translation.message.selectProject"));
       return;
     }
 
@@ -196,7 +198,7 @@ const TranslationManagement: React.FC = () => {
   // 展示批量翻译模态框
   const showBatchAddModal = async (keyName: string, context?: string) => {
     if (!selectedProject) {
-      message.warning("Please select a project first");
+      message.warning(t("translation.message.selectProject"));
       return;
     }
 
@@ -244,7 +246,7 @@ const TranslationManagement: React.FC = () => {
           batchForm.resetFields();
         }
       } else {
-        message.warning("Please add at least one language translation");
+        message.warning(t("translation.message.addLanguage"));
       }
     } catch (error) {
       console.error("Batch create translations failed:", error);
@@ -279,7 +281,7 @@ const TranslationManagement: React.FC = () => {
   // 导入翻译
   const handleImportTranslations = (file: File) => {
     if (!selectedProject) {
-      message.warning("Please select a project first");
+      message.warning(t("translation.message.selectProject"));
       return false;
     }
 
@@ -299,7 +301,11 @@ const TranslationManagement: React.FC = () => {
           }
         } catch (error) {
           console.error("Import failed: File format error", error);
-          message.error("Import failed: File format error");
+          message.error(
+            t("translation.message.importFailed", {
+              error: "File format error",
+            })
+          );
         }
       };
       reader.readAsText(file);
@@ -349,7 +355,7 @@ const TranslationManagement: React.FC = () => {
   // excel导入
   const handleExcelImport = async () => {
     if (!selectedProject) {
-      message.warning("Please select a project first");
+      message.warning(t("translation.message.selectProject"));
       return;
     }
 
@@ -392,7 +398,7 @@ const TranslationManagement: React.FC = () => {
         onSearch={fetchTranslations}
         onAddTranslation={() => {
           if (!selectedProject) {
-            message.warning("Please select a project first");
+            message.warning(t("translation.message.selectProject"));
             return;
           }
           singleForm.setFieldsValue({ project_id: selectedProject });
@@ -400,7 +406,7 @@ const TranslationManagement: React.FC = () => {
         }}
         onBatchAddTranslation={() => {
           if (!selectedProject) {
-            message.warning("Please select a project first");
+            message.warning(t("translation.message.selectProject"));
             return;
           }
           batchForm.setFieldsValue({ project_id: selectedProject });
@@ -420,7 +426,7 @@ const TranslationManagement: React.FC = () => {
       {/* 表格 */}
       {loading ? (
         <div className="flex justify-center items-center py-12">
-          <Spin size="large" tip="Loading..." />
+          <Spin size="large" tip={t("translation.table.loading")} />
         </div>
       ) : paginatedMatrix.length > 0 ? (
         <TranslationTable
@@ -440,7 +446,7 @@ const TranslationManagement: React.FC = () => {
           onShowBatchAddModal={showBatchAddModal}
         />
       ) : (
-        <Empty description="No translations data" />
+        <Empty description={t("translation.table.noData")} />
       )}
 
       {/* 创建翻译弹窗 */}

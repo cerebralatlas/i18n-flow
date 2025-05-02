@@ -105,5 +105,153 @@
         "updatedAt": "更新时间"
       }
     }
+  },
+  "translation": {
+    "title": "翻译管理",
+    "toolbar": {
+      "selectProject": "选择项目",
+      "searchPlaceholder": "搜索翻译",
+      "addTranslation": "添加翻译",
+      "batchAdd": "批量添加",
+      "import": {
+        "json": "导入JSON",
+        "excel": "导入Excel",
+        "uploadJson": "点击或拖拽JSON文件上传",
+        "uploadExcel": "点击或拖拽Excel文件上传"
+      },
+      "export": "导出",
+      "batchDelete": "批量删除",
+      "languageColumns": "语言列"
+    },
+    "modal": {
+      "create": {
+        "title": "创建翻译",
+        "keyName": "键名",
+        "keyNameRequired": "请输入键名",
+        "context": "上下文",
+        "contextPlaceholder": "输入上下文（可选）",
+        "language": "语言",
+        "languageRequired": "请选择语言",
+        "content": "内容",
+        "contentRequired": "请输入内容"
+      },
+      "batch": {
+        "title": "批量添加翻译",
+        "keyName": "键名",
+        "keyNameRequired": "请输入键名",
+        "context": "上下文",
+        "contextPlaceholder": "输入上下文（可选）"
+      },
+      "import": {
+        "jsonTitle": "导入JSON翻译",
+        "excelTitle": "导入Excel翻译",
+        "preview": "预览数据",
+        "mapping": "语言映射",
+        "selectLanguage": "选择语言",
+        "columnName": "列名",
+        "mappedLanguage": "映射语言"
+      },
+      "common": {
+        "save": "保存",
+        "cancel": "取消",
+        "create": "创建",
+        "update": "更新",
+        "project": {
+          "label": "项目",
+          "placeholder": "请选择项目",
+          "required": "请选择项目"
+        },
+        "value": {
+          "label": "翻译值",
+          "placeholder": "请输入翻译值",
+          "required": "请输入翻译值"
+        },
+        "keyName": {
+          "label": "键名",
+          "placeholder": "请输入键名",
+          "required": "请输入键名"
+        },
+        "context": {
+          "label": "上下文",
+          "placeholder": "请输入上下文（可选）"
+        },
+        "language": {
+          "label": "语言",
+          "placeholder": "请选择语言",
+          "required": "请选择语言",
+          "format": "{{name}} [{{code}}]"
+        }
+      },
+      "batch": {
+        "title2": "批量添加/更新翻译",
+        "valuesSection": {
+          "title": "各语言翻译值",
+          "description": "已自动填充现有翻译，您可以修改或补充其他语言的翻译"
+        },
+        "language": {
+          "default": "（默认语言）",
+          "existing": "已有翻译",
+          "placeholder": "请输入 {{name}} 的翻译值",
+          "optional": "（可选）",
+          "hasValue": "（已有翻译）"
+        }
+      },
+      "edit": {
+        "title": "编辑翻译",
+        "context": {
+          "label": "上下文说明",
+          "placeholder": "请输入上下文说明（可选）"
+        }
+      },
+      "import": {
+        "json": {
+          "format": "请选择JSON格式的翻译文件导入，文件格式应为：",
+          "uploadText": "点击或拖拽文件到此区域上传",
+          "uploadHint": "支持单个JSON文件上传"
+        },
+        "excel": {
+          "mapping": {
+            "title": "Excel列与语言映射",
+            "description": "请指定Excel中各列对应的语言，只有映射了语言的列才会被导入",
+            "columnMap": "列对应："
+          },
+          "preview": {
+            "title": "预览数据",
+            "description": "显示前10行数据用于预览，实际导入会处理所有数据",
+            "total": "总计 {{count}} 行数据"
+          }
+        }
+      }
+    },
+    "table": {
+      "keyName": "键名",
+      "context": "上下文",
+      "action": "操作",
+      "noData": "暂无翻译数据",
+      "loading": "加载中...",
+      "total": "共 {{count}} 条记录",
+      "hasContext": "有上下文",
+      "defaultLanguage": "默认",
+      "addTranslation": "添加翻译",
+      "delete": {
+        "title": "确定要删除这条翻译吗？",
+        "confirm": "确定",
+        "cancel": "取消"
+      }
+    },
+    "message": {
+      "selectProject": "请先选择项目",
+      "addLanguage": "请至少添加一种语言翻译",
+      "importSuccess": "导入成功",
+      "importFailed": "导入失败：{{error}}",
+      "deleteSuccess": "删除成功",
+      "deleteFailed": "删除失败",
+      "createSuccess": "创建成功",
+      "createFailed": "创建失败",
+      "updateSuccess": "更新成功",
+      "updateFailed": "更新失败",
+      "batchSuccess": "批量操作成功",
+      "batchFailed": "批量操作失败"
+    }
   }
 }

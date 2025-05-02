@@ -105,5 +105,135 @@
         "updatedAt": "Updated at"
       }
     }
+  },
+  "translation": {
+    "title": "Translation Management",
+    "toolbar": {
+      "selectProject": "Select Project",
+      "searchPlaceholder": "Search translations",
+      "addTranslation": "Add Translation",
+      "batchAdd": "Batch Add",
+      "import": {
+        "json": "Import JSON",
+        "excel": "Import Excel",
+        "uploadJson": "Click or drag JSON file to upload",
+        "uploadExcel": "Click or drag Excel file to upload"
+      },
+      "export": "Export",
+      "batchDelete": "Batch Delete",
+      "languageColumns": "Language Columns"
+    },
+    "modal": {
+      "create": {
+        "title": "Create Translation",
+        "keyName": "Key Name",
+        "keyNameRequired": "Please enter key name",
+        "context": "Context",
+        "contextPlaceholder": "Enter context (optional)",
+        "language": "Language",
+        "languageRequired": "Please select language",
+        "content": "Content",
+        "contentRequired": "Please enter content"
+      },
+      "batch": {
+        "title": "Batch Add Translation",
+        "keyName": "Key Name",
+        "keyNameRequired": "Please enter key name",
+        "context": "Context",
+        "contextPlaceholder": "Enter context (optional)",
+        "title2": "Batch Add/Update Translations",
+        "valuesSection": {
+          "title": "Translation Values for Each Language",
+          "description": "Existing translations have been automatically filled, you can modify or supplement translations for other languages"
+        },
+        "language": {
+          "default": "(Default language)",
+          "existing": "Existing translation",
+          "placeholder": "Please enter the translation value for {{name}}",
+          "optional": "(Optional)",
+          "hasValue": "(Existing translation)"
+        }
+      },
+      "edit": {
+        "title": "Edit Translation",
+        "context": {
+          "label": "Context Description",
+          "placeholder": "Please enter context description (optional)"
+        }
+      },
+      "import": {
+        "jsonTitle": "Import JSON Translation",
+        "excelTitle": "Import Excel Translation",
+        "preview": "Preview Data",
+        "mapping": "Language Mapping",
+        "selectLanguage": "Select Language",
+        "columnName": "Column Name",
+        "mappedLanguage": "Mapped Language",
+        "json": {
+          "format": "Please select a JSON format translation file to import, the file format should be:",
+          "uploadText": "Click or drag file to upload",
+          "uploadHint": "Support single JSON file upload"
+        },
+        "excel": {
+          "mapping": {
+            "title": "Excel Column and Language Mapping",
+            "description": "Please specify the language corresponding to each column in Excel, only mapped columns will be imported",
+            "columnMap": "Column maps to:"
+          },
+          "preview": {
+            "title": "Preview Data",
+            "description": "Showing first 10 rows for preview, actual import will process all data",
+            "total": "Total {{count}} rows of data"
+          }
+        }
+      },
+      "common": {
+        "keyName": {
+          "label": "Key Name",
+          "placeholder": "Please enter the key name",
+          "required": "Please enter the key name"
+        },
+        "context": {
+          "label": "Context",
+          "placeholder": "Please enter the context (optional)"
+        },
+        "language": {
+          "label": "Language",
+          "placeholder": "Please select a language",
+          "required": "Please select a language",
+          "format": "{{name}} [{{code}}]"
+        }
+      }
+    },
+    "table": {
+      "keyName": "Key Name",
+      "context": "Context",
+      "action": "Action",
+      "noData": "No translations data",
+      "loading": "Loading...",
+      "total": "Total {{count}} records",
+      "hasContext": "Has context",
+      "defaultLanguage": "Default",
+      "addTranslation": "Add translation",
+      "delete": {
+        "title": "Are you sure you want to delete this translation?",
+        "confirm": "Yes",
+        "cancel": "Cancel"
+      }
+    },
+    "message": {
+      "selectProject": "Please select a project first",
+      "addLanguage": "Please add at least one language translation",
+      "importSuccess": "Import successful",
+      "importFailed": "Import failed: {{error}}",
+      "deleteSuccess": "Delete successful",
+      "deleteFailed": "Delete failed",
+      "createSuccess": "Create successful",
+      "createFailed": "Create failed",
+      "updateSuccess": "Update successful",
+      "updateFailed": "Update failed",
+      "batchSuccess": "Batch operation successful",
+      "batchFailed": "Batch operation failed"
+    }
   }
 }

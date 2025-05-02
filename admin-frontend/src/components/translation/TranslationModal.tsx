@@ -1,5 +1,14 @@
 import React, { useEffect } from "react";
-import { Modal, Form, Input, Select, Upload, Table, Tag } from "antd";
+import {
+  Modal,
+  Form,
+  Input,
+  Select,
+  Upload,
+  Table,
+  Tag,
+  FormInstance,
+} from "antd";
 import { UploadOutlined } from "@ant-design/icons";
 import { Project } from "../../types/project";
 import {
@@ -9,6 +18,8 @@ import {
   TranslationResponse,
 } from "../../types/translation";
 import { TranslationMatrix } from "./TranslationTable";
+import { useTranslation } from "react-i18next";
+import { ColumnsType } from "antd/es/table";
 
 const { TextArea } = Input;
 const { Dragger } = Upload;
@@ -23,7 +34,7 @@ interface BaseModalProps {
 
 // Single Translation Modal
 interface CreateModalProps extends BaseModalProps {
-  form: any;
+  form: FormInstance;
   onOk: () => void;
 }
 
@@ -36,24 +47,30 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
   languages,
   selectedProject,
 }) => {
+  const { t } = useTranslation();
   return (
     <Modal
-      title="Add Translation"
+      title={t("translation.modal.create.title")}
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
-      okText="Create"
-      cancelText="Cancel"
+      okText={t("translation.modal.common.create")}
+      cancelText={t("translation.modal.common.cancel")}
       maskClosable={false}
     >
       <Form form={form} layout="vertical" name="translationForm">
         <Form.Item
           name="project_id"
-          label="Project"
-          rules={[{ required: true, message: "Please select a project" }]}
+          label={t("translation.modal.common.project.label")}
+          rules={[
+            {
+              required: true,
+              message: t("translation.modal.common.project.required"),
+            },
+          ]}
         >
           <Select
-            placeholder="Please select a project"
+            placeholder={t("translation.modal.common.project.placeholder")}
             options={projects.map((project) => ({
               value: project.id,
               label: project.name,
@@ -64,38 +81,64 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
 
         <Form.Item
           name="key_name"
-          label="Key Name"
-          rules={[{ required: true, message: "Please enter the key name" }]}
+          label={t("translation.modal.common.keyName.label")}
+          rules={[
+            {
+              required: true,
+              message: t("translation.modal.common.keyName.required"),
+            },
+          ]}
         >
-          <Input placeholder="Please enter the key name" />
+          <Input
+            placeholder={t("translation.modal.common.keyName.placeholder")}
+          />
         </Form.Item>
 
-        <Form.Item name="context" label="Context">
-          <Input placeholder="Please enter the context (optional)" />
+        <Form.Item
+          name="context"
+          label={t("translation.modal.common.context.label")}
+        >
+          <Input
+            placeholder={t("translation.modal.common.context.placeholder")}
+          />
         </Form.Item>
 
         <Form.Item
           name="language_id"
-          label="Language"
-          rules={[{ required: true, message: "Please select a language" }]}
+          label={t("translation.modal.common.language.label")}
+          rules={[
+            {
+              required: true,
+              message: t("translation.modal.common.language.required"),
+            },
+          ]}
         >
           <Select
-            placeholder="Please select a language"
+            placeholder={t("translation.modal.common.language.placeholder")}
             options={languages.map((lang) => ({
               value: lang.id,
-              label: `${lang.name} [${lang.code}]`,
+              label: t("translation.modal.common.language.format", {
+                name: lang.name,
+                code: lang.code,
+              }),
             }))}
           />
         </Form.Item>
 
         <Form.Item
           name="value"
-          label="Translation Value"
+          label={t("translation.modal.common.value.label")}
           rules={[
-            { required: true, message: "Please enter the translation value" },
+            {
+              required: true,
+              message: t("translation.modal.common.value.required"),
+            },
           ]}
         >
-          <TextArea rows={4} placeholder="Please enter the translation value" />
+          <TextArea
+            rows={4}
+            placeholder={t("translation.modal.common.value.placeholder")}
+          />
         </Form.Item>
       </Form>
     </Modal>
@@ -104,7 +147,7 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
 
 // Batch Add Modal
 interface BatchModalProps extends BaseModalProps {
-  form: any;
+  form: FormInstance;
   onOk: () => void;
   translations: TranslationResponse[];
   paginatedMatrix: TranslationMatrix[];
@@ -119,6 +162,7 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
   translations,
   paginatedMatrix,
 }) => {
+  const { t } = useTranslation();
   // Add useEffect to ensure form values are set properly when the modal is shown
   useEffect(() => {
     if (visible && form) {
@@ -157,12 +201,12 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
 
   return (
     <Modal
-      title="Batch Add/Update Translations"
+      title={t("translation.modal.batch.title2")}
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
-      okText="Save"
-      cancelText="Cancel"
+      okText={t("translation.modal.common.save")}
+      cancelText={t("translation.modal.common.cancel")}
       maskClosable={false}
       width={700}
       destroyOnClose={true}
@@ -175,24 +219,35 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
       >
         <Form.Item
           name="key_name"
-          label="Key Name"
-          rules={[{ required: true, message: "Please enter the key name" }]}
+          label={t("translation.modal.common.keyName.label")}
+          rules={[
+            {
+              required: true,
+              message: t("translation.modal.common.keyName.required"),
+            },
+          ]}
           initialValue={form.getFieldValue("key_name")}
         >
-          <Input placeholder="Please enter the key name" />
+          <Input
+            placeholder={t("translation.modal.common.keyName.placeholder")}
+          />
         </Form.Item>
 
-        <Form.Item name="context" label="Context">
-          <Input placeholder="Please enter the context (optional)" />
+        <Form.Item
+          name="context"
+          label={t("translation.modal.common.context.label")}
+        >
+          <Input
+            placeholder={t("translation.modal.common.context.placeholder")}
+          />
         </Form.Item>
 
         <div className="bg-gray-50 p-3 mb-4 rounded">
           <h5 className="text-lg font-medium">
-            Translation Values for Each Language
+            {t("translation.modal.batch.valuesSection.title")}
           </h5>
           <p className="text-gray-500">
-            Existing translations have been automatically filled, you can modify
-            or supplement translations for other languages
+            {t("translation.modal.batch.valuesSection.description")}
           </p>
         </div>
 
@@ -209,12 +264,18 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
               name={`lang_${lang.code}`}
               label={
                 <div className="flex items-center">
-                  <span>{`${lang.name} [${lang.code}]${
-                    lang.is_default ? " (Default language)" : ""
-                  }`}</span>
+                  <span>
+                    {t("translation.modal.common.language.format", {
+                      name: lang.name,
+                      code: lang.code,
+                    })}
+                    {lang.is_default
+                      ? t("translation.modal.batch.language.default")
+                      : ""}
+                  </span>
                   {existingTranslation && (
                     <Tag color="blue" className="ml-2">
-                      Existing translation
+                      {t("translation.modal.batch.language.existing")}
                     </Tag>
                   )}
                 </div>
@@ -222,12 +283,13 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
             >
               <TextArea
                 rows={2}
-                placeholder={`Please enter the translation value for ${
-                  lang.name
-                }${
+                placeholder={`${t(
+                  "translation.modal.batch.language.placeholder",
+                  { name: lang.name }
+                )} ${
                   existingTranslation
-                    ? "（Existing translation）"
-                    : "（Optional）"
+                    ? t("translation.modal.batch.language.hasValue")
+                    : t("translation.modal.batch.language.optional")
                 }`}
               />
             </Form.Item>
@@ -240,7 +302,7 @@ export const BatchTranslationModal: React.FC<BatchModalProps> = ({
 
 // Edit Modal
 interface EditModalProps extends BaseModalProps {
-  form: any;
+  form: FormInstance;
   onOk: () => void;
 }
 
@@ -251,14 +313,15 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
   form,
   languages,
 }) => {
+  const { t } = useTranslation();
   return (
     <Modal
-      title="编辑翻译"
+      title={t("translation.modal.edit.title")}
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
-      okText="更新"
-      cancelText="取消"
+      okText={t("translation.modal.common.update")}
+      cancelText={t("translation.modal.common.cancel")}
       maskClosable={false}
     >
       <Form form={form} layout="vertical" name="editTranslationForm">
@@ -280,8 +343,13 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
           />
         </Form.Item>
 
-        <Form.Item name="context" label="上下文说明">
-          <Input placeholder="请输入上下文说明（可选）" />
+        <Form.Item
+          name="context"
+          label={t("translation.modal.edit.context.label")}
+        >
+          <Input
+            placeholder={t("translation.modal.edit.context.placeholder")}
+          />
         </Form.Item>
 
         <Form.Item
@@ -308,10 +376,16 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
   onCancel,
   onImport,
 }) => {
+  const { t } = useTranslation();
   return (
-    <Modal title="导入翻译" open={visible} onCancel={onCancel} footer={null}>
+    <Modal
+      title={t("translation.modal.import.jsonTitle")}
+      open={visible}
+      onCancel={onCancel}
+      footer={null}
+    >
       <div className="p-4">
-        <p className="mb-4">请选择JSON格式的翻译文件导入，文件格式应为：</p>
+        <p className="mb-4">{t("translation.modal.import.json.format")}</p>
         <pre className="bg-gray-100 p-3 rounded mb-4 text-sm">
           {`{
   "en": {
@@ -335,8 +409,12 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
           <p className="ant-upload-drag-icon">
             <UploadOutlined />
           </p>
-          <p className="ant-upload-text">点击或拖拽文件到此区域上传</p>
-          <p className="ant-upload-hint">支持单个JSON文件上传</p>
+          <p className="ant-upload-text">
+            {t("translation.modal.import.json.uploadText")}
+          </p>
+          <p className="ant-upload-hint">
+            {t("translation.modal.import.json.uploadHint")}
+          </p>
         </Dragger>
       </div>
     </Modal>
@@ -367,21 +445,24 @@ export const ExcelImportModal: React.FC<ExcelModalProps> = ({
   languages,
   loading,
 }) => {
+  const { t } = useTranslation();
   return (
     <Modal
-      title="Excel翻译导入"
+      title={t("translation.modal.import.excelTitle")}
       open={visible}
       onOk={onOk}
       onCancel={onCancel}
       width={900}
-      okText="导入"
-      cancelText="取消"
+      okText={t("translation.modal.common.save")}
+      cancelText={t("translation.modal.common.cancel")}
       confirmLoading={loading}
     >
       <div className="mb-4">
-        <div className="mb-2 font-medium">Excel列与语言映射</div>
+        <div className="mb-2 font-medium">
+          {t("translation.modal.import.excel.mapping.title")}
+        </div>
         <div className="text-gray-500 mb-4">
-          请指定Excel中各列对应的语言，只有映射了语言的列才会被导入
+          {t("translation.modal.import.excel.mapping.description")}
         </div>
 
         <div className="grid grid-cols-3 gap-4">
@@ -407,13 +488,15 @@ export const ExcelImportModal: React.FC<ExcelModalProps> = ({
       </div>
 
       <div className="mt-6">
-        <div className="mb-2 font-medium">预览数据</div>
+        <div className="mb-2 font-medium">
+          {t("translation.modal.import.excel.preview.title")}
+        </div>
         <div className="text-gray-500 mb-4">
-          显示前10行数据用于预览，实际导入会处理所有数据
+          {t("translation.modal.import.excel.preview.description")}
         </div>
 
         <Table
-          columns={excelPreviewColumns as any}
+          columns={excelPreviewColumns as unknown as ColumnsType<ExcelData>}
           dataSource={excelPreviewData.slice(0, 10)}
           bordered
           size="small"
@@ -422,7 +505,9 @@ export const ExcelImportModal: React.FC<ExcelModalProps> = ({
         />
 
         <div className="mt-2 text-gray-500">
-          总计 {excelPreviewData.length} 行数据
+          {t("translation.modal.import.excel.preview.total", {
+            count: excelPreviewData.length,
+          })}
         </div>
       </div>
     </Modal>

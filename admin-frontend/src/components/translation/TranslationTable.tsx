@@ -3,6 +3,7 @@ import { Table, PaginationProps } from "antd";
 import { TranslationResponse, Language } from "../../types/translation";
 import { ColumnsType } from "antd/es/table";
 import { AnyObject } from "antd/es/_util/type";
+import { useTranslation } from "react-i18next";
 
 interface TranslationLanguageInfo {
   id: number;
@@ -51,6 +52,8 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
   onRowSelectionChange,
   visibleLanguages,
 }) => {
+  const { t } = useTranslation();
+
   // 根据可见语言过滤列
   const filteredColumns = visibleLanguages
     ? columns.filter((col) => {
@@ -69,7 +72,7 @@ const TranslationTable: React.FC<TranslationTableProps> = ({
         rowKey="key_name"
         pagination={{
           ...pagination,
-          showTotal: (total) => `Total ${total} records`,
+          showTotal: (total) => t("translation.table.total", { count: total }),
         }}
         onChange={onTableChange}
         scroll={{ x: "max-content" }}

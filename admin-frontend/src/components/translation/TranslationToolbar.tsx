@@ -20,6 +20,7 @@ import { Project } from "../../types/project";
 import { Language } from "../../types/translation";
 import ColumnSelector from "./ColumnSelector";
 import debounce from "lodash/debounce";
+import { useTranslation } from "react-i18next";
 
 interface TranslationToolbarProps {
   projects: Project[];
@@ -61,6 +62,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   onColumnSelectionChange,
 }) => {
   const [localKeyword, setLocalKeyword] = useState(keyword);
+  const { t } = useTranslation();
 
   useEffect(() => {
     setLocalKeyword(keyword);
@@ -94,11 +96,11 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   return (
     <>
       <div className="mb-6 flex justify-between items-center">
-        <h3 className="text-xl font-bold m-0">Translation Management</h3>
+        <h3 className="text-xl font-bold m-0">{t("translation.title")}</h3>
         <div>
           <Select
             style={{ width: 200, marginRight: 16 }}
-            placeholder="Please select a project"
+            placeholder={t("translation.toolbar.selectProject")}
             value={selectedProject}
             onChange={handleProjectSelect}
             options={projects.map((project) => ({
@@ -107,7 +109,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
             }))}
           />
           <Input
-            placeholder="Search key name or translation value"
+            placeholder={t("translation.toolbar.searchPlaceholder")}
             value={localKeyword}
             onChange={handleInputChange}
             prefix={<SearchOutlined />}
@@ -123,7 +125,9 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
         <div className="flex flex-wrap gap-2 items-center">
           {selectedTranslations.length > 0 && (
             <Popconfirm
-              title={`Are you sure you want to delete the selected ${selectedTranslations.length} translations?`}
+              title={`${t("translation.toolbar.batchDelete")} ${
+                selectedTranslations.length
+              }?`}
               onConfirm={onBatchDelete}
               okText="Yes"
               cancelText="Cancel"
@@ -134,7 +138,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
                 icon={<DeleteOutlined />}
                 loading={batchDeleteLoading}
               >
-                Batch delete
+                {t("translation.toolbar.batchDelete")}
               </Button>
             </Popconfirm>
           )}
@@ -151,30 +155,30 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
               icon={<PlusOutlined />}
               onClick={() => {
                 if (!selectedProject) {
-                  message.warning("Please select a project");
+                  message.warning(t("translation.message.selectProject"));
                   return;
                 }
                 onAddTranslation();
               }}
             >
-              Add translation
+              {t("translation.toolbar.addTranslation")}
             </Button>
 
             <Button
               icon={<PlusOutlined />}
               onClick={() => {
                 if (!selectedProject) {
-                  message.warning("Please select a project");
+                  message.warning(t("translation.message.selectProject"));
                   return;
                 }
                 onBatchAddTranslation();
               }}
             >
-              Batch add
+              {t("translation.toolbar.batchAdd")}
             </Button>
 
             <Button icon={<ImportOutlined />} onClick={onImportJsonClick}>
-              Import JSON
+              {t("translation.toolbar.import.json")}
             </Button>
 
             <Upload
@@ -182,11 +186,13 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
               showUploadList={false}
               accept=".xlsx,.xls"
             >
-              <Button icon={<FileExcelOutlined />}>Import Excel</Button>
+              <Button icon={<FileExcelOutlined />}>
+                {t("translation.toolbar.import.excel")}
+              </Button>
             </Upload>
 
             <Button icon={<ExportOutlined />} onClick={onExportClick}>
-              Export
+              {t("translation.toolbar.export")}
             </Button>
           </Space>
         </div>
