@@ -1,0 +1,482 @@
+{
+  "en": {
+    "login": {
+      "title": "i18n-flow",
+      "subtitle": "Translation Management System",
+      "secureLogin": "Secure Login",
+      "username": {
+        "placeholder": "Username",
+        "required": "Please enter your username!"
+      },
+      "password": {
+        "placeholder": "Password",
+        "required": "Please enter your password!"
+      },
+      "rememberMe": "Remember me",
+      "signIn": "Sign In",
+      "loggingIn": "Logging in...",
+      "success": "Login successful",
+      "error": "Invalid username or password, please try again",
+      "copyright": "© {{year}} i18n-flow. All rights reserved."
+    },
+    "dashboard": {
+      "title": "Dashboard",
+      "welcome": "Welcome to i18n-flow management system!",
+      "stats": {
+        "projectCount": "Project Count",
+        "translationCount": "Translation Key Count",
+        "languageCount": "Language Count",
+        "userCount": "User Count"
+      }
+    },
+    "layout": {
+      "menu": {
+        "dashboard": "Dashboard",
+        "projectManagement": "Project Management",
+        "translationManagement": "Translation Management"
+      },
+      "user": {
+        "profile": "Profile",
+        "logout": "Logout",
+        "role": "Admin"
+      }
+    },
+    "project": {
+      "title": "Project Management",
+      "search": "Search projects",
+      "create": "Create Project",
+      "edit": "Edit Project",
+      "delete": {
+        "title": "Are you sure you want to delete this project?",
+        "description": "This action cannot be undone!",
+        "confirm": "Yes",
+        "cancel": "Cancel"
+      },
+      "form": {
+        "name": {
+          "label": "Project Name",
+          "placeholder": "Please enter project name",
+          "required": "Please enter project name"
+        },
+        "description": {
+          "label": "Project Description",
+          "placeholder": "Please enter project description"
+        },
+        "slug": {
+          "label": "Project Slug",
+          "placeholder": "For example: my-project",
+          "help": "For URL-friendly identifier, leave blank to generate automatically based on project name"
+        }
+      },
+      "table": {
+        "id": "ID",
+        "name": "Project Name",
+        "slug": "Project Slug",
+        "description": "Description",
+        "statusTitle": "Status",
+        "createdAt": "Created At",
+        "action": "Action",
+        "total": "Total {{count}} records",
+        "status": {
+          "active": "Active",
+          "archived": "Archived"
+        }
+      },
+      "message": {
+        "updateSuccess": "Project updated successfully",
+        "createSuccess": "Project created successfully",
+        "deleteSuccess": "Project deleted successfully",
+        "saveFailed": "Save project failed",
+        "deleteFailed": "Delete project failed",
+        "getDetailsFailed": "Get project details failed",
+        "getListFailed": "Get project list failed"
+      },
+      "detail": {
+        "title": "Project Details",
+        "close": "Close",
+        "editButton": "Edit project",
+        "noDescription": "No description",
+        "fields": {
+          "id": "Project ID",
+          "name": "Project Name",
+          "slug": "Project Slug",
+          "description": "Project Description",
+          "status": "Status",
+          "createdAt": "Created at",
+          "updatedAt": "Updated at"
+        }
+      }
+    },
+    "translation": {
+      "title": "Translation Management",
+      "toolbar": {
+        "selectProject": "Select Project",
+        "searchPlaceholder": "Search translations",
+        "addTranslation": "Add Translation",
+        "batchAdd": "Batch Add",
+        "import": {
+          "json": "Import JSON",
+          "excel": "Import Excel",
+          "uploadJson": "Click or drag JSON file to upload",
+          "uploadExcel": "Click or drag Excel file to upload"
+        },
+        "export": "Export",
+        "batchDelete": "Batch Delete",
+        "languageColumns": "Language Columns"
+      },
+      "modal": {
+        "create": {
+          "title": "Create Translation",
+          "keyName": "Key Name",
+          "keyNameRequired": "Please enter key name",
+          "context": "Context",
+          "contextPlaceholder": "Enter context (optional)",
+          "language": "Language",
+          "languageRequired": "Please select language",
+          "content": "Content",
+          "contentRequired": "Please enter content"
+        },
+        "batch": {
+          "title": "Batch Add Translation",
+          "keyName": "Key Name",
+          "keyNameRequired": "Please enter key name",
+          "context": "Context",
+          "contextPlaceholder": "Enter context (optional)",
+          "title2": "Batch Add/Update Translations",
+          "valuesSection": {
+            "title": "Translation Values for Each Language",
+            "description": "Existing translations have been automatically filled, you can modify or supplement translations for other languages"
+          },
+          "language": {
+            "default": "(Default language)",
+            "existing": "Existing translation",
+            "placeholder": "Please enter the translation value for {{name}}",
+            "optional": "(Optional)",
+            "hasValue": "(Existing translation)"
+          }
+        },
+        "edit": {
+          "title": "Edit Translation",
+          "context": {
+            "label": "Context Description",
+            "placeholder": "Please enter context description (optional)"
+          }
+        },
+        "import": {
+          "jsonTitle": "Import JSON Translation",
+          "excelTitle": "Import Excel Translation",
+          "preview": "Preview Data",
+          "mapping": "Language Mapping",
+          "selectLanguage": "Select Language",
+          "columnName": "Column Name",
+          "mappedLanguage": "Mapped Language",
+          "json": {
+            "format": "Please select a JSON format translation file to import, the file format should be:",
+            "uploadText": "Click or drag file to upload",
+            "uploadHint": "Support single JSON file upload"
+          },
+          "excel": {
+            "mapping": {
+              "title": "Excel Column and Language Mapping",
+              "description": "Please specify the language corresponding to each column in Excel, only mapped columns will be imported",
+              "columnMap": "Column maps to:"
+            },
+            "preview": {
+              "title": "Preview Data",
+              "description": "Showing first 10 rows for preview, actual import will process all data",
+              "total": "Total {{count}} rows of data"
+            }
+          }
+        },
+        "common": {
+          "keyName": {
+            "label": "Key Name",
+            "placeholder": "Please enter the key name",
+            "required": "Please enter the key name"
+          },
+          "context": {
+            "label": "Context",
+            "placeholder": "Please enter the context (optional)"
+          },
+          "language": {
+            "label": "Language",
+            "placeholder": "Please select a language",
+            "required": "Please select a language",
+            "format": "{{name}} [{{code}}]"
+          }
+        }
+      },
+      "table": {
+        "keyName": "Key Name",
+        "context": "Context",
+        "action": "Action",
+        "noData": "No translations data",
+        "loading": "Loading...",
+        "total": "Total {{count}} records",
+        "hasContext": "Has context",
+        "defaultLanguage": "Default",
+        "addTranslation": "Add translation",
+        "delete": {
+          "title": "Are you sure you want to delete this translation?",
+          "confirm": "Yes",
+          "cancel": "Cancel"
+        }
+      },
+      "message": {
+        "selectProject": "Please select a project first",
+        "addLanguage": "Please add at least one language translation",
+        "importSuccess": "Import successful",
+        "importFailed": "Import failed: {{error}}",
+        "deleteSuccess": "Delete successful",
+        "deleteFailed": "Delete failed",
+        "createSuccess": "Create successful",
+        "createFailed": "Create failed",
+        "updateSuccess": "Update successful",
+        "updateFailed": "Update failed",
+        "batchSuccess": "Batch operation successful",
+        "batchFailed": "Batch operation failed"
+      }
+    }
+  },
+  "zh-CN": {
+    "login": {
+      "title": "i18n-flow",
+      "subtitle": "翻译管理系统",
+      "secureLogin": "安全登录",
+      "username": {
+        "placeholder": "用户名",
+        "required": "请输入用户名！"
+      },
+      "password": {
+        "placeholder": "密码",
+        "required": "请输入密码！"
+      },
+      "rememberMe": "记住我",
+      "signIn": "登录",
+      "loggingIn": "登录中...",
+      "success": "登录成功",
+      "error": "用户名或密码错误，请重试",
+      "copyright": "© {{year}} i18n-flow. 保留所有权利。"
+    },
+    "dashboard": {
+      "title": "仪表盘",
+      "welcome": "欢迎使用 i18n-flow 管理系统！",
+      "stats": {
+        "projectCount": "项目数量",
+        "translationCount": "翻译键数量",
+        "languageCount": "语言数量",
+        "userCount": "用户数量"
+      }
+    },
+    "layout": {
+      "menu": {
+        "dashboard": "仪表盘",
+        "projectManagement": "项目管理",
+        "translationManagement": "翻译管理"
+      },
+      "user": {
+        "profile": "个人信息",
+        "logout": "退出登录",
+        "role": "管理员"
+      }
+    },
+    "project": {
+      "title": "项目管理",
+      "search": "搜索项目",
+      "create": "创建项目",
+      "edit": "编辑项目",
+      "delete": {
+        "title": "确定要删除这个项目吗？",
+        "description": "此操作无法撤销！",
+        "confirm": "确定",
+        "cancel": "取消"
+      },
+      "form": {
+        "name": {
+          "label": "项目名称",
+          "placeholder": "请输入项目名称",
+          "required": "请输入项目名称"
+        },
+        "description": {
+          "label": "项目描述",
+          "placeholder": "请输入项目描述"
+        },
+        "slug": {
+          "label": "项目标识",
+          "placeholder": "例如：my-project",
+          "help": "用于URL友好的标识符，留空将根据项目名称自动生成"
+        }
+      },
+      "table": {
+        "id": "ID",
+        "name": "项目名称",
+        "slug": "项目标识",
+        "description": "描述",
+        "statusTitle": "状态",
+        "createdAt": "创建时间",
+        "action": "操作",
+        "total": "共 {{count}} 条记录",
+        "status": {
+          "active": "活跃",
+          "archived": "已归档"
+        }
+      },
+      "message": {
+        "updateSuccess": "项目更新成功",
+        "createSuccess": "项目创建成功",
+        "deleteSuccess": "项目删除成功",
+        "saveFailed": "保存项目失败",
+        "deleteFailed": "删除项目失败",
+        "getDetailsFailed": "获取项目详情失败",
+        "getListFailed": "获取项目列表失败"
+      },
+      "detail": {
+        "title": "项目详情",
+        "close": "关闭",
+        "editButton": "编辑项目",
+        "noDescription": "暂无描述",
+        "fields": {
+          "id": "项目ID",
+          "name": "项目名称",
+          "slug": "项目标识",
+          "description": "项目描述",
+          "status": "状态",
+          "createdAt": "创建时间",
+          "updatedAt": "更新时间"
+        }
+      }
+    },
+    "translation": {
+      "title": "翻译管理",
+      "toolbar": {
+        "selectProject": "选择项目",
+        "searchPlaceholder": "搜索翻译",
+        "addTranslation": "添加翻译",
+        "batchAdd": "批量添加",
+        "import": {
+          "json": "导入JSON",
+          "excel": "导入Excel",
+          "uploadJson": "点击或拖拽JSON文件上传",
+          "uploadExcel": "点击或拖拽Excel文件上传"
+        },
+        "export": "导出",
+        "batchDelete": "批量删除",
+        "languageColumns": "语言列"
+      },
+      "modal": {
+        "create": {
+          "title": "创建翻译",
+          "keyName": "键名",
+          "keyNameRequired": "请输入键名",
+          "context": "上下文",
+          "contextPlaceholder": "输入上下文（可选）",
+          "language": "语言",
+          "languageRequired": "请选择语言",
+          "content": "内容",
+          "contentRequired": "请输入内容"
+        },
+        "common": {
+          "save": "保存",
+          "cancel": "取消",
+          "create": "创建",
+          "update": "更新",
+          "project": {
+            "label": "项目",
+            "placeholder": "请选择项目",
+            "required": "请选择项目"
+          },
+          "value": {
+            "label": "翻译值",
+            "placeholder": "请输入翻译值",
+            "required": "请输入翻译值"
+          },
+          "keyName": {
+            "label": "键名",
+            "placeholder": "请输入键名",
+            "required": "请输入键名"
+          },
+          "context": {
+            "label": "上下文",
+            "placeholder": "请输入上下文（可选）"
+          },
+          "language": {
+            "label": "语言",
+            "placeholder": "请选择语言",
+            "required": "请选择语言",
+            "format": "{{name}} [{{code}}]"
+          }
+        },
+        "batch": {
+          "title2": "批量添加/更新翻译",
+          "valuesSection": {
+            "title": "各语言翻译值",
+            "description": "已自动填充现有翻译，您可以修改或补充其他语言的翻译"
+          },
+          "language": {
+            "default": "（默认语言）",
+            "existing": "已有翻译",
+            "placeholder": "请输入 {{name}} 的翻译值",
+            "optional": "（可选）",
+            "hasValue": "（已有翻译）"
+          }
+        },
+        "edit": {
+          "title": "编辑翻译",
+          "context": {
+            "label": "上下文说明",
+            "placeholder": "请输入上下文说明（可选）"
+          }
+        },
+        "import": {
+          "json": {
+            "format": "请选择JSON格式的翻译文件导入，文件格式应为：",
+            "uploadText": "点击或拖拽文件到此区域上传",
+            "uploadHint": "支持单个JSON文件上传"
+          },
+          "excel": {
+            "mapping": {
+              "title": "Excel列与语言映射",
+              "description": "请指定Excel中各列对应的语言，只有映射了语言的列才会被导入",
+              "columnMap": "列对应："
+            },
+            "preview": {
+              "title": "预览数据",
+              "description": "显示前10行数据用于预览，实际导入会处理所有数据",
+              "total": "总计 {{count}} 行数据"
+            }
+          }
+        }
+      },
+      "table": {
+        "keyName": "键名",
+        "context": "上下文",
+        "action": "操作",
+        "noData": "暂无翻译数据",
+        "loading": "加载中...",
+        "total": "共 {{count}} 条记录",
+        "hasContext": "有上下文",
+        "defaultLanguage": "默认",
+        "addTranslation": "添加翻译",
+        "delete": {
+          "title": "确定要删除这条翻译吗？",
+          "confirm": "确定",
+          "cancel": "取消"
+        }
+      },
+      "message": {
+        "selectProject": "请先选择项目",
+        "addLanguage": "请至少添加一种语言翻译",
+        "importSuccess": "导入成功",
+        "importFailed": "导入失败：{{error}}",
+        "deleteSuccess": "删除成功",
+        "deleteFailed": "删除失败",
+        "createSuccess": "创建成功",
+        "createFailed": "创建失败",
+        "updateSuccess": "更新成功",
+        "updateFailed": "更新失败",
+        "batchSuccess": "批量操作成功",
+        "batchFailed": "批量操作失败"
+      }
+    }
+  }
+}

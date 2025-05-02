@@ -2,13 +2,13 @@ import React, { useState } from "react";
 import { Form, Input, Button, Card, message, Divider, Checkbox } from "antd";
 import { UserOutlined, LockOutlined, KeyOutlined } from "@ant-design/icons";
 import { useNavigate } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuthStore } from "../stores/authStore";
 import { useTranslation } from "react-i18next";
 import LanguageSelector from "../components/LanguageSelector";
 
 const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
-  const { login } = useAuth();
+  const { login } = useAuthStore();
   const navigate = useNavigate();
   const { t } = useTranslation();
 

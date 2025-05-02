@@ -135,22 +135,6 @@
         "content": "内容",
         "contentRequired": "请输入内容"
       },
-      "batch": {
-        "title": "批量添加翻译",
-        "keyName": "键名",
-        "keyNameRequired": "请输入键名",
-        "context": "上下文",
-        "contextPlaceholder": "输入上下文（可选）"
-      },
-      "import": {
-        "jsonTitle": "导入JSON翻译",
-        "excelTitle": "导入Excel翻译",
-        "preview": "预览数据",
-        "mapping": "语言映射",
-        "selectLanguage": "选择语言",
-        "columnName": "列名",
-        "mappedLanguage": "映射语言"
-      },
       "common": {
         "save": "保存",
         "cancel": "取消",

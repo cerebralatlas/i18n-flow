@@ -367,7 +367,7 @@ export const EditTranslationModal: React.FC<EditModalProps> = ({
 interface JSONImportModalProps {
   visible: boolean;
   onCancel: () => void;
-  onImport: (file: File) => boolean;
+  onImport: (file: File) => void;
 }
 
 // 导入json的modal
@@ -377,6 +377,12 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
   onImport,
 }) => {
   const { t } = useTranslation();
+
+  const handleUpload = (file: File) => {
+    onImport(file);
+    return false; // 阻止自动上传
+  };
+
   return (
     <Modal
       title={t("translation.modal.import.jsonTitle")}
@@ -389,12 +395,16 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
         <pre className="bg-gray-100 p-3 rounded mb-4 text-sm">
           {`{
   "en": {
-    "welcome": "Welcome",
-    "hello": "Hello"
+    "common.welcome": "Welcome",
+    "common.hello": "Hello",
+    "nav.home": "Home",
+    "nav.about": "About"
   },
   "zh-CN": {
-    "welcome": "欢迎",
-    "hello": "你好"
+    "common.welcome": "欢迎",
+    "common.hello": "你好",
+    "nav.home": "首页",
+    "nav.about": "关于"
   }
 }`}
         </pre>
@@ -403,7 +413,7 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
           name="file"
           multiple={false}
           accept=".json"
-          beforeUpload={(file) => onImport(file)}
+          beforeUpload={handleUpload}
           showUploadList={false}
         >
           <p className="ant-upload-drag-icon">

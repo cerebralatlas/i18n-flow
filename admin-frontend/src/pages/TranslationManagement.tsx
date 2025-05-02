@@ -23,6 +23,7 @@ import {
   loadSelectedColumns,
   saveSelectedColumns,
 } from "../utils/localStorage";
+import { processTranslationJSON } from "../utils/jsonFlattener";
 
 // Types
 import {
@@ -278,10 +279,10 @@ const TranslationManagement: React.FC = () => {
   };
 
   // 导入翻译
-  const handleImportTranslations = (file: File) => {
+  const handleImportTranslations = async (file: File) => {
     if (!selectedProject) {
       message.warning(t("translation.message.selectProject"));
-      return false;
+      return;
     }
 
     try {
@@ -289,30 +290,36 @@ const TranslationManagement: React.FC = () => {
       reader.onload = async (e) => {
         try {
           const content = e.target?.result as string;
-          const data = JSON.parse(content) as Record<
-            string,
-            Record<string, string>
-          >;
+          const jsonData = JSON.parse(content);
 
-          const success = await importTranslationsFromJson(data);
+          // 使用 processTranslationJSON 处理嵌套的 JSON 数据
+          const processedData = processTranslationJSON(jsonData);
+
+          const success = await importTranslationsFromJson(processedData);
           if (success) {
             setImportModalVisible(false);
+            message.success(t("translation.message.importSuccess"));
+            // 刷新翻译列表
+            await fetchTranslations();
           }
         } catch (error) {
-          console.error("Import failed: File format error", error);
+          console.error("Import failed:", error);
           message.error(
             t("translation.message.importFailed", {
-              error: "File format error",
+              error:
+                error instanceof Error ? error.message : "Invalid JSON format",
             })
           );
         }
       };
       reader.readAsText(file);
-      return false; // 阻止默认上传行为
     } catch (error) {
       console.error("Import translations failed:", error);
-      message.error("Import translations failed");
-      return false;
+      message.error(
+        t("translation.message.importFailed", {
+          error: "File reading failed",
+        })
+      );
     }
   };
 
@@ -359,7 +366,7 @@ const TranslationManagement: React.FC = () => {
     }
 
     if (Object.keys(selectedLanguages).length === 0) {
-      message.warning("Please select at least one language mapping");
+      message.warning(t("translation.message.addLanguage"));
       return;
     }
 
@@ -369,16 +376,23 @@ const TranslationManagement: React.FC = () => {
       // Format Excel data for import
       const importData = formatExcelDataForImport(excelData, selectedLanguages);
 
-      // Call existing import API
-      const success = await importTranslationsFromJson(importData);
+      // 使用 processTranslationJSON 处理数据
+      const processedData = processTranslationJSON(importData);
+
+      // 调用导入 API
+      const success = await importTranslationsFromJson(processedData);
       if (success) {
         setExcelImportModalVisible(false);
+        message.success(t("translation.message.importSuccess"));
+        // 刷新翻译列表
+        await fetchTranslations();
       }
     } catch (error) {
       console.error("Import Excel translations failed:", error);
       message.error(
-        "Import Excel translations failed: " +
-          (error instanceof Error ? error.message : "Unknown error")
+        t("translation.message.importFailed", {
+          error: error instanceof Error ? error.message : "Unknown error",
+        })
       );
     } finally {
       setExcelImportLoading(false);
@@ -471,17 +485,6 @@ const TranslationManagement: React.FC = () => {
         translations={[]}
         paginatedMatrix={paginatedMatrix}
       />
-
-      {/* 编辑翻译弹窗 */}
-      {/* <EditTranslationModal
-        visible={editModalVisible}
-        onCancel={() => setEditModalVisible(false)}
-        onOk={handleEditTranslation}
-        form={editForm}
-        projects={projects}
-        languages={languages}
-        selectedProject={selectedProject}
-      /> */}
 
       {/* json导入翻译弹窗 */}
       <JSONImportTranslationModal

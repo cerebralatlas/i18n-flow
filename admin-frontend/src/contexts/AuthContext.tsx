@@ -5,7 +5,6 @@ import { message } from "antd";
 interface User {
   id: number;
   username: string;
-  // Other user attributes...
 }
 
 interface AuthContextType {
@@ -24,11 +23,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
-  // Add a method to check user authentication status
+  // 检查用户认证状态
   const checkAuthStatus = async () => {
     try {
       setLoading(true);
-      // Get token from localStorage
+      // 获取token
       const token = localStorage.getItem("authToken");
 
       if (!token) {
@@ -36,15 +35,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         return;
       }
 
-      // Set axios default request header with token
+      // 设置axios默认请求头
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
-      // Call API to validate current user
+      // 调用API验证当前用户
       const response = await axios.get("/api/user/info");
       setUser(response.data);
     } catch (error) {
       console.error("Validate user session failed:", error);
-      // Clear invalid token
+      // 清除无效token
       localStorage.removeItem("authToken");
       delete axios.defaults.headers.common["Authorization"];
     } finally {
@@ -52,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     }
   };
 
-  // Check authentication status when component mounts
+  // 组件挂载时检查认证状态
   useEffect(() => {
     checkAuthStatus();
   }, []);
@@ -65,10 +64,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       });
       const { token, user: userData } = response.data;
 
-      // Save token to localStorage
+      // 保存token到localStorage
       localStorage.setItem("authToken", token);
 
-      // Set axios default request header
+      // 设置axios默认请求头
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
       setUser(userData);
@@ -79,12 +78,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
   };
 
   const logout = () => {
-    // Clear authentication information in localStorage
+    // 清除认证信息
     localStorage.removeItem("authToken");
 
-    // Clear axios default request header
+    // 清除axios默认请求头
     delete axios.defaults.headers.common["Authorization"];
 
+    message.success("Logout successfully");
     setUser(null);
   };
 

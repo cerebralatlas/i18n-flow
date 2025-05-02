@@ -10,7 +10,7 @@ import {
   LogoutOutlined,
   GlobalOutlined,
 } from "@ant-design/icons";
-import { useAuth } from "../contexts/AuthContext";
+import { useAuthStore } from "../stores/authStore";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import LanguageSelector from "../components/LanguageSelector";
 import { useTranslation } from "react-i18next";
@@ -18,7 +18,7 @@ import { useTranslation } from "react-i18next";
 const { Header, Sider, Content } = Layout;
 
 const DashboardLayout: React.FC = () => {
-  const { user, logout } = useAuth();
+  const { user, logout } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
