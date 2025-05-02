@@ -1,11 +1,11 @@
-version: "3.8"
-
 services:
   # 数据库服务
   db:
     image: mysql:8.0
     container_name: i18n_flow_db
     restart: unless-stopped
+    env_file:
+      - .env
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD:-rootpassword}
       MYSQL_DATABASE: ${DB_NAME:-i18n_flow}
@@ -43,6 +43,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    env_file:
+      - .env
     environment:
       DB_USERNAME: ${DB_USERNAME:-i18nflow}
       DB_PASSWORD: ${DB_PASSWORD:-password}
@@ -68,6 +70,8 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    env_file:
+      - .env
     ports:
       - "80:80"
     networks:
