@@ -10,7 +10,7 @@ hero:
       link: /en/guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/your-username/i18n-flow
+      link: https://github.com/ilukemagic/i18n-flow
 
 features:
   - icon: 🚀
@@ -25,4 +25,10 @@ features:
   - icon: 🔐
     title: Access Control
     details: Role-based access control for different team members.
+  - icon: 🌐
+    title: Multilingual Support
+    details: Support for unlimited languages to meet global application needs.
+  - icon: 🛠️
+    title: Developer Tool Integration
+    details: CLI tools seamlessly integrate with development workflows, increasing productivity.
 ---

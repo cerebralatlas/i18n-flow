@@ -1,78 +1,78 @@
-# Backend API Reference
+# 后端 API 参考
 
-i18n Flow provides a complete RESTful API to interact with the system. This document details the available API endpoints, parameters, and response formats.
+i18n Flow 提供了一套完整的 RESTful API，用于与系统进行交互。本文档详细介绍了可用的 API 端点、参数和响应格式。
 
-## API Basics
+## API 基础
 
-### Base URL
+### 基本 URL
 
-The base URL for all API requests is:
+所有 API 请求的基本 URL 为：
 
 ```
 http://your-i18n-flow-server.com/api
 ```
 
-### Authentication
+### 认证
 
-The i18n Flow API supports two authentication methods:
+i18n Flow API 支持两种认证方式：
 
-1. **JWT Authentication**: For frontend user access
-2. **API Key Authentication**: For CLI tools and other automated integrations
+1. **JWT 认证**：用于前端管理界面
+2. **API 密钥认证**：用于 CLI 工具和其他自动化集成
 
-#### JWT Authentication
+#### JWT 认证
 
-For requests requiring user authentication, add the JWT token to the HTTP header:
+对于需要用户身份验证的请求，需要在 HTTP 头部添加 JWT 令牌：
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-#### API Key Authentication
+#### API 密钥认证
 
-For CLI tools and automated integrations, add the API key to the HTTP header:
+对于 CLI 工具和自动化集成，需要在 HTTP 头部添加 API 密钥：
 
 ```
 X-API-Key: <api-key>
 ```
 
-The API key is set in the backend `.env` file as `CLI_API_KEY`.
+API 密钥在后端 `.env` 文件中的 `CLI_API_KEY` 设置。
 
-### Response Format
+### 响应格式
 
-All API responses use JSON format and follow this structure:
+所有 API 响应都使用 JSON 格式，遵循以下结构：
 
-**Successful Response**:
+**成功响应**:
 
 ```json
 {
   "success": true,
   "data": {
-    // Response data
+    // 响应数据
   }
 }
 ```
 
-**Error Response**:
+**错误响应**:
 
 ```json
 {
   "success": false,
   "error": {
     "code": "ERROR_CODE",
-    "message": "Error description",
-    "details": {} // Optional additional error information
+    "message": "错误描述信息",
+    "details": {} // 可选的额外错误信息
   }
 }
 ```
 
-### Pagination
+### 分页
 
-Endpoints supporting pagination use the following query parameters:
+支持分页的端点使用以下查询参数：
 
-- `page`: Page number, defaults to 1
-- `limit`: Items per page, defaults to 20
+- `page`: 页码，默认为 1
+- `limit`: 每页项目数，默认为 20
 
-Paginated responses include the following metadata:
+分页响应包含以下元数据：
 
 ```json
 {
@@ -87,19 +87,19 @@ Paginated responses include the following metadata:
 }
 ```
 
-## Authentication API
+## 认证 API
 
-### Login
+### 登录
 
-Obtain a JWT token.
+获取 JWT 令牌。
 
-**Request**:
+**请求**:
 
 ```
 POST /login
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
@@ -108,7 +108,7 @@ POST /login
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -127,17 +127,17 @@ POST /login
 }
 ```
 
-### Refresh Token
+### 刷新令牌
 
-Use a refresh token to obtain a new JWT token.
+使用刷新令牌获取新的 JWT 令牌。
 
-**Request**:
+**请求**:
 
 ```
 POST /refresh
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
@@ -145,7 +145,7 @@ POST /refresh
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -158,23 +158,23 @@ POST /refresh
 }
 ```
 
-### Verify CLI API Key
+### 验证 CLI API 密钥
 
-Verify if a CLI API key is valid.
+验证 CLI API 密钥是否有效。
 
-**Request**:
+**请求**:
 
 ```
 GET /cli/auth
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 X-API-Key: your-api-key
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -185,43 +185,43 @@ X-API-Key: your-api-key
 }
 ```
 
-## Project API
+## 项目 API
 
-### Create Project
+### 创建项目
 
-Create a new project.
+创建新项目。
 
-**Request**:
+**请求**:
 
 ```
 POST /projects
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
-  "name": "My Project",
-  "description": "Project description",
+  "name": "我的项目",
+  "description": "项目描述",
   "slug": "my-project"
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "name": "My Project",
-    "description": "Project description",
+    "name": "我的项目",
+    "description": "项目描述",
     "slug": "my-project",
     "created_at": "2023-01-01T00:00:00Z",
     "updated_at": "2023-01-01T00:00:00Z"
@@ -229,23 +229,23 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Get Project List
+### 获取项目列表
 
-Get a list of all projects, with pagination.
+获取所有项目的列表，支持分页。
 
-**Request**:
+**请求**:
 
 ```
 GET /projects?page=1&limit=20
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -253,8 +253,8 @@ Authorization: Bearer <jwt-token>
   "data": [
     {
       "id": 1,
-      "name": "My Project",
-      "description": "Project description",
+      "name": "我的项目",
+      "description": "项目描述",
       "slug": "my-project",
       "created_at": "2023-01-01T00:00:00Z",
       "updated_at": "2023-01-01T00:00:00Z",
@@ -264,7 +264,7 @@ Authorization: Bearer <jwt-token>
         "completion": 75
       }
     }
-    // More projects...
+    // 更多项目...
   ],
   "meta": {
     "total": 10,
@@ -275,31 +275,31 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Get Project Details
+### 获取项目详情
 
-Get detailed information for a single project.
+获取单个项目的详细信息。
 
-**Request**:
+**请求**:
 
 ```
 GET /projects/detail/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "name": "My Project",
-    "description": "Project description",
+    "name": "我的项目",
+    "description": "项目描述",
     "slug": "my-project",
     "created_at": "2023-01-01T00:00:00Z",
     "updated_at": "2023-01-01T00:00:00Z",
@@ -317,14 +317,14 @@ Authorization: Bearer <jwt-token>
         },
         {
           "language_code": "zh-CN",
-          "language_name": "Simplified Chinese",
+          "language_name": "简体中文",
           "total_keys": 150,
           "translated_keys": 125,
           "completion": 83
         },
         {
           "language_code": "ja",
-          "language_name": "Japanese",
+          "language_name": "日本語",
           "total_keys": 150,
           "translated_keys": 75,
           "completion": 50
@@ -335,41 +335,41 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Update Project
+### 更新项目
 
-Update an existing project's information.
+更新现有项目的信息。
 
-**Request**:
+**请求**:
 
 ```
 PUT /projects/update/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
-  "name": "My Project (Updated)",
-  "description": "Updated project description",
+  "name": "我的项目（更新）",
+  "description": "更新后的项目描述",
   "slug": "my-project-updated"
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
     "id": 1,
-    "name": "My Project (Updated)",
-    "description": "Updated project description",
+    "name": "我的项目（更新）",
+    "description": "更新后的项目描述",
     "slug": "my-project-updated",
     "created_at": "2023-01-01T00:00:00Z",
     "updated_at": "2023-01-02T00:00:00Z"
@@ -377,52 +377,52 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Delete Project
+### 删除项目
 
-Delete a project and all its related data.
+删除项目及其所有相关数据。
 
-**Request**:
+**请求**:
 
 ```
 DELETE /projects/delete/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
-    "message": "Project successfully deleted"
+    "message": "项目已成功删除"
   }
 }
 ```
 
-## Language API
+## 语言 API
 
-### Get Language List
+### 获取语言列表
 
-Get a list of all supported languages.
+获取所有支持的语言列表。
 
-**Request**:
+**请求**:
 
 ```
 GET /languages
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -439,53 +439,53 @@ Authorization: Bearer <jwt-token>
     },
     {
       "id": 2,
-      "name": "Simplified Chinese",
+      "name": "简体中文",
       "code": "zh-CN",
       "locale": "zh-Hans",
       "is_rtl": false,
       "created_at": "2023-01-01T00:00:00Z",
       "updated_at": "2023-01-01T00:00:00Z"
     }
-    // More languages...
+    // 更多语言...
   ]
 }
 ```
 
-### Create Language
+### 创建语言
 
-Add a new supported language.
+添加新的支持语言。
 
-**Request**:
+**请求**:
 
 ```
 POST /languages
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
-  "name": "Spanish",
+  "name": "Español",
   "code": "es",
   "locale": "es-ES",
   "is_rtl": false
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
     "id": 3,
-    "name": "Spanish",
+    "name": "Español",
     "code": "es",
     "locale": "es-ES",
     "is_rtl": false,
@@ -495,40 +495,40 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Update Language
+### 更新语言
 
-Update an existing language's information.
+更新现有语言的信息。
 
-**Request**:
+**请求**:
 
 ```
 PUT /languages/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
-  "name": "Spanish (Spain)",
+  "name": "Español (España)",
   "locale": "es-ES",
   "is_rtl": false
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
     "id": 3,
-    "name": "Spanish (Spain)",
+    "name": "Español (España)",
     "code": "es",
     "locale": "es-ES",
     "is_rtl": false,
@@ -538,58 +538,58 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Delete Language
+### 删除语言
 
-Delete a language and all its related translations.
+删除语言及其所有相关翻译。
 
-**Request**:
+**请求**:
 
 ```
 DELETE /languages/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
-    "message": "Language successfully deleted"
+    "message": "语言已成功删除"
   }
 }
 ```
 
-## Translation API
+## 翻译 API
 
-### Create Translation
+### 创建翻译
 
-Add a new translation.
+添加新的翻译。
 
-**Request**:
+**请求**:
 
 ```
 POST /translations
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
   "project_id": 1,
   "key": "common.buttons.save",
-  "description": "Save button text",
+  "description": "保存按钮文本",
   "translations": [
     {
       "language_id": 1,
@@ -603,7 +603,7 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -611,7 +611,7 @@ Authorization: Bearer <jwt-token>
   "data": {
     "key_id": 1,
     "key": "common.buttons.save",
-    "description": "Save button text",
+    "description": "保存按钮文本",
     "project_id": 1,
     "translations": [
       {
@@ -633,23 +633,23 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Batch Create Translations
+### 批量创建翻译
 
-Batch add multiple translations.
+批量添加多个翻译。
 
-**Request**:
+**请求**:
 
 ```
 POST /translations/batch
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
@@ -657,7 +657,7 @@ Authorization: Bearer <jwt-token>
   "items": [
     {
       "key": "common.buttons.save",
-      "description": "Save button text",
+      "description": "保存按钮文本",
       "translations": [
         {
           "language_id": 1,
@@ -671,7 +671,7 @@ Authorization: Bearer <jwt-token>
     },
     {
       "key": "common.buttons.cancel",
-      "description": "Cancel button text",
+      "description": "取消按钮文本",
       "translations": [
         {
           "language_id": 1,
@@ -687,7 +687,7 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -712,23 +712,23 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Get Translations by Project
+### 按项目获取翻译
 
-Get all translations for a project.
+获取项目的所有翻译。
 
-**Request**:
+**请求**:
 
 ```
 GET /translations/by-project/:project_id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -737,7 +737,7 @@ Authorization: Bearer <jwt-token>
     {
       "key_id": 1,
       "key": "common.buttons.save",
-      "description": "Save button text",
+      "description": "保存按钮文本",
       "project_id": 1,
       "translations": [
         {
@@ -756,28 +756,28 @@ Authorization: Bearer <jwt-token>
       "created_at": "2023-01-05T00:00:00Z",
       "updated_at": "2023-01-05T00:00:00Z"
     }
-    // More translations...
+    // 更多翻译...
   ]
 }
 ```
 
-### Get Translation Matrix
+### 获取翻译矩阵
 
-Get a project's translation matrix (table view).
+获取项目的翻译矩阵（表格视图）。
 
-**Request**:
+**请求**:
 
 ```
 GET /translations/matrix/by-project/:project_id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -792,14 +792,14 @@ Authorization: Bearer <jwt-token>
       {
         "id": 2,
         "code": "zh-CN",
-        "name": "Simplified Chinese"
+        "name": "简体中文"
       }
     ],
     "keys": [
       {
         "id": 1,
         "key": "common.buttons.save",
-        "description": "Save button text",
+        "description": "保存按钮文本",
         "values": {
           "1": "Save",
           "2": "保存"
@@ -808,7 +808,7 @@ Authorization: Bearer <jwt-token>
       {
         "id": 2,
         "key": "common.buttons.cancel",
-        "description": "Cancel button text",
+        "description": "取消按钮文本",
         "values": {
           "1": "Cancel",
           "2": "取消"
@@ -819,31 +819,31 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
-### Update Translation
+### 更新翻译
 
-Update a translation value.
+更新翻译值。
 
-**Request**:
+**请求**:
 
 ```
 PUT /translations/:id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
-  "value": "Save Changes"
+  "value": "保存更改"
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -853,58 +853,58 @@ Authorization: Bearer <jwt-token>
     "language_id": 2,
     "language_code": "zh-CN",
     "key_id": 1,
-    "value": "Save Changes",
+    "value": "保存更改",
     "updated_at": "2023-01-06T00:00:00Z"
   }
 }
 ```
 
-### Delete Translation Key
+### 删除翻译键
 
-Delete a translation key and all its related translation values.
+删除翻译键及其所有相关翻译值。
 
-**Request**:
+**请求**:
 
 ```
 DELETE /translations/:key_id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
   "success": true,
   "data": {
-    "message": "Translation key successfully deleted"
+    "message": "翻译键已成功删除"
   }
 }
 ```
 
 ## CLI API
 
-### Get Translations (CLI)
+### 获取翻译（CLI）
 
-Get translations for a project, for CLI tool use.
+获取项目的翻译，供 CLI 工具使用。
 
-**Request**:
+**请求**:
 
 ```
 GET /cli/translations?project_id=my-project&locales=en,zh-CN
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 X-API-Key: your-api-key
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -912,7 +912,7 @@ X-API-Key: your-api-key
   "data": {
     "project": {
       "id": 1,
-      "name": "My Project",
+      "name": "我的项目",
       "slug": "my-project"
     },
     "languages": [
@@ -924,7 +924,7 @@ X-API-Key: your-api-key
       {
         "id": 2,
         "code": "zh-CN",
-        "name": "Simplified Chinese"
+        "name": "简体中文"
       }
     ],
     "translations": {
@@ -941,23 +941,23 @@ X-API-Key: your-api-key
 }
 ```
 
-### Push Translation Keys (CLI)
+### 推送翻译键（CLI）
 
-Push new translation keys from the CLI tool.
+从 CLI 工具推送新的翻译键。
 
-**Request**:
+**请求**:
 
 ```
 POST /cli/keys
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 X-API-Key: your-api-key
 ```
 
-**Request Body**:
+**请求体**:
 
 ```json
 {
@@ -970,7 +970,7 @@ X-API-Key: your-api-key
 }
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -997,53 +997,53 @@ X-API-Key: your-api-key
 }
 ```
 
-## Import/Export API
+## 导入/导出 API
 
-### Export Project Translations
+### 导出项目翻译
 
-Export translations for a project.
+导出项目的翻译。
 
-**Request**:
+**请求**:
 
 ```
 GET /exports/project/:project_id?format=json&locales=en,zh-CN
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
-File download, format depends on the `format` parameter (json, xlsx, csv).
+文件下载，格式取决于 `format` 参数（json、xlsx、csv）。
 
-### Import Project Translations
+### 导入项目翻译
 
-Import translations for a project.
+导入项目的翻译。
 
-**Request**:
+**请求**:
 
 ```
 POST /imports/project/:project_id
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 Content-Type: multipart/form-data
 ```
 
-**Request Parameters**:
+**请求参数**:
 
-- `file`: File to import
-- `format`: File format (json, xlsx, csv)
-- `locale`: Language code (only for single language imports)
-- `merge_strategy`: Merge strategy (overwrite, keep_existing)
+- `file`: 要导入的文件
+- `format`: 文件格式 (json、xlsx、csv)
+- `locale`: 语言代码 (仅用于单语言导入)
+- `merge_strategy`: 合并策略 (overwrite、keep_existing)
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -1058,25 +1058,25 @@ Content-Type: multipart/form-data
 }
 ```
 
-## Dashboard API
+## 仪表板 API
 
-### Get System Statistics
+### 获取系统统计信息
 
-Get system statistics for dashboard display.
+获取系统统计信息，用于仪表板显示。
 
-**Request**:
+**请求**:
 
 ```
 GET /dashboard/stats
 ```
 
-**Request Headers**:
+**请求头**:
 
 ```
 Authorization: Bearer <jwt-token>
 ```
 
-**Response**:
+**响应**:
 
 ```json
 {
@@ -1087,11 +1087,11 @@ Authorization: Bearer <jwt-token>
       "recent": [
         {
           "id": 1,
-          "name": "My Project",
+          "name": "我的项目",
           "slug": "my-project",
           "updated_at": "2023-01-06T00:00:00Z"
         }
-        // More projects...
+        // 更多项目...
       ]
     },
     "languages": {
@@ -1104,10 +1104,10 @@ Authorization: Bearer <jwt-token>
         },
         {
           "code": "zh-CN",
-          "name": "Simplified Chinese",
+          "name": "简体中文",
           "projects_count": 4
         }
-        // More languages...
+        // 更多语言...
       ]
     },
     "translations": {
@@ -1119,7 +1119,7 @@ Authorization: Bearer <jwt-token>
       {
         "type": "translation_update",
         "project_id": 1,
-        "project_name": "My Project",
+        "project_name": "我的项目",
         "user": "admin",
         "timestamp": "2023-01-06T12:30:00Z",
         "details": {
@@ -1127,42 +1127,42 @@ Authorization: Bearer <jwt-token>
           "language": "zh-CN"
         }
       }
-      // More activities...
+      // 更多活动...
     ]
   }
 }
 ```
 
-## Error Codes
+## 错误代码
 
-Here are common error codes that the system may return:
+以下是系统可能返回的常见错误代码：
 
-| Code                            | Description                        |
-| ------------------------------- | ---------------------------------- |
-| `AUTH_INVALID_CREDENTIALS`      | Invalid authentication credentials |
-| `AUTH_TOKEN_EXPIRED`            | Authentication token expired       |
-| `AUTH_TOKEN_INVALID`            | Invalid authentication token       |
-| `AUTH_INSUFFICIENT_PERMISSIONS` | Insufficient permissions           |
-| `RESOURCE_NOT_FOUND`            | Requested resource not found       |
-| `RESOURCE_ALREADY_EXISTS`       | Resource already exists            |
-| `VALIDATION_ERROR`              | Request data validation error      |
-| `SERVER_ERROR`                  | Server internal error              |
+| 代码                            | 描述             |
+| ------------------------------- | ---------------- |
+| `AUTH_INVALID_CREDENTIALS`      | 无效的认证凭据   |
+| `AUTH_TOKEN_EXPIRED`            | 认证令牌已过期   |
+| `AUTH_TOKEN_INVALID`            | 无效的认证令牌   |
+| `AUTH_INSUFFICIENT_PERMISSIONS` | 权限不足         |
+| `RESOURCE_NOT_FOUND`            | 请求的资源不存在 |
+| `RESOURCE_ALREADY_EXISTS`       | 资源已存在       |
+| `VALIDATION_ERROR`              | 请求数据验证错误 |
+| `SERVER_ERROR`                  | 服务器内部错误   |
 
-## Rate Limiting
+## 速率限制
 
-The API implements rate limiting to prevent abuse. Limits are as follows:
+API 实施速率限制以防止滥用。限制如下：
 
-- Authentication endpoints: 10 requests per minute per IP address
-- Other endpoints: 100 requests per minute per API key or user
+- 认证端点：每 IP 地址每分钟 10 次请求
+- 其他端点：每 API 密钥或用户每分钟 100 次请求
 
-Exceeding the limit will return HTTP status 429 with the following response:
+超过限制会返回 HTTP 429 状态码，并附带以下响应：
 
 ```json
 {
   "success": false,
   "error": {
     "code": "RATE_LIMIT_EXCEEDED",
-    "message": "Rate limit exceeded, please try again later",
+    "message": "已超过速率限制，请稍后再试",
     "details": {
       "retry_after": 30
     }
