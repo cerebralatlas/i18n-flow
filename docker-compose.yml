@@ -79,9 +79,32 @@ services:
     networks:
       - i18n_flow_network
 
+  # 文档网站服务
+  docs:
+    build:
+      context: ./i18n-flow-docs
+      dockerfile: Dockerfile
+    container_name: i18n_flow_docs
+    restart: unless-stopped
+    depends_on:
+      - frontend
+    ports:
+      - "8000:80" # 文档网站端口映射到主机的 8000 端口
+    volumes:
+      - docs_nginx_logs:/var/log/nginx
+    networks:
+      - i18n_flow_network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:80"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
 networks:
   i18n_flow_network:
     driver: bridge
 
 volumes:
   mysql_data:
+  docs_nginx_logs:

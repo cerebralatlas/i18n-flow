@@ -1,0 +1,25 @@
+# 开发环境文件
+node_modules
+.DS_Store
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vscode
+.idea
+
+# 构建输出
+docs/.vitepress/dist
+docs/.vitepress/cache
+
+# 本地环境文件
+.env
+.env.*
+!.env.example
+
+# 其他
+.git
+.github
+.gitignore
+README.md 

@@ -186,6 +186,24 @@ docker compose up -d --build
 
 ## 📚 Documentation
 
+### Documentation Site
+
+The i18n Flow documentation is available as a dedicated website:
+
+- **URL**: When deployed via Docker, access at `http://localhost:8000/en/`
+- **Languages**: Available in both English and Chinese
+- **Content**:
+  - Comprehensive guides for all components
+  - Installation and setup instructions
+  - Usage tutorials with practical examples
+  - API reference documentation
+  - Deployment guides
+
+Access specific language versions:
+
+- English: `http://localhost:8000/en/`
+- Chinese: `http://localhost:8000/zh/`
+
 ### API Documentation
 
 The API documentation is available via Swagger UI when running the backend server:

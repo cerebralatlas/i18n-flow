@@ -6,7 +6,7 @@ The i18n Flow admin interface is a modern frontend application developed with Re
 
 When you first access the i18n Flow admin interface, you need to log in:
 
-1. Visit the admin interface (default is http://localhost:5173 or your production deployment address)
+1. Visit the admin interface (default is <http://localhost:5173> or your production deployment address)
 2. Enter your username and password
    - Default admin account: `admin`
    - Default password: `admin123`
