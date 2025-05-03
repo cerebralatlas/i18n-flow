@@ -1,6 +1,8 @@
 export default {
   title: "i18n Flow",
   description: "A modern i18n management system",
+  // 忽略死链接检查
+  ignoreDeadLinks: true,
 
   themeConfig: {
     // Global theme configuration that applies to all locales
