@@ -1,5 +1,5 @@
 import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
-import { getConfig } from './config';
+import { getConfig, I18nFlowConfig } from './config';
 
 // API响应类型
 export interface ApiResponse<T> {
@@ -22,31 +22,20 @@ export interface KeysPushResponse {
   failed: string[];
 }
 
-// 创建API客户端
-function createApiClient(): AxiosInstance {
-  const config = getConfig();
-
-  return axios.create({
-    baseURL: `${config.serverUrl}/api`,
-    headers: {
-      'Content-Type': 'application/json',
-      'X-API-Key': config.apiKey
-    },
-    timeout: 30000
-  });
-}
 
 // API客户端类
 export class ApiClient {
-  private client: AxiosInstance;
+  private client!: AxiosInstance;
 
   constructor() {
     const config = getConfig();
-    console.log("Creating API client with config:", {
-      serverUrl: config.serverUrl,
-      apiKey: config.apiKey ? "***" + config.apiKey.slice(-4) : undefined
-    });
+    this.updateClient(config);
+  }
 
+  /**
+   * 更新API客户端
+   */
+  updateClient(config: I18nFlowConfig) {
     this.client = axios.create({
       baseURL: `${config.serverUrl}/api`,
       headers: {
@@ -60,8 +49,11 @@ export class ApiClient {
   /**
    * 测试API连接
    */
-  async testConnection(): Promise<boolean> {
+  async testConnection(config: I18nFlowConfig): Promise<boolean> {
     try {
+      if (config) {
+        this.updateClient(config);
+      }
       const response = await this.client.get('/cli/auth');
       return response.status === 200 && response.data.status === 'ok';
     } catch (error) {

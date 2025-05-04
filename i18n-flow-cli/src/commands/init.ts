@@ -32,7 +32,7 @@ export default function initCommand(program: Command): void {
         }
       }
 
-      // Get inputs from user
+      // 得到用户输入的配置
       const answers = await inquirer.prompt([
         {
           type: 'input',
@@ -66,14 +66,14 @@ export default function initCommand(program: Command): void {
         }
       ]);
 
-      // Test connection
       const spinner = ora('Testing server connection...').start();
 
       try {
-        // Temporarily save API key for testing
-        saveConfig({ apiKey: answers.apiKey, serverUrl: answers.serverUrl });
+        saveConfig({
+          ...answers
+        });
 
-        const connected = await apiClient.testConnection();
+        const connected = await apiClient.testConnection(answers);
 
         if (!connected) {
           spinner.fail('Could not connect to the server. Please check your API key and server URL.');
@@ -82,16 +82,7 @@ export default function initCommand(program: Command): void {
 
         spinner.succeed('Connected to the server successfully!');
 
-        // Save config
-        saveConfig({
-          serverUrl: answers.serverUrl,
-          apiKey: answers.apiKey,
-          projectId: answers.projectId,
-          localesDir: answers.localesDir,
-          defaultLocale: answers.defaultLocale
-        });
-
-        // Ensure locales directory exists
+        // 确保 locales 目录存在
         const localesPath = path.resolve(process.cwd(), answers.localesDir);
         fs.ensureDirSync(localesPath);
 
