@@ -2,6 +2,13 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.6](https://github.com/ilukemagic/i18n-flow/compare/v0.0.5...v0.0.6) (2025-05-04)
+
+
+### Features
+
+* Refactor API client initialization and connection testing to support dynamic configuration updates; enhance user input handling in init command with Chinese comments for better clarity. ([8c6528d](https://github.com/ilukemagic/i18n-flow/commit/8c6528d5b3b08e0b1d88219482d2ef29f1b10d46))
+
 ### [0.0.5](https://github.com/ilukemagic/i18n-flow/compare/v0.0.4...v0.0.5) (2025-05-04)
 
 ### 0.0.4 (2025-05-04)
