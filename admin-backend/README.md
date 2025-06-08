@@ -114,11 +114,17 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
    JWT_REFRESH_SECRET=your_secure_refresh_secret
    JWT_REFRESH_EXPIRATION_HOURS=168
    CLI_API_KEY=your_secure_api_key
+   ADMIN_NAME=your_name
+   ADMIN_PASSWORD=your_password
    ```
 
 4. Start the server:
 
    ```bash
+   air
+   
+   or
+
    go run main.go
    ```
 
@@ -134,8 +140,8 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 On first run, the system creates a default admin user:
 
-- Username: `admin`
-- Password: `admin123`
+- Username: your_username
+- Password: your_password
 
 It's highly recommended to change this password after the first login.
 

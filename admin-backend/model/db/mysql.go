@@ -5,6 +5,7 @@ import (
 	"i18n-flow/config"
 	"i18n-flow/model"
 	"log"
+	"os"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
@@ -40,10 +41,14 @@ func InitDB() {
 		log.Fatalf("自动迁移表结构失败: %v", err)
 	}
 
-	// 初始化管理员账户
-	createAdminUser()
+	initSeedData()
+}
 
-	// 初始化常见语言
+// 初始化数据
+func initSeedData() {
+	// 创建管理员用户
+	createAdminUser()
+	// 创建常见语言
 	createDefaultLanguages()
 }
 
@@ -53,14 +58,14 @@ func createAdminUser() {
 	DB.Model(&model.User{}).Count(&count)
 
 	if count == 0 {
-		password, err := bcrypt.GenerateFromPassword([]byte("admin123"), bcrypt.DefaultCost)
+		password, err := bcrypt.GenerateFromPassword([]byte(os.Getenv("ADMIN_PASSWORD")), bcrypt.DefaultCost)
 		if err != nil {
 			log.Printf("生成密码哈希失败: %v", err)
 			return
 		}
 
 		admin := model.User{
-			Username: "admin",
+			Username: os.Getenv("ADMIN_USERNAME"),
 			Password: string(password),
 		}
 
