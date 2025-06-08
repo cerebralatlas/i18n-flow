@@ -48,7 +48,7 @@ const docTemplate = `{
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     }
                 }
@@ -89,13 +89,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     }
                 }
@@ -139,13 +139,13 @@ const docTemplate = `{
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     }
                 }
@@ -179,7 +179,7 @@ const docTemplate = `{
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/controller.ErrorResponse"
+                            "$ref": "#/definitions/errors.Response"
                         }
                     }
                 }
@@ -1466,12 +1466,71 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "controller.ErrorResponse": {
+        "errors.ErrorCode": {
+            "type": "integer",
+            "enum": [
+                0,
+                1000,
+                1001,
+                1002,
+                1003,
+                1004,
+                1005,
+                2000,
+                2001,
+                2002,
+                2003,
+                2004,
+                3000,
+                3001,
+                3002,
+                3003,
+                3004,
+                3005,
+                3006,
+                4000,
+                4001,
+                4002,
+                5000
+            ],
+            "x-enum-varnames": [
+                "Success",
+                "InternalError",
+                "InvalidParams",
+                "NotFound",
+                "AlreadyExists",
+                "Forbidden",
+                "TooManyRequests",
+                "Unauthorized",
+                "InvalidToken",
+                "TokenExpired",
+                "InvalidAPIKey",
+                "LoginFailed",
+                "ProjectNotFound",
+                "ProjectExists",
+                "LanguageNotFound",
+                "LanguageExists",
+                "TranslationNotFound",
+                "UserNotFound",
+                "InvalidFileFormat",
+                "DatabaseError",
+                "TransactionError",
+                "ConnectionError",
+                "ExternalAPIError"
+            ]
+        },
+        "errors.Response": {
             "type": "object",
             "properties": {
-                "error": {
-                    "type": "string",
-                    "example": "错误信息"
+                "code": {
+                    "$ref": "#/definitions/errors.ErrorCode"
+                },
+                "data": {},
+                "details": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
                 }
             }
         },

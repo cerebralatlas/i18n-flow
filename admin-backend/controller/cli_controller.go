@@ -1,10 +1,10 @@
 package controller
 
 import (
+	"i18n-flow/config"
+	"i18n-flow/errors"
 	"i18n-flow/service"
 	"net/http"
-
-	"i18n-flow/config"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,8 +32,8 @@ func NewCLIController() *CLIController {
 // @Param project_id query int false "项目ID"
 // @Param locale query string false "语言代码"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 400 {object} errors.Response
+// @Failure 500 {object} errors.Response
 // @Router /cli/translations [get]
 func (cc *CLIController) GetAllTranslations(c *gin.Context) {
 	projectID := c.Query("project_id")
@@ -42,13 +42,11 @@ func (cc *CLIController) GetAllTranslations(c *gin.Context) {
 	// 调用 service 获取数据
 	translations, err := cc.translationService.GetTranslationsForCLI(projectID, locale)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error: "获取翻译数据失败: " + err.Error(),
-		})
+		errors.ErrorResponse(c, errors.NewDatabaseError(err).WithDetails("获取翻译数据失败"))
 		return
 	}
 
-	c.JSON(http.StatusOK, translations)
+	errors.SuccessResponse(c, translations)
 }
 
 // PushKeys 推送新的翻译键
@@ -59,27 +57,23 @@ func (cc *CLIController) GetAllTranslations(c *gin.Context) {
 // @Produce json
 // @Param request body service.KeysPushRequest true "键值请求"
 // @Success 200 {object} map[string]interface{}
-// @Failure 400 {object} ErrorResponse
-// @Failure 500 {object} ErrorResponse
+// @Failure 400 {object} errors.Response
+// @Failure 500 {object} errors.Response
 // @Router /cli/keys [post]
 func (cc *CLIController) PushKeys(c *gin.Context) {
 	var request service.KeysPushRequest
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, ErrorResponse{
-			Error: "无效的请求数据: " + err.Error(),
-		})
+		errors.ErrorResponse(c, errors.NewInvalidParamsError("无效的请求数据: "+err.Error()))
 		return
 	}
 
 	result, err := cc.translationService.PushKeysFromCLI(request)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, ErrorResponse{
-			Error: "推送键值失败: " + err.Error(),
-		})
+		errors.ErrorResponse(c, errors.NewDatabaseError(err).WithDetails("推送键值失败"))
 		return
 	}
 
-	c.JSON(http.StatusOK, result)
+	errors.SuccessResponse(c, result)
 }
 
 // CheckAPIKey 检查API Key是否有效
@@ -89,7 +83,7 @@ func (cc *CLIController) PushKeys(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Success 200 {object} map[string]interface{}
-// @Failure 401 {object} ErrorResponse
+// @Failure 401 {object} errors.Response
 // @Router /cli/auth [get]
 func (cc *CLIController) CheckAPIKey(c *gin.Context) {
 	// 从请求头中获取API Key

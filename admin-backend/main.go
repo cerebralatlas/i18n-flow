@@ -40,12 +40,30 @@ func main() {
 
 	router := gin.Default()
 
+	// 全局错误处理中间件
+	router.Use(middleware.ErrorHandlerMiddleware())
+
+	// 请求验证中间件
+	router.Use(middleware.RequestValidationMiddleware())
+
 	// 允许跨域请求
 	router.Use(middleware.CORSMiddleware())
+
+	// 404处理器
+	router.NoRoute(middleware.NotFoundHandler())
 
 	// 基本路由
 	router.GET("/", func(c *gin.Context) {
 		c.JSON(http.StatusOK, gin.H{"message": "Hello, World!"})
+	})
+
+	// 健康检查端点
+	router.GET("/health", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{
+			"status":  "ok",
+			"service": "i18n-flow",
+			"version": "1.0.0",
+		})
 	})
 
 	// Swagger 文档

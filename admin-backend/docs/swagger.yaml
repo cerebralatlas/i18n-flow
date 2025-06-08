@@ -1,9 +1,63 @@
 basePath: /api
 definitions:
-  controller.ErrorResponse:
+  errors.ErrorCode:
+    enum:
+    - 0
+    - 1000
+    - 1001
+    - 1002
+    - 1003
+    - 1004
+    - 1005
+    - 2000
+    - 2001
+    - 2002
+    - 2003
+    - 2004
+    - 3000
+    - 3001
+    - 3002
+    - 3003
+    - 3004
+    - 3005
+    - 3006
+    - 4000
+    - 4001
+    - 4002
+    - 5000
+    type: integer
+    x-enum-varnames:
+    - Success
+    - InternalError
+    - InvalidParams
+    - NotFound
+    - AlreadyExists
+    - Forbidden
+    - TooManyRequests
+    - Unauthorized
+    - InvalidToken
+    - TokenExpired
+    - InvalidAPIKey
+    - LoginFailed
+    - ProjectNotFound
+    - ProjectExists
+    - LanguageNotFound
+    - LanguageExists
+    - TranslationNotFound
+    - UserNotFound
+    - InvalidFileFormat
+    - DatabaseError
+    - TransactionError
+    - ConnectionError
+    - ExternalAPIError
+  errors.Response:
     properties:
-      error:
-        example: 错误信息
+      code:
+        $ref: '#/definitions/errors.ErrorCode'
+      data: {}
+      details:
+        type: string
+      message:
         type: string
     type: object
   model.User:
@@ -294,7 +348,7 @@ paths:
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
       summary: 检查API Key是否有效
       tags:
       - CLI
@@ -321,11 +375,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
       summary: 推送新的翻译键
       tags:
       - CLI
@@ -354,11 +408,11 @@ paths:
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
       summary: 获取所有翻译
       tags:
       - CLI
@@ -377,7 +431,7 @@ paths:
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/controller.ErrorResponse'
+            $ref: '#/definitions/errors.Response'
       security:
       - BearerAuth: []
       summary: 获取仪表板统计数据

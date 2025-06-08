@@ -1,8 +1,8 @@
 package middleware
 
 import (
+	"i18n-flow/errors"
 	"i18n-flow/service/auth"
-	"net/http"
 	"strings"
 
 	"github.com/gin-gonic/gin"
@@ -14,16 +14,14 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		// 从Authorization头获取token
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "未提供Authorization头"})
-			c.Abort()
+			errors.AbortWithError(c, errors.NewInvalidToken("未提供Authorization头"))
 			return
 		}
 
 		// Bearer token格式检查
 		parts := strings.SplitN(authHeader, " ", 2)
 		if !(len(parts) == 2 && parts[0] == "Bearer") {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Authorization格式错误，应为'Bearer token'"})
-			c.Abort()
+			errors.AbortWithError(c, errors.NewInvalidToken("Authorization格式错误，应为'Bearer token'"))
 			return
 		}
 
@@ -31,8 +29,11 @@ func JWTAuthMiddleware() gin.HandlerFunc {
 		tokenString := parts[1]
 		claims, err := auth.ValidateToken(tokenString)
 		if err != nil {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
-			c.Abort()
+			if strings.Contains(err.Error(), "expired") {
+				errors.AbortWithError(c, errors.NewAppError(errors.TokenExpired).WithError(err))
+			} else {
+				errors.AbortWithError(c, errors.NewInvalidToken(err.Error()))
+			}
 			return
 		}
 
