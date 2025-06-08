@@ -1,15 +1,19 @@
 package main
 
 import (
+	"i18n-flow/config"
 	"i18n-flow/controller"
 	"i18n-flow/docs" // 导入自动生成的 docs 包
 	"i18n-flow/middleware"
 	"i18n-flow/model/db"
+	"i18n-flow/utils"
 	"net/http"
+	"os"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 )
 
 // @title           i18n-flow API
@@ -32,13 +36,67 @@ import (
 // @name Authorization
 // @description 输入格式: Bearer {token}
 func main() {
+	// 获取配置
+	appConfig := config.GetConfig()
+
+	// 初始化多日志系统
+	env := os.Getenv("ENV")
+	if env == "" {
+		env = "development"
+	}
+
+	logConfig := utils.MultiLogConfig{
+		Level:         appConfig.Log.Level,
+		Format:        appConfig.Log.Format,
+		Output:        appConfig.Log.Output,
+		LogDir:        appConfig.Log.LogDir,
+		DateFormat:    appConfig.Log.DateFormat,
+		MaxSize:       appConfig.Log.MaxSize,
+		MaxAge:        appConfig.Log.MaxAge,
+		MaxBackups:    appConfig.Log.MaxBackups,
+		Compress:      appConfig.Log.Compress,
+		EnableConsole: appConfig.Log.EnableConsole,
+		LogTypes: map[string]string{
+			"access": "info",
+			"error":  "error",
+			"auth":   "info",
+			"db":     "warn",
+			"app":    appConfig.Log.Level,
+		},
+	}
+
+	if err := utils.InitMultiLogger(logConfig); err != nil {
+		panic("Failed to initialize multi-logger: " + err.Error())
+	}
+
+	// 确保程序退出时同步所有日志
+	defer utils.SyncAll()
+
+	utils.AppInfo("Application starting",
+		zap.String("version", "1.0.0"),
+		zap.String("environment", env),
+		zap.String("log_level", appConfig.Log.Level),
+		zap.String("log_dir", appConfig.Log.LogDir),
+	)
+
 	// 初始化数据库连接
+	utils.AppInfo("Initializing database connection")
 	db.InitDB()
 
 	// 初始化Swagger文档
 	docs.SwaggerInfo.BasePath = "/api"
 
 	router := gin.Default()
+
+	// 移除Gin默认的日志中间件
+	router.Use(gin.Recovery())
+
+	// 请求ID中间件
+	router.Use(middleware.RequestIDMiddleware())
+
+	// 请求日志中间件（跳过健康检查）
+	router.Use(middleware.SkipLoggingMiddleware("/health"))
+	router.Use(middleware.LoggingMiddleware())
 
 	// 全局错误处理中间件
 	router.Use(middleware.ErrorHandlerMiddleware())
@@ -126,5 +184,13 @@ func main() {
 		cliRoutes.POST("/keys", cliController.PushKeys)
 	}
 
-	router.Run(":8080")
+	utils.AppInfo("Server starting",
+		zap.String("address", ":8080"),
+		zap.String("docs", "http://localhost:8080/swagger/index.html"),
+	)
+
+	if err := router.Run(":8080"); err != nil {
+		utils.AppError("Failed to start server", zap.Error(err))
+		os.Exit(1)
+	}
 }

@@ -3,24 +3,48 @@ package middleware
 import (
 	"fmt"
 	"i18n-flow/errors"
-	"log"
+	"i18n-flow/utils"
 	"net/http"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // ErrorHandlerMiddleware 全局错误处理中间件
 func ErrorHandlerMiddleware() gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
+		// 获取请求信息
+		fields := []zap.Field{
+			zap.String("method", c.Request.Method),
+			zap.String("path", c.Request.URL.Path),
+			zap.String("client_ip", c.ClientIP()),
+			zap.String("user_agent", c.Request.UserAgent()),
+			zap.String("request_id", getRequestIDFromContext(c)),
+		}
+
+		// 添加用户信息（如果存在）
+		if userID, exists := c.Get("userID"); exists {
+			fields = append(fields, zap.Any("user_id", userID))
+		}
+
 		if err, ok := recovered.(string); ok {
-			log.Printf("Panic recovered: %s\n%s", err, debug.Stack())
+			utils.ErrorLog("Panic recovered", append(fields,
+				zap.String("error", err),
+				zap.String("stack", string(debug.Stack())),
+			)...)
 			errors.ErrorResponse(c, errors.NewInternalError("服务器发生异常"))
 		} else if err, ok := recovered.(error); ok {
-			log.Printf("Panic recovered: %s\n%s", err.Error(), debug.Stack())
+			utils.ErrorLog("Panic recovered", append(fields,
+				zap.Error(err),
+				zap.String("stack", string(debug.Stack())),
+			)...)
 			errors.ErrorResponse(c, errors.NewInternalError("服务器发生异常"))
 		} else {
-			log.Printf("Panic recovered: %v\n%s", recovered, debug.Stack())
+			utils.ErrorLog("Panic recovered", append(fields,
+				zap.Any("error", recovered),
+				zap.String("stack", string(debug.Stack())),
+			)...)
 			errors.ErrorResponse(c, errors.NewInternalError("服务器发生异常"))
 		}
 		c.Abort()
@@ -41,6 +65,14 @@ func RequestValidationMiddleware() gin.HandlerFunc {
 
 		c.Next()
 	}
+}
+
+// getRequestIDFromContext 从上下文获取请求ID
+func getRequestIDFromContext(c *gin.Context) string {
+	if requestID, exists := c.Get("request_id"); exists {
+		return requestID.(string)
+	}
+	return ""
 }
 
 // NotFoundHandler 404处理器

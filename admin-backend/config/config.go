@@ -30,11 +30,26 @@ type CLIConfig struct {
 	APIKey string
 }
 
+// LogConfig 日志配置
+type LogConfig struct {
+	Level         string `json:"level"`          // 全局日志级别
+	Format        string `json:"format"`         // 日志格式
+	Output        string `json:"output"`         // 输出方式
+	LogDir        string `json:"log_dir"`        // 日志目录
+	DateFormat    string `json:"date_format"`    // 日期格式
+	MaxSize       int    `json:"max_size"`       // 最大文件大小
+	MaxAge        int    `json:"max_age"`        // 保留天数
+	MaxBackups    int    `json:"max_backups"`    // 最大备份数
+	Compress      bool   `json:"compress"`       // 是否压缩
+	EnableConsole bool   `json:"enable_console"` // 是否启用控制台
+}
+
 // Config 应用配置
 type Config struct {
 	DB  DBConfig
 	JWT JWTConfig
 	CLI CLIConfig
+	Log LogConfig
 }
 
 // GetConfig 获取配置
@@ -63,6 +78,24 @@ func GetConfig() *Config {
 		jwtRefreshExpHours = 168 // 7天
 	}
 
+	// 解析日志配置
+	logMaxSize, err := strconv.Atoi(getEnv("LOG_MAX_SIZE", "100"))
+	if err != nil {
+		logMaxSize = 100
+	}
+
+	logMaxAge, err := strconv.Atoi(getEnv("LOG_MAX_AGE", "7"))
+	if err != nil {
+		logMaxAge = 7
+	}
+
+	logMaxBackups, err := strconv.Atoi(getEnv("LOG_MAX_BACKUPS", "5"))
+	if err != nil {
+		logMaxBackups = 5
+	}
+
+	logCompress := getEnv("LOG_COMPRESS", "true") == "true"
+
 	return &Config{
 		DB: DBConfig{
 			Username: getEnv("DB_USERNAME", "root"),
@@ -79,6 +112,18 @@ func GetConfig() *Config {
 		},
 		CLI: CLIConfig{
 			APIKey: getEnv("CLI_API_KEY", "testapikey"),
+		},
+		Log: LogConfig{
+			Level:         getEnv("LOG_LEVEL", "info"),
+			Format:        getEnv("LOG_FORMAT", "console"),
+			Output:        getEnv("LOG_OUTPUT", "both"),
+			LogDir:        getEnv("LOG_DIR", "logs"),
+			DateFormat:    getEnv("LOG_DATE_FORMAT", "2006-01-02"),
+			MaxSize:       logMaxSize,
+			MaxAge:        logMaxAge,
+			MaxBackups:    logMaxBackups,
+			Compress:      logCompress,
+			EnableConsole: getEnv("LOG_ENABLE_CONSOLE", "true") == "true",
 		},
 	}
 }
