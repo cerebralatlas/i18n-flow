@@ -55,34 +55,51 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 
 // CreateBatch 批量创建翻译
 // @Summary      批量创建翻译
-// @Description  批量创建多个翻译
+// @Description  批量创建多个翻译，支持两种格式：数组格式和前端对象格式
 // @Tags         翻译管理
 // @Accept       json
 // @Produce      json
-// @Param        translations  body      []domain.CreateTranslationRequest  true  "翻译信息列表"
-// @Success      201           {object}  map[string]string
-// @Failure      400           {object}  map[string]string
+// @Param        translations  body      domain.BatchTranslationRequest  true  "批量翻译请求"
+// @Success      201           {object}  response.APIResponse
+// @Failure      400           {object}  response.APIResponse
 // @Security     BearerAuth
 // @Router       /translations/batch [post]
 func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
-	var requests []domain.CreateTranslationRequest
+	// 先尝试解析为前端格式（带有translations字段的对象格式）
+	var batchReq domain.BatchTranslationRequest
+	if err := ctx.ShouldBindJSON(&batchReq); err == nil && batchReq.Translations != nil {
+		// 使用前端格式处理
+		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), batchReq)
+		if err != nil {
+			if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
+				response.BadRequest(ctx, err.Error())
+			} else {
+				response.InternalServerError(ctx, "批量创建翻译失败")
+			}
+			return
+		}
+		response.Success(ctx, gin.H{"message": "批量创建成功"})
+		return
+	}
 
+	// 如果前端格式解析失败，尝试数组格式
+	var requests []domain.CreateTranslationRequest
 	if err := ctx.ShouldBindJSON(&requests); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	err := h.translationService.CreateBatch(ctx.Request.Context(), requests)
 	if err != nil {
 		if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.BadRequest(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "批量创建翻译失败"})
+			response.InternalServerError(ctx, "批量创建翻译失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, gin.H{"message": "批量创建成功"})
+	response.Success(ctx, gin.H{"message": "批量创建成功"})
 }
 
 // GetByProjectID 根据项目ID获取翻译

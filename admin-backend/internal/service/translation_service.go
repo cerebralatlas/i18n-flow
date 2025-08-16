@@ -106,6 +106,46 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 	return s.translationRepo.CreateBatch(ctx, translations)
 }
 
+// CreateBatchFromRequest 从批量翻译请求创建翻译
+func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req domain.BatchTranslationRequest) error {
+	// 获取所有语言
+	languages, err := s.languageRepo.GetAll(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 创建语言代码到ID的映射
+	languageCodeToID := make(map[string]uint)
+	for _, lang := range languages {
+		languageCodeToID[lang.Code] = lang.ID
+	}
+
+	// 转换为标准翻译请求
+	var requests []domain.CreateTranslationRequest
+	for langCode, value := range req.Translations {
+		// 跳过空值
+		if value == "" {
+			continue
+		}
+
+		if langID, exists := languageCodeToID[langCode]; exists {
+			requests = append(requests, domain.CreateTranslationRequest{
+				ProjectID:  req.ProjectID,
+				KeyName:    req.KeyName,
+				Context:    req.Context,
+				LanguageID: langID,
+				Value:      value,
+			})
+		}
+	}
+
+	if len(requests) == 0 {
+		return fmt.Errorf("no valid translations to create")
+	}
+
+	return s.CreateBatch(ctx, requests)
+}
+
 // GetByID 根据ID获取翻译
 func (s *TranslationService) GetByID(ctx context.Context, id uint) (*domain.Translation, error) {
 	return s.translationRepo.GetByID(ctx, id)

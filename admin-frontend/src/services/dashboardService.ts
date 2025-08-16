@@ -1,10 +1,10 @@
 import api from '../utils/api';
 
 export interface DashboardStats {
-  project_count: number;
-  translation_count: number;
-  language_count: number;
-  user_count: number;
+  total_projects: number;
+  total_translations: number;
+  total_languages: number;
+  total_keys: number;
 }
 
 /**

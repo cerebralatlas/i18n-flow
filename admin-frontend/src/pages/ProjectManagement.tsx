@@ -189,6 +189,9 @@ const ProjectManagement: React.FC = () => {
       title: t("project.table.createdAt"),
       dataIndex: "created_at",
       key: "created_at",
+      render: (createdAt: string) => {
+        return new Date(createdAt).toLocaleString();
+      },
     },
     {
       title: t("project.table.action"),

@@ -15,6 +15,7 @@ const DashboardHome: React.FC = () => {
     const fetchDashboardStats = async () => {
       try {
         const response = await getDashboardStats();
+        console.log(response.data);
         setStats(response.data);
       } catch (error) {
         console.error("Get dashboard stats failed:", error);
@@ -39,7 +40,7 @@ const DashboardHome: React.FC = () => {
           <Card>
             <Statistic
               title={t("dashboard.stats.projectCount")}
-              value={stats?.project_count || 0}
+              value={stats?.total_projects || 0}
               loading={loading}
             />
           </Card>
@@ -48,7 +49,7 @@ const DashboardHome: React.FC = () => {
           <Card>
             <Statistic
               title={t("dashboard.stats.translationCount")}
-              value={stats?.translation_count || 0}
+              value={stats?.total_translations || 0}
               loading={loading}
             />
           </Card>
@@ -57,7 +58,7 @@ const DashboardHome: React.FC = () => {
           <Card>
             <Statistic
               title={t("dashboard.stats.languageCount")}
-              value={stats?.language_count || 0}
+              value={stats?.total_languages || 0}
               loading={loading}
             />
           </Card>
@@ -66,7 +67,7 @@ const DashboardHome: React.FC = () => {
           <Card>
             <Statistic
               title={t("dashboard.stats.userCount")}
-              value={stats?.user_count || 0}
+              value={stats?.total_keys || 0}
               loading={loading}
             />
           </Card>

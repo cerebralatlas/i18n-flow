@@ -44,6 +44,14 @@ type (
 		Value      string `json:"value" binding:"required"`
 	}
 
+	// BatchTranslationRequest 批量翻译请求（前端格式）
+	BatchTranslationRequest struct {
+		ProjectID    uint              `json:"project_id" binding:"required"`
+		KeyName      string            `json:"key_name" binding:"required"`
+		Context      string            `json:"context"`
+		Translations map[string]string `json:"translations" binding:"required"`
+	}
+
 	DashboardStats struct {
 		TotalProjects     int `json:"total_projects"`
 		TotalLanguages    int `json:"total_languages"`
@@ -81,6 +89,7 @@ type LanguageService interface {
 type TranslationService interface {
 	Create(ctx context.Context, req CreateTranslationRequest) (*Translation, error)
 	CreateBatch(ctx context.Context, translations []CreateTranslationRequest) error
+	CreateBatchFromRequest(ctx context.Context, req BatchTranslationRequest) error
 	GetByID(ctx context.Context, id uint) (*Translation, error)
 	GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*Translation, int64, error)
 	GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error)
