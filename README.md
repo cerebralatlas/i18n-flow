@@ -41,7 +41,7 @@ i18n-flow consists of three main components:
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/ilukemagic/i18n-flow.git
+   git clone https://github.com/cerebralatlas/i18n-flow.git
    cd i18n-flow/admin-backend
    ```
 
@@ -113,7 +113,7 @@ You can easily deploy i18n-flow using Docker and Docker Compose.
 1. Clone the repository:
 
    ```bash
-   git clone https://github.com/ilukemagic/i18n-flow.git
+   git clone https://github.com/cerebralatlas/i18n-flow.git
    cd i18n-flow
    ```
 
@@ -297,7 +297,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 📧 Contact
 
-Project Link: [https://github.com/ilukemagic/i18n-flow](https://github.com/ilukemagic/i18n-flow)
+Project Link: [https://github.com/cerebralatlas/i18n-flow](https://github.com/cerebralatlas/i18n-flow)
 
 ---
 

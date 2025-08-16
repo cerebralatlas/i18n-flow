@@ -170,7 +170,7 @@
 
 如果在尝试这些故障排除步骤后仍然遇到问题：
 
-1. 查看 [GitHub Issues](https://github.com/ilukemagic/i18n-flow/issues) 是否有类似问题
+1. 查看 [GitHub Issues](https://github.com/cerebralatlas/i18n-flow/issues) 是否有类似问题
 2. 收集相关日志和错误信息
 3. 创建一个新的 issue，详细说明您的设置和问题
 4. 加入 [Discord/Slack] 社区讨论，获取实时帮助

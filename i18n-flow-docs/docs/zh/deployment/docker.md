@@ -21,7 +21,7 @@
 首先，克隆 i18n Flow 仓库到您的服务器：
 
 ```bash
-git clone https://github.com/ilukemagic/i18n-flow.git
+git clone https://github.com/cerebralatlas/i18n-flow.git
 cd i18n-flow
 ```
 

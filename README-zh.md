@@ -41,7 +41,7 @@ i18n-flow 由三个主要组件组成：
 1. 克隆仓库：
 
    ```bash
-   git clone https://github.com/ilukemagic/i18n-flow.git
+   git clone https://github.com/cerebralatlas/i18n-flow.git
    cd i18n-flow/admin-backend
    ```
 
@@ -113,7 +113,7 @@ i18n-flow 由三个主要组件组成：
 1. 克隆仓库：
 
    ```bash
-   git clone https://github.com/ilukemagic/i18n-flow.git
+   git clone https://github.com/cerebralatlas/i18n-flow.git
    cd i18n-flow
    ```
 

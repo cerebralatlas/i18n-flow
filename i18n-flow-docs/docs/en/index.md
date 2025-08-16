@@ -10,7 +10,7 @@ hero:
       link: /en/guide/getting-started
     - theme: alt
       text: View on GitHub
-      link: https://github.com/ilukemagic/i18n-flow
+      link: https://github.com/cerebralatlas/i18n-flow
 
 features:
   - icon: 🚀

@@ -21,7 +21,7 @@ Before you begin, make sure your server meets the following requirements:
 First, clone the i18n Flow repository to your server:
 
 ```bash
-git clone https://github.com/ilukemagic/i18n-flow.git
+git clone https://github.com/cerebralatlas/i18n-flow.git
 cd i18n-flow
 ```
 

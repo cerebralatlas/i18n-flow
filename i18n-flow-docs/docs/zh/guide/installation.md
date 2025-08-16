@@ -20,7 +20,7 @@
 首先，从 GitHub 克隆 i18n Flow 仓库：
 
 ```bash
-git clone https://github.com/ilukemagic/i18n-flow.git
+git clone https://github.com/cerebralatlas/i18n-flow.git
 cd i18n-flow
 ```
 

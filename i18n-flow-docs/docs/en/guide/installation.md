@@ -20,7 +20,7 @@ Before you begin, ensure your system meets the following requirements:
 First, clone the i18n Flow repository from GitHub:
 
 ```bash
-git clone https://github.com/ilukemagic/i18n-flow.git
+git clone https://github.com/cerebralatlas/i18n-flow.git
 cd i18n-flow
 ```
 

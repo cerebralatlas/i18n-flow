@@ -170,7 +170,7 @@ This guide provides solutions to common issues you might encounter when using i1
 
 If you continue to experience issues after trying these troubleshooting steps:
 
-1. Check the [GitHub Issues](https://github.com/ilukemagic/i18n-flow/issues) for similar problems
+1. Check the [GitHub Issues](https://github.com/cerebralatlas/i18n-flow/issues) for similar problems
 2. Gather relevant logs and error messages
 3. Create a new issue with detailed information about your setup and the problem
 4. Join the community discussion on [Discord/Slack] for real-time help
