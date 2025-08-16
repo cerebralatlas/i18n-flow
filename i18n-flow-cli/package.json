@@ -1,11 +1,12 @@
 {
   "name": "i18n-flow-cli",
-  "version": "0.0.6",
+  "version": "0.0.7",
   "description": "CLI tool for i18n-flow translation management",
   "main": "dist/index.js",
+  "author": "cerebralatlas <cerebralatlas@gmail.com>",
   "repository": {
     "type": "git",
-    "url": "https://github.com/ilukemagic/i18n-flow/tree/master/i18n-flow-cli"
+    "url": "https://github.com/cerebralatlas/i18n-flow/tree/master/i18n-flow-cli"
   },
   "bin": {
     "i18n-flow": "./bin/i18n-flow"
