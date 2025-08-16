@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
 	"net/http"
 	"strconv"
@@ -129,27 +130,27 @@ func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 		return
 	}
 
-	response := gin.H{
-		"data": translations,
-		"meta": gin.H{
-			"page":        page,
-			"page_size":   pageSize,
-			"total_count": total,
-			"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
-		},
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalCount: total,
+		TotalPages: (total + int64(pageSize) - 1) / int64(pageSize),
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	response.SuccessWithMeta(ctx, translations, meta)
 }
 
 // GetMatrix 获取翻译矩阵
 // @Summary      获取翻译矩阵
-// @Description  获取项目的翻译矩阵（键-语言映射）
+// @Description  获取项目的翻译矩阵（键-语言映射），支持分页
 // @Tags         翻译管理
 // @Accept       json
 // @Produce      json
-// @Param        project_id  path      int  true  "项目ID"
-// @Success      200         {object}  map[string]map[string]string
+// @Param        project_id  path      int     true   "项目ID"
+// @Param        page        query     int     false  "页码"  default(1)
+// @Param        page_size   query     int     false  "每页数量"  default(10)
+// @Param        keyword     query     string  false  "搜索关键词"
+// @Success      200         {object}  map[string]interface{}
 // @Failure      400         {object}  map[string]string
 // @Failure      404         {object}  map[string]string
 // @Security     BearerAuth
@@ -158,21 +159,42 @@ func (h *TranslationHandler) GetMatrix(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
 	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
-	matrix, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID))
+	// 解析分页参数
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+	keyword := ctx.DefaultQuery("keyword", "")
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	matrix, total, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), pageSize, offset, keyword)
 	if err != nil {
 		if err == domain.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取翻译矩阵失败"})
+			response.InternalServerError(ctx, "获取翻译矩阵失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, matrix)
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalCount: total,
+		TotalPages: (total + int64(pageSize) - 1) / int64(pageSize),
+	}
+
+	response.SuccessWithMeta(ctx, matrix, meta)
 }
 
 // GetByID 根据ID获取翻译
@@ -205,7 +227,7 @@ func (h *TranslationHandler) GetByID(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, translation)
+	response.Success(ctx, translation)
 }
 
 // Update 更新翻译
@@ -247,7 +269,7 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	ctx.JSON(http.StatusOK, translation)
+	response.Success(ctx, translation)
 }
 
 // Delete 删除翻译
@@ -280,7 +302,7 @@ func (h *TranslationHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	response.NoContent(ctx)
 }
 
 // DeleteBatch 批量删除翻译
@@ -308,7 +330,7 @@ func (h *TranslationHandler) DeleteBatch(ctx *gin.Context) {
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	response.NoContent(ctx)
 }
 
 // Export 导出翻译

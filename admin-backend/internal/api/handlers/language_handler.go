@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
 	"net/http"
 	"strconv"
@@ -36,23 +37,23 @@ func (h *LanguageHandler) Create(ctx *gin.Context) {
 	var req domain.CreateLanguageRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	language, err := h.languageService.Create(ctx.Request.Context(), req)
 	if err != nil {
 		if err == domain.ErrLanguageExists {
-			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			response.Conflict(ctx, err.Error())
 		} else if err == domain.ErrInvalidLanguage {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.ValidationError(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "创建语言失败"})
+			response.InternalServerError(ctx, "创建语言失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, language)
+	response.Created(ctx, language)
 }
 
 // GetAll 获取所有语言
@@ -68,11 +69,11 @@ func (h *LanguageHandler) Create(ctx *gin.Context) {
 func (h *LanguageHandler) GetAll(ctx *gin.Context) {
 	languages, err := h.languageService.GetAll(ctx.Request.Context())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取语言列表失败"})
+		response.InternalServerError(ctx, "获取语言列表失败")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, languages)
+	response.Success(ctx, languages)
 }
 
 // Update 更新语言
@@ -92,29 +93,29 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的语言ID"})
+		response.BadRequest(ctx, "无效的语言ID")
 		return
 	}
 
 	var req domain.CreateLanguageRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	language, err := h.languageService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
 		if err == domain.ErrLanguageNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else if err == domain.ErrLanguageExists || err == domain.ErrInvalidInput {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.ValidationError(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "更新语言失败"})
+			response.InternalServerError(ctx, "更新语言失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, language)
+	response.Success(ctx, language)
 }
 
 // Delete 删除语言
@@ -133,18 +134,18 @@ func (h *LanguageHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的语言ID"})
+		response.BadRequest(ctx, "无效的语言ID")
 		return
 	}
 
 	err = h.languageService.Delete(ctx.Request.Context(), uint(id))
 	if err != nil {
 		if err == domain.ErrLanguageNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else if err == domain.ErrInvalidInput {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.ValidationError(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "删除语言失败"})
+			response.InternalServerError(ctx, "删除语言失败")
 		}
 		return
 	}

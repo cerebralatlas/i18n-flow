@@ -441,7 +441,7 @@ const TranslationManagement: React.FC = () => {
         <div className="flex justify-center items-center py-12">
           <Spin size="large" tip={t("translation.table.loading")} />
         </div>
-      ) : paginatedMatrix.length > 0 ? (
+      ) : paginatedMatrix?.length > 0 ? (
         <TranslationTable
           loading={loading}
           paginatedMatrix={paginatedMatrix}

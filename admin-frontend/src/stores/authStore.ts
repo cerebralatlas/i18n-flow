@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import axios from 'axios';
 import { message } from 'antd';
+import api from '../utils/api';
 
 interface User {
   id: number;
@@ -51,10 +52,11 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (username: string, password: string) => {
     try {
-      const response = await axios.post('/api/login', {
+      const response = await api.post('/api/login', {
         username,
         password,
       });
+
       const { token, user: userData } = response.data;
 
       localStorage.setItem('authToken', token);

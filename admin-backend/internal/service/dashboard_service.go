@@ -48,8 +48,8 @@ func (s *DashboardService) GetStats(ctx context.Context) (*domain.DashboardStats
 	uniqueKeys := make(map[string]bool)
 
 	for _, project := range projects {
-		// 获取每个项目的翻译矩阵
-		matrix, err := s.translationRepo.GetMatrix(ctx, project.ID)
+		// 获取每个项目的翻译矩阵（统计所有数据，不分页）
+		matrix, _, err := s.translationRepo.GetMatrix(ctx, project.ID, -1, 0, "")
 		if err != nil {
 			continue // 跳过出错的项目
 		}

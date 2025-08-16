@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -35,7 +35,7 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
@@ -44,14 +44,14 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	if err != nil {
 		// 根据错误类型返回不同状态码
 		if err == domain.ErrUserNotFound || err == domain.ErrInvalidPassword {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			response.Unauthorized(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "登录失败"})
+			response.InternalServerError(ctx, "登录失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	response.Success(ctx, resp)
 }
 
 // RefreshToken 刷新token
@@ -70,7 +70,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
@@ -78,14 +78,14 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	resp, err := h.userService.RefreshToken(ctx.Request.Context(), req)
 	if err != nil {
 		if err == domain.ErrInvalidToken {
-			ctx.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+			response.InvalidToken(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "刷新token失败"})
+			response.InternalServerError(ctx, "刷新token失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, resp)
+	response.Success(ctx, resp)
 }
 
 // GetUserInfo 获取用户信息
@@ -102,16 +102,16 @@ func (h *UserHandler) GetUserInfo(ctx *gin.Context) {
 	// 从上下文中获取用户ID
 	userID, exists := ctx.Get("userID")
 	if !exists {
-		ctx.JSON(http.StatusUnauthorized, gin.H{"error": "用户未登录"})
+		response.Unauthorized(ctx, "用户未登录")
 		return
 	}
 
 	// 获取用户信息
 	user, err := h.userService.GetUserInfo(ctx.Request.Context(), userID.(uint))
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取用户信息失败"})
+		response.InternalServerError(ctx, "获取用户信息失败")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, user)
+	response.Success(ctx, user)
 }

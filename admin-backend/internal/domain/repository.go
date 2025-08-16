@@ -37,7 +37,7 @@ type TranslationRepository interface {
 	GetByID(ctx context.Context, id uint) (*Translation, error)
 	GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*Translation, int64, error)
 	GetByProjectAndLanguage(ctx context.Context, projectID, languageID uint) ([]*Translation, error)
-	GetMatrix(ctx context.Context, projectID uint) (map[string]map[string]string, error)
+	GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error)
 	Create(ctx context.Context, translation *Translation) error
 	CreateBatch(ctx context.Context, translations []*Translation) error
 	Update(ctx context.Context, translation *Translation) error

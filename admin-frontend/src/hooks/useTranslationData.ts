@@ -51,7 +51,7 @@ export const useTranslationData = (initialProjectId?: string) => {
   // 请求项目列表
   const fetchProjects = async () => {
     try {
-      const { data } = await projectService.getProjects();
+      const data = await projectService.getProjects();
       setProjects(data);
 
       // 如果未选择项目，但有项目列表，则默认选择第一个项目
@@ -82,17 +82,17 @@ export const useTranslationData = (initialProjectId?: string) => {
 
     try {
       setLoading(true);
-      const response = await translationService.getTranslationMatrix(
+      const result = await translationService.getTranslationMatrix(
         selectedProject,
         localPagination.current,
         localPagination.pageSize,
         keyword
       );
 
-      setPaginatedMatrix(response.data.data);
+      setPaginatedMatrix(result.data);
       setLocalPagination({
         ...localPagination,
-        total: response.data.total
+        total: result.total
       });
     } catch (error) {
       console.error("Failed to get translation matrix:", error);

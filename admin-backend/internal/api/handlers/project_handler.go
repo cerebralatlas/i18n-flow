@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -36,23 +36,23 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 	var req domain.CreateProjectRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	project, err := h.projectService.Create(ctx.Request.Context(), req)
 	if err != nil {
 		if err == domain.ErrProjectExists {
-			ctx.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			response.Conflict(ctx, err.Error())
 		} else if err == domain.ErrInvalidSlug {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.BadRequest(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "创建项目失败"})
+			response.InternalServerError(ctx, "创建项目失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, project)
+	response.Created(ctx, project)
 }
 
 // GetByID 根据ID获取项目
@@ -71,21 +71,21 @@ func (h *ProjectHandler) GetByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
 	project, err := h.projectService.GetByID(ctx.Request.Context(), uint(id))
 	if err != nil {
 		if err == domain.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取项目失败"})
+			response.InternalServerError(ctx, "获取项目失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, project)
+	response.Success(ctx, project)
 }
 
 // GetAll 获取项目列表
@@ -116,21 +116,18 @@ func (h *ProjectHandler) GetAll(ctx *gin.Context) {
 
 	projects, total, err := h.projectService.GetAll(ctx.Request.Context(), pageSize, offset)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取项目列表失败"})
+		response.InternalServerError(ctx, "获取项目列表失败")
 		return
 	}
 
-	response := gin.H{
-		"data": projects,
-		"meta": gin.H{
-			"page":        page,
-			"page_size":   pageSize,
-			"total_count": total,
-			"total_pages": (total + int64(pageSize) - 1) / int64(pageSize),
-		},
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalCount: total,
+		TotalPages: (total + int64(pageSize) - 1) / int64(pageSize),
 	}
 
-	ctx.JSON(http.StatusOK, response)
+	response.SuccessWithMeta(ctx, projects, meta)
 }
 
 // Update 更新项目
@@ -150,29 +147,29 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
 	var req domain.UpdateProjectRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	project, err := h.projectService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
 		if err == domain.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else if err == domain.ErrProjectExists || err == domain.ErrInvalidInput {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			response.BadRequest(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "更新项目失败"})
+			response.InternalServerError(ctx, "更新项目失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusOK, project)
+	response.Success(ctx, project)
 }
 
 // Delete 删除项目
@@ -191,19 +188,19 @@ func (h *ProjectHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
 	err = h.projectService.Delete(ctx.Request.Context(), uint(id))
 	if err != nil {
 		if err == domain.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			response.NotFound(ctx, err.Error())
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "删除项目失败"})
+			response.InternalServerError(ctx, "删除项目失败")
 		}
 		return
 	}
 
-	ctx.Status(http.StatusNoContent)
+	response.NoContent(ctx)
 }

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/config"
 	"net/http"
 
@@ -15,15 +16,13 @@ func APIKeyAuthMiddleware() gin.HandlerFunc {
 		// 获取配置
 		cfg, err := config.Load()
 		if err != nil {
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to load configuration"})
-			c.Abort()
+			response.InternalServerError(c, "Failed to load configuration")
 			return
 		}
 
 		// 如果API Key为空或不匹配
 		if apiKey == "" || apiKey != cfg.CLI.APIKey {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid or missing API key"})
-			c.Abort()
+			response.Error(c, http.StatusUnauthorized, "INVALID_API_KEY", "Invalid or missing API key")
 			return
 		}
 

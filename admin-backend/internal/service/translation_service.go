@@ -133,14 +133,14 @@ func (s *TranslationService) GetByProjectID(ctx context.Context, projectID uint,
 }
 
 // GetMatrix 获取翻译矩阵
-func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint) (map[string]map[string]string, error) {
+func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
-		return nil, domain.ErrProjectNotFound
+		return nil, 0, domain.ErrProjectNotFound
 	}
 
-	return s.translationRepo.GetMatrix(ctx, projectID)
+	return s.translationRepo.GetMatrix(ctx, projectID, limit, offset, keyword)
 }
 
 // Update 更新翻译
@@ -218,8 +218,8 @@ func (s *TranslationService) Export(ctx context.Context, projectID uint, format 
 		return nil, domain.ErrProjectNotFound
 	}
 
-	// 获取翻译矩阵
-	matrix, err := s.translationRepo.GetMatrix(ctx, projectID)
+	// 获取翻译矩阵（导出所有数据，不分页）
+	matrix, _, err := s.translationRepo.GetMatrix(ctx, projectID, -1, 0, "")
 	if err != nil {
 		return nil, err
 	}

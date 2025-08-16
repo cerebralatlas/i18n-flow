@@ -1,8 +1,8 @@
 package handlers
 
 import (
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
@@ -32,9 +32,9 @@ func NewDashboardHandler(dashboardService domain.DashboardService) *DashboardHan
 func (h *DashboardHandler) GetStats(ctx *gin.Context) {
 	stats, err := h.dashboardService.GetStats(ctx.Request.Context())
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取统计信息失败"})
+		response.InternalServerError(ctx, "获取统计信息失败")
 		return
 	}
 
-	ctx.JSON(http.StatusOK, stats)
+	response.Success(ctx, stats)
 }

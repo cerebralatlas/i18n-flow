@@ -3,8 +3,8 @@ package routes
 import (
 	"i18n-flow/internal/api/handlers"
 	"i18n-flow/internal/api/middleware"
+	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/container"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -31,12 +31,12 @@ func NewRouter(container *container.Container) *Router {
 func (r *Router) SetupRoutes(engine *gin.Engine) {
 	// 基本路由
 	engine.GET("/", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"message": "Hello, World!"})
+		response.Success(c, gin.H{"message": "Hello, World!"})
 	})
 
 	// 健康检查端点
 	engine.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{
+		response.Success(c, gin.H{
 			"status":  "ok",
 			"service": "i18n-flow",
 			"version": "1.0.0",

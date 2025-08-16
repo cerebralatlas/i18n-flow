@@ -2,6 +2,7 @@ package middleware
 
 import (
 	"fmt"
+	"i18n-flow/internal/api/response"
 	"i18n-flow/utils"
 	"net/http"
 	"runtime/debug"
@@ -32,19 +33,19 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 				zap.String("error", err),
 				zap.String("stack", string(debug.Stack())),
 			)...)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器发生异常"})
+			response.InternalServerError(c, "服务器发生异常")
 		} else if err, ok := recovered.(error); ok {
 			utils.ErrorLog("Panic recovered", append(fields,
 				zap.Error(err),
 				zap.String("stack", string(debug.Stack())),
 			)...)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器发生异常"})
+			response.InternalServerError(c, "服务器发生异常")
 		} else {
 			utils.ErrorLog("Panic recovered", append(fields,
 				zap.Any("error", recovered),
 				zap.String("stack", string(debug.Stack())),
 			)...)
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "服务器发生异常"})
+			response.InternalServerError(c, "服务器发生异常")
 		}
 		c.Abort()
 	})
@@ -57,8 +58,7 @@ func RequestValidationMiddleware() gin.HandlerFunc {
 		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut {
 			contentType := c.GetHeader("Content-Type")
 			if contentType != "" && contentType != "application/json" && contentType != "multipart/form-data" {
-				c.JSON(http.StatusBadRequest, gin.H{"error": fmt.Sprintf("不支持的Content-Type: %s", contentType)})
-				c.Abort()
+				response.BadRequest(c, fmt.Sprintf("不支持的Content-Type: %s", contentType))
 				return
 			}
 		}
@@ -78,6 +78,6 @@ func getRequestIDFromContext(c *gin.Context) string {
 // NotFoundHandler 404处理器
 func NotFoundHandler() gin.HandlerFunc {
 	return func(c *gin.Context) {
-		c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf("路由 %s %s 不存在", c.Request.Method, c.Request.URL.Path)})
+		response.NotFound(c, fmt.Sprintf("路由 %s %s 不存在", c.Request.Method, c.Request.URL.Path))
 	}
 }

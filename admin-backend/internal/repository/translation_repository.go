@@ -59,13 +59,59 @@ func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, pro
 	return translations, nil
 }
 
-// GetMatrix 获取翻译矩阵（key-language映射）
-func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint) (map[string]map[string]string, error) {
-	var translations []*domain.Translation
-	if err := r.db.WithContext(ctx).Preload("Language").Where("project_id = ?", projectID).Find(&translations).Error; err != nil {
-		return nil, err
+// GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
+func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+	// 首先获取符合条件的唯一键名总数
+	var totalCount int64
+	countQuery := r.db.WithContext(ctx).Model(&domain.Translation{}).
+		Select("DISTINCT key_name").
+		Where("project_id = ?", projectID)
+	
+	if keyword != "" {
+		countQuery = countQuery.Where("key_name LIKE ? OR value LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	
+	// 统计唯一键名数量
+	var uniqueKeys []string
+	if err := countQuery.Pluck("key_name", &uniqueKeys).Error; err != nil {
+		return nil, 0, err
+	}
+	totalCount = int64(len(uniqueKeys))
+
+	// 获取分页的键名列表
+	var keyNames []string
+	keyQuery := r.db.WithContext(ctx).Model(&domain.Translation{}).
+		Select("DISTINCT key_name").
+		Where("project_id = ?", projectID)
+	
+	if keyword != "" {
+		keyQuery = keyQuery.Where("key_name LIKE ? OR value LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	
+	// 应用分页（如果limit为-1则获取所有数据）
+	if limit > 0 {
+		keyQuery = keyQuery.Limit(limit).Offset(offset)
+	}
+	
+	if err := keyQuery.Pluck("key_name", &keyNames).Error; err != nil {
+		return nil, 0, err
 	}
 
+	// 如果没有数据，返回空矩阵
+	if len(keyNames) == 0 {
+		return make(map[string]map[string]string), totalCount, nil
+	}
+
+	// 获取这些键名对应的所有翻译
+	var translations []*domain.Translation
+	if err := r.db.WithContext(ctx).
+		Preload("Language").
+		Where("project_id = ? AND key_name IN ?", projectID, keyNames).
+		Find(&translations).Error; err != nil {
+		return nil, 0, err
+	}
+
+	// 构建矩阵
 	matrix := make(map[string]map[string]string)
 	for _, translation := range translations {
 		if matrix[translation.KeyName] == nil {
@@ -74,7 +120,7 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint) (
 		matrix[translation.KeyName][translation.Language.Code] = translation.Value
 	}
 
-	return matrix, nil
+	return matrix, totalCount, nil
 }
 
 // Create 创建翻译
