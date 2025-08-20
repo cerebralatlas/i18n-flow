@@ -15,7 +15,6 @@ const DashboardHome: React.FC = () => {
     const fetchDashboardStats = async () => {
       try {
         const response = await getDashboardStats();
-        console.log(response.data);
         setStats(response.data);
       } catch (error) {
         console.error("Get dashboard stats failed:", error);

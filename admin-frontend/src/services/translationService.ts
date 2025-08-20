@@ -116,9 +116,6 @@ export const translationService = {
       };
     }
 
-    // 添加调试日志
-    console.log('Backend response:', backendResponse);
-    
     // 转换数据格式
     const transformedData = transformMatrixData(backendResponse.data);
     

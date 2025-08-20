@@ -11,7 +11,6 @@ export interface DashboardStats {
 /**
  * 获取仪表板统计数据
  */
-export async function getDashboardStats(): Promise<DashboardStats> {
-  const response: ApiResponse<DashboardStats> = await api.get("/api/dashboard/stats");
-  return response.data;
+export async function getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
+  return await api.get("/api/dashboard/stats");
 }
