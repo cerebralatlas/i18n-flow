@@ -290,8 +290,8 @@ func (s *TranslationService) Import(ctx context.Context, projectID uint, data []
 
 // importFromJSON 从JSON导入翻译
 func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint, data []byte) error {
-	var matrix map[string]map[string]string
-	if err := json.Unmarshal(data, &matrix); err != nil {
+	var rawData map[string]interface{}
+	if err := json.Unmarshal(data, &rawData); err != nil {
 		return fmt.Errorf("invalid JSON format: %w", err)
 	}
 
@@ -309,6 +309,10 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint,
 
 	// 转换为翻译请求
 	var requests []domain.CreateTranslationRequest
+
+	// 检测数据格式并转换
+	matrix := s.normalizeImportData(rawData)
+
 	for key, translations := range matrix {
 		for langCode, value := range translations {
 			if langID, exists := languageCodeToID[langCode]; exists {
@@ -322,5 +326,91 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint,
 		}
 	}
 
+	if len(requests) == 0 {
+		return fmt.Errorf("no valid translations found in import data")
+	}
+
 	return s.CreateBatch(ctx, requests)
+}
+
+// normalizeImportData 标准化导入数据格式
+// 支持两种格式：
+// 1. key -> {language: value} (标准格式)
+// 2. language -> {key: value} (前端格式)
+func (s *TranslationService) normalizeImportData(rawData map[string]interface{}) map[string]map[string]string {
+	matrix := make(map[string]map[string]string)
+
+	// 检测数据格式
+	if s.isLanguageToKeyFormat(rawData) {
+		// 前端格式: language -> {key: value}
+		for langCode, keysInterface := range rawData {
+			if keys, ok := keysInterface.(map[string]interface{}); ok {
+				for key, valueInterface := range keys {
+					if value, ok := valueInterface.(string); ok {
+						if matrix[key] == nil {
+							matrix[key] = make(map[string]string)
+						}
+						matrix[key][langCode] = value
+					}
+				}
+			}
+		}
+	} else {
+		// 标准格式: key -> {language: value}
+		for key, languagesInterface := range rawData {
+			if languages, ok := languagesInterface.(map[string]interface{}); ok {
+				matrix[key] = make(map[string]string)
+				for langCode, valueInterface := range languages {
+					if value, ok := valueInterface.(string); ok {
+						matrix[key][langCode] = value
+					}
+				}
+			}
+		}
+	}
+
+	return matrix
+}
+
+// isLanguageToKeyFormat 检测是否为 language -> {key: value} 格式
+func (s *TranslationService) isLanguageToKeyFormat(rawData map[string]interface{}) bool {
+	// 检查第一层的键是否看起来像语言代码
+	for key := range rawData {
+		// 如果键是短的字符串（1-5个字符），可能是语言代码
+		if len(key) <= 5 && isLikelyLanguageCode(key) {
+			return true
+		}
+		// 如果键包含点号，更可能是翻译键而不是语言代码
+		if strings.Contains(key, ".") {
+			return false
+		}
+	}
+	return false
+}
+
+// isLikelyLanguageCode 判断字符串是否像语言代码
+func isLikelyLanguageCode(code string) bool {
+	// 常见的语言代码模式
+	commonLanguageCodes := []string{
+		"en", "zh", "ja", "ko", "fr", "de", "es", "pt", "ru", "ar", "hi", "th", "vi", "id", "ms", "tr", "it", "pl", "nl", "sv", "da", "no", "fi",
+		"zh-CN", "zh-TW", "en-US", "en-GB", "pt-BR", "es-ES", "fr-FR", "de-DE",
+	}
+
+	for _, lang := range commonLanguageCodes {
+		if code == lang {
+			return true
+		}
+	}
+
+	// 简单的启发式规则：长度为2-5的字符串，只包含字母、数字和连字符
+	if len(code) >= 2 && len(code) <= 5 {
+		for _, c := range code {
+			if !((c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c >= '0' && c <= '9') || c == '-') {
+				return false
+			}
+		}
+		return true
+	}
+
+	return false
 }

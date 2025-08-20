@@ -121,6 +121,11 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 		exportRoutes.GET("/project/:project_id", translationHandler.Export)
 	}
 
+	importRoutes := authRoutes.Group("/imports")
+	{
+		importRoutes.POST("/project/:project_id", translationHandler.Import)
+	}
+
 	// 仪表板相关路由
 	dashboardRoutes := authRoutes.Group("/dashboard")
 	{

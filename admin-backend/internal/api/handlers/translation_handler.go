@@ -387,3 +387,47 @@ func (h *TranslationHandler) Export(ctx *gin.Context) {
 	ctx.Header("Content-Disposition", "attachment; filename=translations.json")
 	ctx.Data(http.StatusOK, "application/json", data)
 }
+
+// Import 导入翻译
+// @Summary      导入翻译
+// @Description  导入项目翻译数据
+// @Tags         翻译管理
+// @Accept       json
+// @Produce      json
+// @Param        project_id  path      int                                       true  "项目ID"
+// @Param        data        body      map[string]map[string]string             true  "翻译数据，格式为 {\"key1\": {\"en\": \"value1\", \"zh\": \"值1\"}}"
+// @Param        format      query     string                                   false "导入格式" default("json")
+// @Success      200         {object}  response.APIResponse
+// @Failure      400         {object}  response.APIResponse
+// @Failure      404         {object}  response.APIResponse
+// @Security     BearerAuth
+// @Router       /imports/project/{project_id} [post]
+func (h *TranslationHandler) Import(ctx *gin.Context) {
+	projectIDStr := ctx.Param("project_id")
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	if err != nil {
+		response.BadRequest(ctx, "无效的项目ID")
+		return
+	}
+
+	format := ctx.DefaultQuery("format", "json")
+
+	// 读取请求体
+	data, err := ctx.GetRawData()
+	if err != nil {
+		response.BadRequest(ctx, "读取请求数据失败")
+		return
+	}
+
+	err = h.translationService.Import(ctx.Request.Context(), uint(projectID), data, format)
+	if err != nil {
+		if err == domain.ErrProjectNotFound {
+			response.NotFound(ctx, err.Error())
+		} else {
+			response.InternalServerError(ctx, "导入翻译失败: "+err.Error())
+		}
+		return
+	}
+
+	response.Success(ctx, gin.H{"message": "导入翻译成功"})
+}
