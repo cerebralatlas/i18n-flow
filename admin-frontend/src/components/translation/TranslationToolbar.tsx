@@ -7,6 +7,8 @@ import {
   Upload,
   Popconfirm,
   message,
+  Dropdown,
+  MenuProps,
 } from "antd";
 import {
   PlusOutlined,
@@ -15,6 +17,9 @@ import {
   ImportOutlined,
   ExportOutlined,
   FileExcelOutlined,
+  DownOutlined,
+  FileOutlined,
+  FileTextOutlined,
 } from "@ant-design/icons";
 import { Project } from "../../types/project";
 import { Language } from "../../types/translation";
@@ -32,7 +37,7 @@ interface TranslationToolbarProps {
   onAddTranslation: () => void;
   onBatchAddTranslation: () => void;
   onImportJsonClick: () => void;
-  onExportClick: () => void;
+  onExportClick: (format: 'json' | 'csv' | 'excel') => void;
   onExcelFileUpload: (file: File) => boolean;
   selectedTranslations: number[];
   onBatchDelete: () => void;
@@ -92,6 +97,28 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   const handleProjectSelect = (value: number) => {
     onProjectChange(value);
   };
+
+  // 导出菜单项
+  const exportMenuItems: MenuProps['items'] = [
+    {
+      key: 'json',
+      label: t("translation.toolbar.export.json"),
+      icon: <FileOutlined />,
+      onClick: () => onExportClick('json'),
+    },
+    {
+      key: 'csv',
+      label: t("translation.toolbar.export.csv"),
+      icon: <FileTextOutlined />,
+      onClick: () => onExportClick('csv'),
+    },
+    {
+      key: 'excel',
+      label: t("translation.toolbar.export.excel"),
+      icon: <FileExcelOutlined />,
+      onClick: () => onExportClick('excel'),
+    },
+  ];
 
   return (
     <>
@@ -191,9 +218,11 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
               </Button>
             </Upload>
 
-            <Button icon={<ExportOutlined />} onClick={onExportClick}>
-              {t("translation.toolbar.export")}
-            </Button>
+            <Dropdown menu={{ items: exportMenuItems }} placement="bottomLeft">
+              <Button icon={<ExportOutlined />}>
+                {t("translation.toolbar.export.label")} <DownOutlined />
+              </Button>
+            </Dropdown>
           </Space>
         </div>
       </div>

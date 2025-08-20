@@ -119,7 +119,12 @@
         "uploadJson": "Click or drag JSON file to upload",
         "uploadExcel": "Click or drag Excel file to upload"
       },
-      "export": "Export",
+      "export": {
+        "label": "Export",
+        "json": "Export as JSON",
+        "csv": "Export as CSV",
+        "excel": "Export as Excel"
+      },
       "batchDelete": "Batch Delete",
       "languageColumns": "Language Columns"
     },
@@ -233,7 +238,9 @@
       "updateSuccess": "Update successful",
       "updateFailed": "Update failed",
       "batchSuccess": "Batch operation successful",
-      "batchFailed": "Batch operation failed"
+      "batchFailed": "Batch operation failed",
+      "exportSuccess": "Export successful",
+      "exportFailed": "Export failed"
     }
   }
 }

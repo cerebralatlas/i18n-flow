@@ -393,7 +393,7 @@ func isLikelyLanguageCode(code string) bool {
 	// 常见的语言代码模式
 	commonLanguageCodes := []string{
 		"en", "zh", "ja", "ko", "fr", "de", "es", "pt", "ru", "ar", "hi", "th", "vi", "id", "ms", "tr", "it", "pl", "nl", "sv", "da", "no", "fi",
-		"zh-CN", "zh-TW", "en-US", "en-GB", "pt-BR", "es-ES", "fr-FR", "de-DE",
+		"zh_CN", "zh_TW", "en_US", "en_GB", "pt_BR", "es_ES", "fr_FR", "de_DE",
 	}
 
 	for _, lang := range commonLanguageCodes {

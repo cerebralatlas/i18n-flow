@@ -259,22 +259,18 @@ const TranslationManagement: React.FC = () => {
   };
 
   // 导出翻译
-  const handleExportTranslations = async (format: string = "json") => {
-    const data = await exportTranslations(format);
-    if (data) {
-      // 创建和下载文件
-      const fileName = `translations_${selectedProject}_${new Date().toISOString()}.json`;
-      const jsonStr = JSON.stringify(data, null, 2);
-      const blob = new Blob([jsonStr], { type: "application/json" });
-      const href = URL.createObjectURL(blob);
-
-      const link = document.createElement("a");
-      link.href = href;
-      link.download = fileName;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      URL.revokeObjectURL(href);
+  const handleExportTranslations = async (format: 'json' | 'csv' | 'excel' = "json") => {
+    try {
+      const data = await exportTranslations();
+      if (data) {
+        // 使用导出工具函数处理不同格式
+        const { exportTranslations: exportUtil } = await import('../utils/exportUtils');
+        exportUtil(data, format, selectedProject!);
+        message.success(t("translation.message.exportSuccess"));
+      }
+    } catch (error) {
+      console.error('Export failed:', error);
+      message.error(t("translation.message.exportFailed"));
     }
   };
 
@@ -426,7 +422,7 @@ const TranslationManagement: React.FC = () => {
           setBatchModalVisible(true);
         }}
         onImportJsonClick={() => setImportModalVisible(true)}
-        onExportClick={() => handleExportTranslations()}
+        onExportClick={handleExportTranslations}
         onExcelFileUpload={handleExcelFile}
         selectedTranslations={selectedTranslations}
         onBatchDelete={batchDeleteTranslations}

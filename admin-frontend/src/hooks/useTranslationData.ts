@@ -181,12 +181,10 @@ export const useTranslationData = (initialProjectId?: string) => {
         selectedProject,
         format
       );
-      message.success("Export translations successfully");
       return data;
     } catch (error) {
       console.error("Failed to export translations:", error);
-      message.error("Export translations failed");
-      return null;
+      throw error; // 让上层组件处理错误消息
     }
   };
 

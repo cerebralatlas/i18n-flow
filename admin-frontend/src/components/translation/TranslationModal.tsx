@@ -400,7 +400,7 @@ export const JSONImportTranslationModal: React.FC<JSONImportModalProps> = ({
     "nav.home": "Home",
     "nav.about": "About"
   },
-  "zh-CN": {
+  "zh_CN": {
     "common.welcome": "欢迎",
     "common.hello": "你好",
     "nav.home": "首页",

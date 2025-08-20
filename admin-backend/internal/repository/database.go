@@ -111,8 +111,8 @@ func createDefaultLanguages(db *gorm.DB) error {
 		// 定义常见语言列表
 		languages := []domain.Language{
 			{Code: "en", Name: "English", IsDefault: true},
-			{Code: "zh-CN", Name: "简体中文", IsDefault: false},
-			{Code: "zh-TW", Name: "繁體中文", IsDefault: false},
+			{Code: "zh_CN", Name: "简体中文", IsDefault: false},
+			{Code: "zh_TW", Name: "繁體中文", IsDefault: false},
 			{Code: "ja", Name: "日本語", IsDefault: false},
 			{Code: "ko", Name: "한국어", IsDefault: false},
 			{Code: "fr", Name: "Français", IsDefault: false},

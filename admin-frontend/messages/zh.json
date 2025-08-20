@@ -119,7 +119,12 @@
         "uploadJson": "点击或拖拽JSON文件上传",
         "uploadExcel": "点击或拖拽Excel文件上传"
       },
-      "export": "导出",
+      "export": {
+        "label": "导出",
+        "json": "导出为JSON",
+        "csv": "导出为CSV",
+        "excel": "导出为Excel"
+      },
       "batchDelete": "批量删除",
       "languageColumns": "语言列"
     },
@@ -235,7 +240,9 @@
       "updateSuccess": "更新成功",
       "updateFailed": "更新失败",
       "batchSuccess": "批量操作成功",
-      "batchFailed": "批量操作失败"
+      "batchFailed": "批量操作失败",
+      "exportSuccess": "导出成功",
+      "exportFailed": "导出失败"
     }
   }
 }

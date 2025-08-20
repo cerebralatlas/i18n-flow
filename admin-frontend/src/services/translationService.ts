@@ -75,10 +75,8 @@ export const translationService = {
 
   // 导出项目翻译
   exportTranslations: async (projectId: number, format: string = 'json') => {
-    const response: ApiResponse = await api.get(`/api/exports/project/${projectId}`, {
-      params: { format }
-    });
-    return response.data;
+    const response: ApiResponse = await api.get(`/api/exports/project/${projectId}`);
+    return response?.success ? response.data : response;
   },
 
   // 导入项目翻译
