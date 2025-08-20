@@ -135,11 +135,21 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 
 // setupCLIRoutes 设置CLI相关路由
 func (r *Router) setupCLIRoutes(rg *gin.RouterGroup) {
-	// CLI路由需要API Key认证，这里暂时跳过
-	// 可以根据需要实现API Key中间件
+	// CLI路由使用API Key认证
 	cliRoutes := rg.Group("/cli")
+	cliRoutes.Use(r.middlewareFactory.APIKeyAuthMiddleware())
+	
+	// 获取CLI处理器
+	cliHandler := r.handlerFactory.CLIHandler()
+	
 	{
-		// 这里可以添加CLI相关的路由
-		_ = cliRoutes
+		// CLI身份验证
+		cliRoutes.GET("/auth", cliHandler.Auth)
+		
+		// 获取翻译数据
+		cliRoutes.GET("/translations", cliHandler.GetTranslations)
+		
+		// 推送翻译键
+		cliRoutes.POST("/keys", cliHandler.PushKeys)
 	}
 }

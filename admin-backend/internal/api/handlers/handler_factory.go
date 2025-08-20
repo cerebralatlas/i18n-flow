@@ -38,3 +38,12 @@ func (f *HandlerFactory) TranslationHandler() *TranslationHandler {
 func (f *HandlerFactory) DashboardHandler() *DashboardHandler {
 	return NewDashboardHandler(f.container.DashboardService())
 }
+
+// CLIHandler 获取CLI处理器
+func (f *HandlerFactory) CLIHandler() *CLIHandler {
+	return NewCLIHandler(
+		f.container.TranslationService(),
+		f.container.ProjectService(),
+		f.container.LanguageService(),
+	)
+}
