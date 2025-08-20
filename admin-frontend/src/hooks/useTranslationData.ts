@@ -51,12 +51,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   // 请求项目列表
   const fetchProjects = async () => {
     try {
-      const data = await projectService.getProjects();
-      setProjects(data);
+      const response = await projectService.getProjects();
+      setProjects(response.data);
 
       // 如果未选择项目，但有项目列表，则默认选择第一个项目
-      if (!selectedProject && data.length > 0) {
-        setSelectedProject(data[0].id);
+      if (!selectedProject && response.data.length > 0) {
+        setSelectedProject(response.data[0].id);
       }
     } catch (error) {
       console.error("Failed to get project list:", error);

@@ -72,7 +72,7 @@ export const CreateTranslationModal: React.FC<CreateModalProps> = ({
         >
           <Select
             placeholder={t("translation.modal.common.project.placeholder")}
-            options={projects.map((project) => ({
+            options={projects?.map((project) => ({
               value: project.id,
               label: project.name,
             }))}

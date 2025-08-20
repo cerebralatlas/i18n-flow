@@ -1,4 +1,5 @@
 import api from '../utils/api';
+import { ApiResponse } from '../types/api';
 
 export interface DashboardStats {
   total_projects: number;
@@ -10,6 +11,7 @@ export interface DashboardStats {
 /**
  * 获取仪表板统计数据
  */
-export async function getDashboardStats() {
-  return api.get("/api/dashboard/stats");
+export async function getDashboardStats(): Promise<DashboardStats> {
+  const response: ApiResponse<DashboardStats> = await api.get("/api/dashboard/stats");
+  return response.data;
 }

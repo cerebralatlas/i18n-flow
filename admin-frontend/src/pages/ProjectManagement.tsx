@@ -17,10 +17,11 @@ import {
   DeleteOutlined,
   EyeOutlined,
 } from "@ant-design/icons";
-import axios from "axios";
+import api from "../utils/api";
 import ErrorAlert from "../components/ErrorAlert";
 import ProjectDetailModal from "../components/ProjectDetailModal";
 import { Project } from "../types/project";
+import { ApiResponse, PaginatedResponse } from "../types/api";
 import { useTranslation } from "react-i18next";
 
 const { Title } = Typography;
@@ -45,7 +46,7 @@ const ProjectManagement: React.FC = () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await axios.get("/api/projects", {
+      const response: PaginatedResponse<Project> = await api.get("/api/projects", {
         params: {
           page,
           page_size: pageSize,
@@ -53,8 +54,9 @@ const ProjectManagement: React.FC = () => {
         },
       });
 
-      setProjects(response.data.data);
-      setTotal(response.data.total);
+      // API interceptor returns response.data, so response contains {success, data, meta}
+      setProjects(response.data);
+      setTotal(response.meta?.total_count || 0);
     } catch (error) {
       console.error("Get project list failed:", error);
       setError(t("project.message.getListFailed"));
@@ -75,11 +77,11 @@ const ProjectManagement: React.FC = () => {
 
       if (currentProject) {
         // Update project
-        await axios.put(`/api/projects/update/${currentProject.id}`, values);
+        await api.put(`/api/projects/update/${currentProject.id}`, values);
         message.success(t("project.message.updateSuccess"));
       } else {
         // Create project
-        await axios.post("/api/projects", values);
+        await api.post("/api/projects", values);
         message.success(t("project.message.createSuccess"));
       }
 
@@ -95,7 +97,7 @@ const ProjectManagement: React.FC = () => {
   // Delete project
   const handleDeleteProject = async (id: number) => {
     try {
-      await axios.delete(`/api/projects/delete/${id}`);
+      await api.delete(`/api/projects/delete/${id}`);
       message.success(t("project.message.deleteSuccess"));
       fetchProjects();
     } catch (error) {
@@ -115,8 +117,8 @@ const ProjectManagement: React.FC = () => {
   const showEditModal = async (project: Project) => {
     try {
       // Get project details
-      const response = await axios.get(`/api/projects/detail/${project.id}`);
-      const projectData = response.data;
+      const response: ApiResponse<Project> = await api.get(`/api/projects/detail/${project.id}`);
+      const projectData = response.data; // response contains {success, data, meta}, so response.data is the project
 
       setCurrentProject(projectData);
       form.setFieldsValue({
@@ -139,8 +141,8 @@ const ProjectManagement: React.FC = () => {
       setDetailVisible(true);
 
       // Get project details
-      const response = await axios.get(`/api/projects/detail/${project.id}`);
-      setCurrentProject(response.data);
+      const response: ApiResponse<Project> = await api.get(`/api/projects/detail/${project.id}`);
+      setCurrentProject(response.data); // response contains {success, data, meta}, so response.data is the project
     } catch (error) {
       console.error("Get project details failed:", error);
       message.error(t("project.message.getDetailsFailed"));

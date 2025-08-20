@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import axios from 'axios';
 import { message } from 'antd';
 import api from '../utils/api';
+import { ApiResponse } from '../types/api';
 
 interface User {
   id: number;
@@ -52,7 +53,7 @@ export const useAuthStore = create<AuthState>((set) => ({
 
   login: async (username: string, password: string) => {
     try {
-      const response = await api.post('/api/login', {
+      const response: ApiResponse<{ token: string; user: User }> = await api.post('/api/login', {
         username,
         password,
       });

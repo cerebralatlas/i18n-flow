@@ -103,7 +103,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
             placeholder={t("translation.toolbar.selectProject")}
             value={selectedProject}
             onChange={handleProjectSelect}
-            options={projects.map((project) => ({
+            options={projects?.map((project) => ({
               value: project.id,
               label: project.name,
             }))}
