@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { message } from "antd";
+import { useTranslation } from "react-i18next";
 
 interface User {
   id: number;
@@ -22,6 +23,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
 }) => {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const { t } = useTranslation();
 
   // 检查用户认证状态
   const checkAuthStatus = async () => {
@@ -84,7 +86,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     // 清除axios默认请求头
     delete axios.defaults.headers.common["Authorization"];
 
-    message.success("Logout successfully");
+    message.success(t("common.messages.logoutSuccess"));
     setUser(null);
   };
 

@@ -156,8 +156,8 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
                 selectedTranslations.length
               }?`}
               onConfirm={onBatchDelete}
-              okText="Yes"
-              cancelText="Cancel"
+              okText={t("common.buttons.yes")}
+              cancelText={t("common.buttons.cancel")}
             >
               <Button
                 type="primary"

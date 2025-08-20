@@ -17,12 +17,13 @@ export const generateTableColumns = (
   onDeleteTranslation: (id: number) => void,
   onAddTranslation: (keyName: string, languageId: number) => void,
   onShowBatchAddModal: (keyName: string, context?: string) => void,
-  selectedLanguageCodes: string[] = []
+  selectedLanguageCodes: string[] = [],
+  t: (key: string) => string
 ) => {
   // 基础列：key name和context
   const baseColumns = [
     {
-      title: "Key Name",
+      title: t("translation.table.keyName"),
       dataIndex: "key_name",
       key: "key_name",
       fixed: "left" as const,
@@ -35,7 +36,7 @@ export const generateTableColumns = (
           {record.context && (
             <Tooltip title={record.context}>
               <Tag icon={<InfoCircleOutlined />} color="blue">
-                Has context
+                {t("translation.table.hasContext")}
               </Tag>
             </Tooltip>
           )}
@@ -57,7 +58,7 @@ export const generateTableColumns = (
         <div className="text-xs text-gray-500">[{lang.code}]</div>
         {lang.is_default && (
           <Tag color="green" className="mt-1">
-            Default
+            {t("translation.table.defaultLanguage")}
           </Tag>
         )}
       </div>
@@ -94,13 +95,13 @@ export const generateTableColumns = (
                     }}
                   />
                   <Popconfirm
-                    title="Are you sure you want to delete this translation?"
+                    title={t("translation.table.delete.title")}
                     onConfirm={(e) => {
                       e?.stopPropagation();
                       onDeleteTranslation(translation.id);
                     }}
-                    okText="Yes"
-                    cancelText="Cancel"
+                    okText={t("translation.table.delete.confirm")}
+                    cancelText={t("translation.table.delete.cancel")}
                   >
                     <Button
                       type="text"
@@ -123,7 +124,7 @@ export const generateTableColumns = (
             icon={<PlusOutlined />}
             onClick={() => onAddTranslation(record.key_name, lang.id)}
           >
-            Add translation
+            {t("translation.table.addTranslation")}
           </Button>
         );
       }
@@ -132,7 +133,7 @@ export const generateTableColumns = (
 
   // 操作列
   const actionColumn = {
-    title: "Action",
+    title: t("translation.table.action"),
     key: "action",
     fixed: "right" as const,
     width: 120,
@@ -144,7 +145,7 @@ export const generateTableColumns = (
           icon={<EditOutlined />}
           onClick={() => onShowBatchAddModal(record.key_name, record.context)}
         >
-          Edit
+          {t("translation.table.editKey")}
         </Button>
       </Space>
     ),

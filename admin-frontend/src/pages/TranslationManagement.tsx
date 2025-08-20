@@ -141,7 +141,8 @@ const TranslationManagement: React.FC = () => {
         handleDeleteTranslation,
         handleAddTranslation,
         showBatchAddModal,
-        selectedLanguageColumns // 传递选中的列到过滤
+        selectedLanguageColumns, // 传递选中的列到过滤
+        t // 传递翻译函数
       );
       setColumns(generatedColumns as unknown as ColumnProps<AnyObject>[]);
     }
@@ -387,7 +388,7 @@ const TranslationManagement: React.FC = () => {
       console.error("Import Excel translations failed:", error);
       message.error(
         t("translation.message.importFailed", {
-          error: error instanceof Error ? error.message : "Unknown error",
+          error: error instanceof Error ? error.message : t("common.error.unknown"),
         })
       );
     } finally {

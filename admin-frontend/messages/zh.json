@@ -222,6 +222,7 @@
       "hasContext": "有上下文",
       "defaultLanguage": "默认",
       "addTranslation": "添加翻译",
+      "editKey": "编辑",
       "delete": {
         "title": "确定要删除这条翻译吗？",
         "confirm": "确定",
@@ -243,6 +244,36 @@
       "batchFailed": "批量操作失败",
       "exportSuccess": "导出成功",
       "exportFailed": "导出失败"
+    },
+    "columnSelector": {
+      "showColumns": "显示列",
+      "selectAll": "全选",
+      "clear": "清空",
+      "default": "默认",
+      "buttonText": "显示列 ({{selected}}/{{total}})"
+    }
+  },
+  "common": {
+    "error": {
+      "defaultDescription": "请稍后重试或联系管理员",
+      "retry": "重试",
+      "unknown": "未知错误"
+    },
+    "messages": {
+      "logoutSuccess": "退出登录成功"
+    },
+    "buttons": {
+      "yes": "是",
+      "cancel": "取消",
+      "confirm": "确认",
+      "save": "保存",
+      "create": "创建",
+      "edit": "编辑",
+      "delete": "删除",
+      "close": "关闭",
+      "submit": "提交",
+      "reset": "重置",
+      "ok": "确定"
     }
   }
 }

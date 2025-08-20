@@ -1,6 +1,7 @@
 import React from "react";
 import { Button, Dropdown, Checkbox, Space, Typography } from "antd";
 import { ColumnHeightOutlined } from "@ant-design/icons";
+import { useTranslation } from "react-i18next";
 import { Language } from "../../types/translation";
 
 const { Text } = Typography;
@@ -16,6 +17,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   selectedColumns,
   onChange,
 }) => {
+  const { t } = useTranslation();
   const handleCheckboxChange = (code: string, checked: boolean) => {
     const newSelectedColumns = checked
       ? [...selectedColumns, code]
@@ -38,13 +40,13 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
         label: (
           <div className="p-2" onClick={(e) => e.stopPropagation()}>
             <div className="mb-2 flex justify-between">
-              <Text strong>Show Columns</Text>
+              <Text strong>{t("translation.columnSelector.showColumns")}</Text>
               <Space>
                 <Button size="small" onClick={handleSelectAll}>
-                  Select All
+                  {t("translation.columnSelector.selectAll")}
                 </Button>
                 <Button size="small" onClick={handleSelectNone}>
-                  Clear
+                  {t("translation.columnSelector.clear")}
                 </Button>
               </Space>
             </div>
@@ -60,7 +62,7 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
                     <Space>
                       {lang.name}
                       <Text type="secondary">[{lang.code}]</Text>
-                      {lang.is_default && <Text type="success">(Default)</Text>}
+                      {lang.is_default && <Text type="success">({t("translation.columnSelector.default")})</Text>}
                     </Space>
                   </Checkbox>
                 </div>
@@ -75,7 +77,10 @@ const ColumnSelector: React.FC<ColumnSelectorProps> = ({
   return (
     <Dropdown menu={menu} trigger={["click"]} placement="bottomRight">
       <Button icon={<ColumnHeightOutlined />}>
-        Show Columns ({selectedColumns.length}/{languages.length})
+        {t("translation.columnSelector.buttonText", {
+          selected: selectedColumns.length,
+          total: languages.length
+        })}
       </Button>
     </Dropdown>
   );
