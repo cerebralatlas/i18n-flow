@@ -30,6 +30,7 @@ export default function pushCommand(program: Command): void {
       try {
         let keys: string[] = [];
         const defaults: Record<string, string> = {};
+        const translations: Record<string, Record<string, string>> = {};
 
         // 扫描源码中的翻译键
         if (options.scan) {
@@ -105,23 +106,78 @@ export default function pushCommand(program: Command): void {
             return;
           }
         } else {
-          // 从默认语言文件中获取键
-          const defaultLocaleFile = path.join(
-            process.cwd(),
-            config.localesDir,
-            `${config.defaultLocale}.json`
-          );
-
-          if (fs.existsSync(defaultLocaleFile)) {
-            const defaultTranslations = fs.readJSONSync(defaultLocaleFile);
-            keys = Object.keys(defaultTranslations);
-            Object.assign(defaults, defaultTranslations);
-            logger.info(`Loaded ${keys.length} keys from ${config.defaultLocale}.json`);
-          } else {
-            logger.warn(`Default locale file not found: ${defaultLocaleFile}`);
+          // 从所有语言文件中读取翻译数据
+          const localesDir = path.resolve(process.cwd(), config.localesDir);
+          
+          if (!fs.existsSync(localesDir)) {
+            logger.warn(`Locales directory not found: ${localesDir}`);
             logger.info('Use --scan option to scan source files for keys or --nested to read from nested structure');
             return;
           }
+
+          // 获取所有 JSON 翻译文件
+          const translationFiles = fs.readdirSync(localesDir)
+            .filter(file => file.endsWith('.json'))
+            .map(file => ({
+              locale: file.replace('.json', ''),
+              path: path.join(localesDir, file)
+            }));
+
+          if (translationFiles.length === 0) {
+            logger.warn(`No translation files found in ${localesDir}`);
+            return;
+          }
+
+          // 递归处理嵌套对象
+          function flattenObject(obj: any, currentPath: string = ''): Record<string, string> {
+            const result: Record<string, string> = {};
+            for (const [key, value] of Object.entries(obj)) {
+              const fullPath = currentPath ? `${currentPath}.${key}` : key;
+              
+              if (value && typeof value === 'object' && !Array.isArray(value)) {
+                // 递归处理嵌套对象
+                Object.assign(result, flattenObject(value, fullPath));
+              } else {
+                // 添加叶子节点
+                result[fullPath] = String(value);
+              }
+            }
+            return result;
+          }
+
+          // 读取每个语言文件
+          const allKeys = new Set<string>();
+          for (const { locale, path: filePath } of translationFiles) {
+            try {
+              const translationData = fs.readJSONSync(filePath);
+              const flattenedData = flattenObject(translationData);
+              
+              // 记录所有键
+              Object.keys(flattenedData).forEach(key => allKeys.add(key));
+              
+              // 使用语言代码映射（如果配置了）
+              const mappedLocale = config.languageMapping?.[locale] || locale;
+              
+              // 存储该语言的翻译数据（使用映射后的语言代码）
+              translations[mappedLocale] = flattenedData;
+              
+              // 如果是默认语言，也填充到 defaults（向后兼容）
+              if (locale === config.defaultLocale) {
+                Object.assign(defaults, flattenedData);
+              }
+              
+              if (mappedLocale !== locale) {
+                logger.info(`Loaded ${Object.keys(flattenedData).length} keys from ${locale}.json (mapped to ${mappedLocale})`);
+              } else {
+                logger.info(`Loaded ${Object.keys(flattenedData).length} keys from ${locale}.json`);
+              }
+            } catch (error) {
+              logger.warn(`Could not read ${filePath}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+            }
+          }
+
+          keys = Array.from(allKeys);
+          logger.info(`Total ${keys.length} unique keys from ${translationFiles.length} language files`);
         }
 
         // 空检查
@@ -155,7 +211,8 @@ export default function pushCommand(program: Command): void {
         const result = await apiClient.pushKeys({
           project_id: config.projectId,
           keys,
-          defaults
+          defaults, // 保持向后兼容
+          translations // 新的多语言数据
         });
 
         spinner.succeed('Translation keys pushed to server');

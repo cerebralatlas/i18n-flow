@@ -7,6 +7,54 @@ import apiClient from '../core/api';
 import { getConfig, validateConfig } from '../core/config';
 import { logger } from '../utils/logger';
 
+/**
+ * 将扁平化的键值对转换为嵌套对象结构
+ */
+function convertFlatToNested(flatObject: Record<string, string>): Record<string, any> {
+  const result: Record<string, any> = {};
+  
+  for (const [key, value] of Object.entries(flatObject)) {
+    const keys = key.split('.');
+    let current = result;
+    
+    // 遍历除最后一个键之外的所有键，创建嵌套对象
+    for (let i = 0; i < keys.length - 1; i++) {
+      const keyPart = keys[i];
+      if (!current[keyPart] || typeof current[keyPart] !== 'object') {
+        current[keyPart] = {};
+      }
+      current = current[keyPart];
+    }
+    
+    // 设置最终值
+    const lastKey = keys[keys.length - 1];
+    current[lastKey] = value;
+  }
+  
+  return result;
+}
+
+/**
+ * 深度合并两个对象
+ */
+function mergeDeep(target: Record<string, any>, source: Record<string, any>): Record<string, any> {
+  const result = { ...target };
+  
+  for (const [key, value] of Object.entries(source)) {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      if (result[key] && typeof result[key] === 'object' && !Array.isArray(result[key])) {
+        result[key] = mergeDeep(result[key], value);
+      } else {
+        result[key] = value;
+      }
+    } else {
+      result[key] = value;
+    }
+  }
+  
+  return result;
+}
+
 export default function syncCommand(program: Command): void {
   program
     .command('sync')
@@ -39,11 +87,18 @@ export default function syncCommand(program: Command): void {
 
         // get the list of languages from the translations
         const availableLocales = new Set<string>();
-        Object.values(translations).forEach(translationObj => {
-          Object.keys(translationObj as Record<string, any>).forEach(locale => {
-            availableLocales.add(locale);
-          });
-        });
+        
+        // Check if we have any translation keys
+        const translationKeys = Object.keys(translations);
+        if (translationKeys.length > 0) {
+          // Look at the first translation to get available languages
+          const firstTranslation = translations[translationKeys[0]];
+          if (typeof firstTranslation === 'object' && firstTranslation !== null) {
+            Object.keys(firstTranslation).forEach(locale => {
+              availableLocales.add(locale);
+            });
+          }
+        }
 
         // filter the locales to process
         const localesToProcess = locales.length > 0
@@ -69,49 +124,42 @@ export default function syncCommand(program: Command): void {
           });
 
           if (options.nested) {
-            // use nested directory structure
+            // use nested directory structure - create one folder per locale with namespace files
             const localeDir = path.join(localesDir, locale);
             fs.ensureDirSync(localeDir);
 
-            // group by the first part of the key
+            // group by the first part of the key (namespace)
             const groupedTranslations: Record<string, Record<string, any>> = {};
 
             Object.entries(localeTranslations).forEach(([key, value]) => {
-              const [namespace, ...rest] = key.split('.');
-              if (!namespace) return;
+              const keyParts = key.split('.');
+              if (keyParts.length < 2) {
+                // 如果键名没有点分隔，跳过或放入一个默认命名空间
+                logger.warn(`Skipping key without namespace: ${key}`);
+                return;
+              }
 
+              const namespace = keyParts[0];
               if (!groupedTranslations[namespace]) {
                 groupedTranslations[namespace] = {};
               }
 
-              // rest part become new key
-              const newKey = rest.join('.');
-              if (newKey) {
-                // For keys like "common.signinSuccess" (simple case)
-                if (!newKey.includes('.')) {
-                  groupedTranslations[namespace][newKey] = value;
-                } else {
-                  // For keys like "banner.info.title" (nested case)
-                  const parts = newKey.split('.');
-                  let current = groupedTranslations[namespace];
-
-                  // Create nested objects for all parts except the last one
-                  for (let i = 0; i < parts.length - 1; i++) {
-                    const part = parts[i];
-                    if (!current[part]) {
-                      current[part] = {};
-                    }
-                    current = current[part];
-                  }
-
-                  // Set the value at the deepest level
-                  const lastPart = parts[parts.length - 1];
-                  current[lastPart] = value;
+              // 构建嵌套对象结构
+              let current = groupedTranslations[namespace];
+              for (let i = 1; i < keyParts.length - 1; i++) {
+                const part = keyParts[i];
+                if (!current[part]) {
+                  current[part] = {};
                 }
+                current = current[part];
               }
+
+              // 设置最终值
+              const lastPart = keyParts[keyParts.length - 1];
+              current[lastPart] = value;
             });
 
-            // save each group to a separate file
+            // save each namespace to a separate file
             for (const [namespace, namespaceTranslations] of Object.entries(groupedTranslations)) {
               const namespaceFilePath = path.join(localeDir, `${namespace}.json`);
 
@@ -127,18 +175,21 @@ export default function syncCommand(program: Command): void {
               }
             }
           } else {
-            // use the traditional single file structure
+            // use the traditional single file structure with nested objects
             const localeFilePath = path.join(localesDir, `${locale}.json`);
+            
+            // 将扁平化的键转换为嵌套对象结构
+            const nestedTranslations = convertFlatToNested(localeTranslations);
 
             // handle existing files
             if (fs.existsSync(localeFilePath) && !options.force) {
               // merge the existing translations
               const existingTranslations = fs.readJSONSync(localeFilePath, { throws: false }) || {};
-              const mergedTranslations = { ...existingTranslations, ...localeTranslations };
+              const mergedTranslations = mergeDeep(existingTranslations, nestedTranslations);
               fs.writeJSONSync(localeFilePath, mergedTranslations, { spaces: 2 });
             } else {
               // create new file
-              fs.writeJSONSync(localeFilePath, localeTranslations, { spaces: 2 });
+              fs.writeJSONSync(localeFilePath, nestedTranslations, { spaces: 2 });
             }
           }
         }

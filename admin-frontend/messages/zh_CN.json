@@ -1,7 +1,7 @@
 {
   "login": {
     "title": "i18n-flow",
-    "subtitle": "翻译管理系统",
+    "subtitle": "国际化翻译管理系统",
     "secureLogin": "安全登录",
     "username": {
       "placeholder": "用户名",

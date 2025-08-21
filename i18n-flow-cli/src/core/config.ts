@@ -18,6 +18,7 @@ export interface I18nFlowConfig {
   defaultLocale: string;
   sourcePatterns: string[];
   extractorPattern: string;
+  languageMapping?: Record<string, string>; // 语言代码映射：文件名 -> 数据库语言代码
 }
 
 // 默认配置

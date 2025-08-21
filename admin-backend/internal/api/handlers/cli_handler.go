@@ -111,9 +111,10 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 
 // PushKeysRequest 推送键请求
 type PushKeysRequest struct {
-	ProjectID string            `json:"project_id" binding:"required"`
-	Keys      []string          `json:"keys" binding:"required"`
-	Defaults  map[string]string `json:"defaults"`
+	ProjectID    string                       `json:"project_id" binding:"required"`
+	Keys         []string                     `json:"keys" binding:"required"`
+	Defaults     map[string]string            `json:"defaults"`     // 保持向后兼容（已废弃）
+	Translations map[string]map[string]string `json:"translations"` // 新增：语言代码 -> 键值对映射
 }
 
 // PushKeysResponse 推送键响应
@@ -201,23 +202,45 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 			continue
 		}
 
-		// 创建新的翻译记录
-		defaultValue := req.Defaults[key]
-		if defaultValue == "" {
-			defaultValue = key // 如果没有默认值，使用键名作为默认值
+		// 为所有语言创建新的翻译记录
+		keyAdded := false
+		keyFailed := false
+
+		for _, language := range languages {
+			// 确定翻译值
+			var value string
+
+			// 优先使用新的多语言数据结构
+			if req.Translations != nil {
+				if langTranslations, exists := req.Translations[language.Code]; exists {
+					value = langTranslations[key]
+				}
+			} else {
+				// 向后兼容：使用旧的 Defaults 字段
+				if language.Code == defaultLanguage.Code {
+					value = req.Defaults[key]
+				}
+			}
+
+			translationReq := domain.CreateTranslationRequest{
+				ProjectID:  uint(projectID),
+				KeyName:    key,
+				LanguageID: language.ID,
+				Value:      value,
+			}
+
+			_, err := h.translationService.Create(ctx.Request.Context(), translationReq)
+			if err != nil {
+				keyFailed = true
+			} else if !keyAdded {
+				keyAdded = true
+			}
 		}
 
-		translationReq := domain.CreateTranslationRequest{
-			ProjectID:  uint(projectID),
-			KeyName:    key,
-			LanguageID: defaultLanguage.ID,
-			Value:      defaultValue,
-		}
-
-		_, err := h.translationService.Create(ctx.Request.Context(), translationReq)
-		if err != nil {
+		// 记录结果
+		if keyFailed && !keyAdded {
 			failed = append(failed, key)
-		} else {
+		} else if keyAdded {
 			added = append(added, key)
 		}
 	}

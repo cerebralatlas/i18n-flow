@@ -12,7 +12,8 @@ export interface ApiResponse<T> {
 export interface KeysPushRequest {
   project_id: string;
   keys: string[];
-  defaults: Record<string, string>;
+  defaults?: Record<string, string>; // 保持向后兼容（已废弃）
+  translations?: Record<string, Record<string, string>>; // 新增：语言代码 -> 键值对映射
 }
 
 // 键推送响应
@@ -55,7 +56,7 @@ export class ApiClient {
         this.updateClient(config);
       }
       const response = await this.client.get('/cli/auth');
-      return response.status === 200 && response.data.status === 'ok';
+      return response.data.data.status === 'ok';
     } catch (error) {
       return false;
     }
@@ -70,7 +71,7 @@ export class ApiClient {
     if (locale) params.locale = locale;
 
     const response = await this.client.get('/cli/translations', { params });
-    return response.data;
+    return response.data.data; // 提取实际的翻译数据
   }
 
   /**
