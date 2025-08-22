@@ -43,11 +43,12 @@ func (h *LanguageHandler) Create(ctx *gin.Context) {
 
 	language, err := h.languageService.Create(ctx.Request.Context(), req)
 	if err != nil {
-		if err == domain.ErrLanguageExists {
+		switch err {
+		case domain.ErrLanguageExists:
 			response.Conflict(ctx, err.Error())
-		} else if err == domain.ErrInvalidLanguage {
+		case domain.ErrInvalidLanguage:
 			response.ValidationError(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "创建语言失败")
 		}
 		return
@@ -105,11 +106,12 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 
 	language, err := h.languageService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
-		if err == domain.ErrLanguageNotFound {
+		switch err {
+		case domain.ErrLanguageNotFound:
 			response.NotFound(ctx, err.Error())
-		} else if err == domain.ErrLanguageExists || err == domain.ErrInvalidInput {
+		case domain.ErrLanguageExists, domain.ErrInvalidInput:
 			response.ValidationError(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "更新语言失败")
 		}
 		return
@@ -140,11 +142,12 @@ func (h *LanguageHandler) Delete(ctx *gin.Context) {
 
 	err = h.languageService.Delete(ctx.Request.Context(), uint(id))
 	if err != nil {
-		if err == domain.ErrLanguageNotFound {
+		switch err {
+		case domain.ErrLanguageNotFound:
 			response.NotFound(ctx, err.Error())
-		} else if err == domain.ErrInvalidInput {
+		case domain.ErrInvalidInput:
 			response.ValidationError(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "删除语言失败")
 		}
 		return

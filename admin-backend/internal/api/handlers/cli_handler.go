@@ -78,9 +78,10 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 	// 验证项目是否存在
 	_, err = h.projectService.GetByID(ctx.Request.Context(), uint(projectID))
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "获取项目失败")
 		}
 		return
@@ -152,9 +153,10 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 	// 验证项目是否存在
 	_, err = h.projectService.GetByID(ctx.Request.Context(), uint(projectID))
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "获取项目失败")
 		}
 		return

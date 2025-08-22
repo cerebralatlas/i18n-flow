@@ -3,7 +3,6 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
-	"net/http"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -36,21 +35,22 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 	var req domain.CreateTranslationRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	translation, err := h.translationService.Create(ctx.Request.Context(), req)
 	if err != nil {
-		if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "创建翻译失败"})
+		switch err {
+		case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
+			response.BadRequest(ctx, err.Error())
+		default:
+			response.InternalServerError(ctx, "创建翻译失败")
 		}
 		return
 	}
 
-	ctx.JSON(http.StatusCreated, translation)
+	response.Created(ctx, translation)
 }
 
 // CreateBatch 批量创建翻译
@@ -71,9 +71,10 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 		// 使用前端格式处理
 		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), batchReq)
 		if err != nil {
-			if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
+			switch err {
+			case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
 				response.BadRequest(ctx, err.Error())
-			} else {
+			default:
 				response.InternalServerError(ctx, "批量创建翻译失败")
 			}
 			return
@@ -91,9 +92,10 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 
 	err := h.translationService.CreateBatch(ctx.Request.Context(), requests)
 	if err != nil {
-		if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
+		switch err {
+		case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
 			response.BadRequest(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "批量创建翻译失败")
 		}
 		return
@@ -120,7 +122,7 @@ func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
 	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的项目ID"})
+		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
@@ -139,10 +141,11 @@ func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 
 	translations, total, err := h.translationService.GetByProjectID(ctx.Request.Context(), uint(projectID), pageSize, offset)
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取翻译列表失败"})
+		switch err {
+		case domain.ErrProjectNotFound:
+			response.NotFound(ctx, err.Error())
+		default:
+			response.InternalServerError(ctx, "获取翻译列表失败")
 		}
 		return
 	}
@@ -196,9 +199,10 @@ func (h *TranslationHandler) GetMatrix(ctx *gin.Context) {
 
 	matrix, total, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), pageSize, offset, keyword)
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "获取翻译矩阵失败")
 		}
 		return
@@ -230,16 +234,17 @@ func (h *TranslationHandler) GetByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的翻译ID"})
+		response.BadRequest(ctx, "无效的翻译ID")
 		return
 	}
 
 	translation, err := h.translationService.GetByID(ctx.Request.Context(), uint(id))
 	if err != nil {
-		if err == domain.ErrTranslationNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "获取翻译失败"})
+		switch err {
+		case domain.ErrTranslationNotFound:
+			response.NotFound(ctx, err.Error())
+		default:
+			response.InternalServerError(ctx, "获取翻译失败")
 		}
 		return
 	}
@@ -264,24 +269,25 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的翻译ID"})
+		response.BadRequest(ctx, "无效的翻译ID")
 		return
 	}
 
 	var req domain.CreateTranslationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	translation, err := h.translationService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
-		if err == domain.ErrTranslationNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else if err == domain.ErrProjectNotFound || err == domain.ErrLanguageNotFound {
-			ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "更新翻译失败"})
+		switch err {
+		case domain.ErrTranslationNotFound:
+			response.NotFound(ctx, err.Error())
+		case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
+			response.BadRequest(ctx, err.Error())
+		default:
+			response.InternalServerError(ctx, "更新翻译失败")
 		}
 		return
 	}
@@ -305,16 +311,17 @@ func (h *TranslationHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
 	id, err := strconv.ParseUint(idStr, 10, 32)
 	if err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": "无效的翻译ID"})
+		response.BadRequest(ctx, "无效的翻译ID")
 		return
 	}
 
 	err = h.translationService.Delete(ctx.Request.Context(), uint(id))
 	if err != nil {
-		if err == domain.ErrTranslationNotFound {
-			ctx.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error": "删除翻译失败"})
+		switch err {
+		case domain.ErrTranslationNotFound:
+			response.NotFound(ctx, err.Error())
+		default:
+			response.InternalServerError(ctx, "删除翻译失败")
 		}
 		return
 	}
@@ -337,13 +344,13 @@ func (h *TranslationHandler) DeleteBatch(ctx *gin.Context) {
 	var ids []uint
 
 	if err := ctx.ShouldBindJSON(&ids); err != nil {
-		ctx.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		response.ValidationError(ctx, err.Error())
 		return
 	}
 
 	err := h.translationService.DeleteBatch(ctx.Request.Context(), ids)
 	if err != nil {
-		ctx.JSON(http.StatusInternalServerError, gin.H{"error": "批量删除翻译失败"})
+		response.InternalServerError(ctx, "批量删除翻译失败")
 		return
 	}
 
@@ -373,9 +380,10 @@ func (h *TranslationHandler) Export(ctx *gin.Context) {
 	// 获取翻译矩阵数据
 	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), -1, 0, "")
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "导出翻译失败")
 		}
 		return
@@ -418,9 +426,10 @@ func (h *TranslationHandler) Import(ctx *gin.Context) {
 
 	err = h.translationService.Import(ctx.Request.Context(), uint(projectID), data, format)
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "导入翻译失败: "+err.Error())
 		}
 		return

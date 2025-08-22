@@ -42,11 +42,12 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 
 	project, err := h.projectService.Create(ctx.Request.Context(), req)
 	if err != nil {
-		if err == domain.ErrProjectExists {
+		switch err {
+		case domain.ErrProjectExists:
 			response.Conflict(ctx, err.Error())
-		} else if err == domain.ErrInvalidSlug {
+		case domain.ErrInvalidSlug:
 			response.BadRequest(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "创建项目失败")
 		}
 		return
@@ -77,9 +78,10 @@ func (h *ProjectHandler) GetByID(ctx *gin.Context) {
 
 	project, err := h.projectService.GetByID(ctx.Request.Context(), uint(id))
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "获取项目失败")
 		}
 		return
@@ -159,11 +161,12 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 
 	project, err := h.projectService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else if err == domain.ErrProjectExists || err == domain.ErrInvalidInput {
+		case domain.ErrProjectExists, domain.ErrInvalidInput:
 			response.BadRequest(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "更新项目失败")
 		}
 		return
@@ -194,9 +197,10 @@ func (h *ProjectHandler) Delete(ctx *gin.Context) {
 
 	err = h.projectService.Delete(ctx.Request.Context(), uint(id))
 	if err != nil {
-		if err == domain.ErrProjectNotFound {
+		switch err {
+		case domain.ErrProjectNotFound:
 			response.NotFound(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "删除项目失败")
 		}
 		return

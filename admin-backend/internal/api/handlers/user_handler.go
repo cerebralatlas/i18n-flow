@@ -43,9 +43,10 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 	resp, err := h.userService.Login(ctx.Request.Context(), req)
 	if err != nil {
 		// 根据错误类型返回不同状态码
-		if err == domain.ErrUserNotFound || err == domain.ErrInvalidPassword {
+		switch err {
+		case domain.ErrUserNotFound, domain.ErrInvalidPassword:
 			response.Unauthorized(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "登录失败")
 		}
 		return
@@ -77,9 +78,10 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	// 调用刷新服务
 	resp, err := h.userService.RefreshToken(ctx.Request.Context(), req)
 	if err != nil {
-		if err == domain.ErrInvalidToken {
+		switch err {
+		case domain.ErrInvalidToken:
 			response.InvalidToken(ctx, err.Error())
-		} else {
+		default:
 			response.InternalServerError(ctx, "刷新token失败")
 		}
 		return
