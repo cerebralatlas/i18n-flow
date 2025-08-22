@@ -126,6 +126,12 @@ func initLogger(cfg *config.Config) error {
 
 // setupMiddleware 设置全局中间件
 func setupMiddleware(router *gin.Engine) {
+	// 安全HTTP头中间件（最先设置，确保所有响应都包含安全头）
+	router.Use(middleware.SecurityHeadersMiddleware())
+
+	// 全局限流中间件（每秒100个请求，突发200个）
+	router.Use(middleware.GlobalRateLimitMiddleware())
+
 	// 请求ID中间件
 	router.Use(middleware.RequestIDMiddleware())
 

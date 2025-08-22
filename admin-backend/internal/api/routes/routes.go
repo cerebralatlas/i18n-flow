@@ -59,16 +59,22 @@ func (r *Router) SetupRoutes(engine *gin.Engine) {
 func (r *Router) setupPublicRoutes(rg *gin.RouterGroup) {
 	userHandler := r.handlerFactory.UserHandler()
 
-	// 公开的认证路由
-	rg.POST("/login", userHandler.Login)
-	rg.POST("/refresh", userHandler.RefreshToken)
+	// 登录路由组（应用登录限流中间件）
+	loginRoutes := rg.Group("")
+	loginRoutes.Use(middleware.LoginRateLimitMiddleware())
+	{
+		// 公开的认证路由（每秒5个请求，突发10个）
+		loginRoutes.POST("/login", userHandler.Login)
+		loginRoutes.POST("/refresh", userHandler.RefreshToken)
+	}
 }
 
 // setupAuthenticatedRoutes 设置需要认证的路由
 func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
-	// 应用JWT认证中间件
+	// 应用JWT认证中间件和API限流中间件
 	authRoutes := rg.Group("")
 	authRoutes.Use(r.middlewareFactory.JWTAuthMiddleware())
+	authRoutes.Use(middleware.APIRateLimitMiddleware())
 
 	// 获取处理器
 	userHandler := r.handlerFactory.UserHandler()
@@ -105,23 +111,32 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 	// 翻译相关路由
 	translationRoutes := authRoutes.Group("/translations")
 	{
+		// 普通翻译操作
 		translationRoutes.POST("", translationHandler.Create)
-		translationRoutes.POST("/batch", translationHandler.CreateBatch)
 		translationRoutes.GET("/by-project/:project_id", translationHandler.GetByProjectID)
 		translationRoutes.GET("/matrix/by-project/:project_id", translationHandler.GetMatrix)
 		translationRoutes.GET("/:id", translationHandler.GetByID)
 		translationRoutes.PUT("/:id", translationHandler.Update)
 		translationRoutes.DELETE("/:id", translationHandler.Delete)
-		translationRoutes.POST("/batch-delete", translationHandler.DeleteBatch)
 	}
 
-	// 导出导入路由
+	// 批量操作路由组（应用批量操作限流中间件）
+	batchRoutes := authRoutes.Group("/translations")
+	batchRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
+	{
+		batchRoutes.POST("/batch", translationHandler.CreateBatch)
+		batchRoutes.POST("/batch-delete", translationHandler.DeleteBatch)
+	}
+
+	// 导出导入路由（应用批量操作限流中间件）
 	exportRoutes := authRoutes.Group("/exports")
+	exportRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
 	{
 		exportRoutes.GET("/project/:project_id", translationHandler.Export)
 	}
 
 	importRoutes := authRoutes.Group("/imports")
+	importRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
 	{
 		importRoutes.POST("/project/:project_id", translationHandler.Import)
 	}
@@ -135,21 +150,27 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 
 // setupCLIRoutes 设置CLI相关路由
 func (r *Router) setupCLIRoutes(rg *gin.RouterGroup) {
-	// CLI路由使用API Key认证
+	// CLI路由使用API Key认证和API限流
 	cliRoutes := rg.Group("/cli")
 	cliRoutes.Use(r.middlewareFactory.APIKeyAuthMiddleware())
-	
+	cliRoutes.Use(middleware.APIRateLimitMiddleware())
+
 	// 获取CLI处理器
 	cliHandler := r.handlerFactory.CLIHandler()
-	
+
 	{
 		// CLI身份验证
 		cliRoutes.GET("/auth", cliHandler.Auth)
-		
+
 		// 获取翻译数据
 		cliRoutes.GET("/translations", cliHandler.GetTranslations)
-		
-		// 推送翻译键
-		cliRoutes.POST("/keys", cliHandler.PushKeys)
+	}
+
+	// 推送翻译键（批量操作，应用批量操作限流）
+	batchCliRoutes := rg.Group("/cli")
+	batchCliRoutes.Use(r.middlewareFactory.APIKeyAuthMiddleware())
+	batchCliRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
+	{
+		batchCliRoutes.POST("/keys", cliHandler.PushKeys)
 	}
 }
