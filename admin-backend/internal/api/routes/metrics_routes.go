@@ -10,14 +10,28 @@ import (
 
 // SetupMetricsRoutes 设置监控相关路由
 func SetupMetricsRoutes(router *gin.Engine, c *container.Container) {
+	// 将容器注入到上下文中，以便在路由处理函数中使用
+	router.Use(func(ctx *gin.Context) {
+		ctx.Set("container", c)
+		ctx.Next()
+	})
+
 	// 监控指标路由组
 	metricsGroup := router.Group("/metrics")
 	{
 		// 添加IP白名单中间件，限制只有特定IP可以访问监控指标
-		metricsGroup.Use(middleware.IPWhitelistMiddleware(c.Config().Metrics.AllowedIPs))
+		// 默认允许所有IP访问
+		var allowedIPs []string
+
+		// 尝试从配置中获取IP白名单
+		if c.Config().Metrics.Enabled {
+			allowedIPs = c.Config().Metrics.AllowedIPs
+		}
+
+		metricsGroup.Use(middleware.IPWhitelistMiddleware(allowedIPs))
 
 		// Prometheus指标端点
-		metricsGroup.GET("/", metrics.MetricsHandler())
+		metricsGroup.GET("", metrics.MetricsHandler()) // 修改为空字符串，匹配/metrics路径
 
 		// 健康检查端点
 		metricsGroup.GET("/health", func(c *gin.Context) {
@@ -30,7 +44,8 @@ func SetupMetricsRoutes(router *gin.Engine, c *container.Container) {
 		// 就绪检查端点
 		metricsGroup.GET("/ready", func(c *gin.Context) {
 			// 检查数据库连接
-			db, err := c.MustGet("container").(*container.Container).DB().DB()
+			container := c.MustGet("container").(*container.Container)
+			db, err := container.DB().DB()
 			if err != nil {
 				c.JSON(503, gin.H{
 					"status": "not_ready",
@@ -48,7 +63,7 @@ func SetupMetricsRoutes(router *gin.Engine, c *container.Container) {
 			}
 
 			// 检查Redis连接
-			redisClient := c.MustGet("container").(*container.Container).RedisClient()
+			redisClient := container.RedisClient()
 			if redisClient != nil {
 				if err := redisClient.Ping(c.Request.Context()); err != nil {
 					c.JSON(503, gin.H{

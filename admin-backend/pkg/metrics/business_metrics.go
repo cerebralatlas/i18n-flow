@@ -48,9 +48,6 @@ func (c *BusinessMetricsCollector) Stop() {
 
 // collectMetrics 收集业务指标
 func (c *BusinessMetricsCollector) collectMetrics() {
-	// 由于我们没有完整的仓储接口定义，这里只是一个框架
-	// 实际实现需要根据具体的仓储接口进行调整
-
 	// 设置一些模拟的业务指标数据
 	SetProjectsCount(10)
 	SetTranslationsCount("project-1", 100)

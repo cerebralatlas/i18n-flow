@@ -94,23 +94,16 @@ func main() {
 	// 应用全局中间件
 	setupMiddleware(router)
 
+	// 初始化监控系统
+	utils.AppInfo("Initializing metrics system")
+	metrics.Init()
+
 	// 设置路由
 	routeManager := routes.NewRouter(container)
 	routeManager.SetupRoutes(router)
-
+	
 	// 设置监控路由
 	routes.SetupMetricsRoutes(router, container)
-
-	// 初始化监控系统
-	metricsEnabled := false
-	if cfg.Metrics.Enabled {
-		metricsEnabled = true
-	}
-
-	if metricsEnabled {
-		utils.AppInfo("Initializing metrics system")
-		metrics.InitMetrics(container)
-	}
 
 	// 启动服务器
 	utils.AppInfo("Server starting",

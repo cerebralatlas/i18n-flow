@@ -3,7 +3,7 @@ package metrics
 import (
 	"runtime"
 	"time"
-
+	
 	"github.com/shirou/gopsutil/v3/cpu"
 	"github.com/shirou/gopsutil/v3/mem"
 )
@@ -24,6 +24,9 @@ func NewSystemMetricsCollector(interval time.Duration) *SystemMetricsCollector {
 
 // Start 开始收集系统指标
 func (c *SystemMetricsCollector) Start() {
+	// 立即收集一次指标
+	c.collectMetrics()
+	
 	go func() {
 		ticker := time.NewTicker(c.interval)
 		defer ticker.Stop()
@@ -48,7 +51,7 @@ func (c *SystemMetricsCollector) Stop() {
 func (c *SystemMetricsCollector) collectMetrics() {
 	// 收集内存指标
 	c.collectMemoryMetrics()
-
+	
 	// 收集CPU指标
 	c.collectCPUMetrics()
 }
@@ -58,7 +61,7 @@ func (c *SystemMetricsCollector) collectMemoryMetrics() {
 	// 收集Go运行时内存统计
 	var m runtime.MemStats
 	runtime.ReadMemStats(&m)
-
+	
 	// 设置Go堆内存使用量
 	SetMemoryUsage(float64(m.HeapAlloc))
 

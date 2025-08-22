@@ -16,9 +16,6 @@ var (
 
 // InitMetrics 初始化监控系统
 func InitMetrics(c *container.Container) {
-	// 初始化Prometheus指标
-	Init()
-
 	// 创建系统指标收集器（每30秒收集一次）
 	systemMetricsCollector = NewSystemMetricsCollector(30 * time.Second)
 	systemMetricsCollector.Start()
