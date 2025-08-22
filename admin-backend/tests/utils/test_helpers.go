@@ -30,19 +30,21 @@ func SetupTestLogger(t *testing.T) (*zap.Logger, *observer.ObservedLogs) {
 	core, logs := observer.New(zap.InfoLevel)
 	logger := zap.New(core)
 
-	// 保存原始日志器
-	originalLogger := utils.Logger
-	originalSugar := utils.SugaredLogger
-
 	// 设置测试日志器
-	utils.Logger = logger
-	utils.SugaredLogger = logger.Sugar()
-
-	// 测试结束后恢复原始日志器
-	t.Cleanup(func() {
-		utils.Logger = originalLogger
-		utils.SugaredLogger = originalSugar
-	})
+	// 注意：这里不再需要保存和恢复原始日志器，因为我们使用的是多日志系统
+	logConfig := utils.MultiLogConfig{
+		Level:         "info",
+		Format:        "console",
+		Output:        "stdout",
+		LogDir:        t.TempDir(),
+		DateFormat:    "2006-01-02",
+		MaxSize:       1,
+		MaxAge:        1,
+		MaxBackups:    1,
+		Compress:      false,
+		EnableConsole: true,
+	}
+	utils.InitMultiLogger(logConfig)
 
 	return logger, logs
 }

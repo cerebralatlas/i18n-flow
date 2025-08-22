@@ -79,7 +79,7 @@ func LoggingMiddleware() gin.HandlerFunc {
 		}
 
 		// 添加请求体（仅在debug级别且非敏感路径）
-		if utils.Logger != nil && shouldLogRequestBody(c.Request.URL.Path) && len(requestBody) > 0 && len(requestBody) < 1024 {
+		if shouldLogRequestBody(c.Request.URL.Path) && len(requestBody) > 0 && len(requestBody) < 1024 {
 			fields = append(fields, zap.String("request_body", string(requestBody)))
 		}
 

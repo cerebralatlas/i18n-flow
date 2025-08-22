@@ -23,15 +23,15 @@ func TestMain(m *testing.M) {
 
 func setup() {
 	// 初始化测试环境的日志配置
-	logConfig := utils.GetDefaultLogConfig("test")
-	utils.InitLogger(logConfig)
+	logConfig := utils.GetDefaultMultiLogConfig("test")
+	utils.InitMultiLogger(logConfig)
 
-	utils.Info("测试环境初始化完成")
+	utils.AppInfo("测试环境初始化完成")
 }
 
 func teardown() {
 	// 同步日志，确保所有日志都已写入
-	utils.Sync()
+	utils.SyncAll()
 
-	utils.Info("测试环境清理完成")
+	utils.AppInfo("测试环境清理完成")
 }

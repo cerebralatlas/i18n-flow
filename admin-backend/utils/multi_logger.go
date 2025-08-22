@@ -41,10 +41,15 @@ type MultiLogConfig struct {
 type LoggerManager struct {
 	config  MultiLogConfig
 	loggers map[LoggerType]*zap.Logger
-	sugar   *zap.SugaredLogger
 }
 
 var logManager *LoggerManager
+
+// Logger 全局日志实例
+var Logger *zap.Logger
+
+// SugaredLogger 全局语法糖日志实例
+var SugaredLogger *zap.SugaredLogger
 
 // InitMultiLogger 初始化多日志系统
 func InitMultiLogger(config MultiLogConfig) error {
@@ -150,6 +155,22 @@ func (lm *LoggerManager) createLogger(logType LoggerType) (*zap.Logger, error) {
 	return zap.New(core, zap.AddCaller(), zap.AddCallerSkip(1), zap.AddStacktrace(zapcore.ErrorLevel)), nil
 }
 
+// parseLogLevel 解析日志级别
+func parseLogLevel(level string) zapcore.Level {
+	switch level {
+	case "debug":
+		return zapcore.DebugLevel
+	case "info":
+		return zapcore.InfoLevel
+	case "warn":
+		return zapcore.WarnLevel
+	case "error":
+		return zapcore.ErrorLevel
+	default:
+		return zapcore.InfoLevel
+	}
+}
+
 // getLogLevel 获取指定类型的日志级别
 func (lm *LoggerManager) getLogLevel(logType LoggerType) zapcore.Level {
 	// 检查是否有特定配置
@@ -210,6 +231,28 @@ func GetLogger(logType LoggerType) *zap.Logger {
 }
 
 // 不同类型的日志记录函数
+// 全局日志函数（兼容旧代码）
+func Debug(msg string, fields ...zap.Field) {
+	GetLogger(LogTypeApp).Debug(msg, fields...)
+}
+
+func Info(msg string, fields ...zap.Field) {
+	GetLogger(LogTypeApp).Info(msg, fields...)
+}
+
+func Warn(msg string, fields ...zap.Field) {
+	GetLogger(LogTypeApp).Warn(msg, fields...)
+}
+
+func Error(msg string, fields ...zap.Field) {
+	GetLogger(LogTypeApp).Error(msg, fields...)
+}
+
+func Fatal(msg string, fields ...zap.Field) {
+	GetLogger(LogTypeApp).Fatal(msg, fields...)
+}
+
+// 应用日志函数
 func AppInfo(msg string, fields ...zap.Field) {
 	GetLogger(LogTypeApp).Info(msg, fields...)
 }
@@ -242,13 +285,42 @@ func DBLog(msg string, fields ...zap.Field) {
 	GetLogger(LogTypeDB).Info(msg, fields...)
 }
 
-// 格式化日志函数
+// 格式化日志函数（兼容旧代码）
+func Debugf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Debugf(template, args...)
+}
+
+func Infof(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Infof(template, args...)
+}
+
+func Warnf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Warnf(template, args...)
+}
+
+func Errorf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Errorf(template, args...)
+}
+
+func Fatalf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Fatalf(template, args...)
+}
+
+// 应用格式化日志函数
 func AppInfof(template string, args ...interface{}) {
 	GetLogger(LogTypeApp).Sugar().Infof(template, args...)
 }
 
 func AppErrorf(template string, args ...interface{}) {
 	GetLogger(LogTypeApp).Sugar().Errorf(template, args...)
+}
+
+func AppWarnf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Warnf(template, args...)
+}
+
+func AppDebugf(template string, args ...interface{}) {
+	GetLogger(LogTypeApp).Sugar().Debugf(template, args...)
 }
 
 func AccessLogf(template string, args ...interface{}) {
@@ -262,6 +334,21 @@ func SyncAll() {
 			logger.Sync()
 		}
 	}
+}
+
+// Sync 同步日志缓冲区（兼容旧代码）
+func Sync() {
+	if Logger != nil {
+		Logger.Sync()
+	}
+}
+
+// WithFields 创建带字段的日志条目（兼容旧代码）
+func WithFields(fields ...zap.Field) *zap.Logger {
+	if Logger != nil {
+		return Logger.With(fields...)
+	}
+	return zap.NewNop()
 }
 
 // GetDefaultMultiLogConfig 获取默认多日志配置
