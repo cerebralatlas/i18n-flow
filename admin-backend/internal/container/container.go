@@ -127,3 +127,21 @@ func (c *Container) DashboardService() domain.DashboardService {
 	}
 	return c.dashboardService
 }
+
+// Repository 获取仓储集合
+func (c *Container) Repository() *Repository {
+	return &Repository{
+		User:        c.UserRepository(),
+		Project:     c.ProjectRepository(),
+		Language:    c.LanguageRepository(),
+		Translation: c.TranslationRepository(),
+	}
+}
+
+// Repository 仓储集合
+type Repository struct {
+	User        domain.UserRepository
+	Project     domain.ProjectRepository
+	Language    domain.LanguageRepository
+	Translation domain.TranslationRepository
+}

@@ -56,11 +56,12 @@ type LogConfig struct {
 
 // Config 应用配置
 type Config struct {
-	DB    DBConfig
-	JWT   JWTConfig
-	CLI   CLIConfig
-	Log   LogConfig
-	Redis RedisConfig
+	DB      DBConfig
+	JWT     JWTConfig
+	CLI     CLIConfig
+	Log     LogConfig
+	Redis   RedisConfig
+	Metrics MetricsConfig
 }
 
 // Load 加载配置
@@ -107,6 +108,7 @@ func Load() (*Config, error) {
 			Compress:      getEnvAsBool("LOG_COMPRESS", true),
 			EnableConsole: getEnvAsBool("LOG_ENABLE_CONSOLE", true),
 		},
+		Metrics: GetDefaultMetricsConfig(),
 	}
 
 	if err := config.Validate(); err != nil {
@@ -188,6 +190,7 @@ func loadWithoutValidation() *Config {
 			Compress:      getEnvAsBool("LOG_COMPRESS", true),
 			EnableConsole: getEnvAsBool("LOG_ENABLE_CONSOLE", true),
 		},
+		Metrics: GetDefaultMetricsConfig(),
 	}
 }
 
