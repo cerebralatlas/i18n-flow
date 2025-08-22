@@ -26,6 +26,22 @@ func (c *Container) createTranslationRepository() domain.TranslationRepository {
 	return repository.NewTranslationRepository(c.db)
 }
 
+// RedisClient 获取Redis客户端
+func (c *Container) RedisClient() *repository.RedisClient {
+	if c.redisClient == nil {
+		c.redisClient = repository.NewRedisClient(&c.config.Redis)
+	}
+	return c.redisClient
+}
+
+// CacheService 获取缓存服务
+func (c *Container) CacheService() domain.CacheService {
+	if c.cacheService == nil {
+		c.cacheService = service.NewCacheService(c.RedisClient())
+	}
+	return c.cacheService
+}
+
 // createAuthService 创建认证服务实例
 func (c *Container) createAuthService() domain.AuthService {
 	return service.NewAuthService(c.config.JWT)
@@ -51,18 +67,24 @@ func (c *Container) createLanguageService() domain.LanguageService {
 
 // createTranslationService 创建翻译服务实例
 func (c *Container) createTranslationService() domain.TranslationService {
-	return service.NewTranslationService(
+	baseService := service.NewTranslationService(
 		c.TranslationRepository(),
 		c.ProjectRepository(),
 		c.LanguageRepository(),
 	)
+
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedTranslationService(baseService, c.CacheService())
 }
 
 // createDashboardService 创建仪表板服务实例
 func (c *Container) createDashboardService() domain.DashboardService {
-	return service.NewDashboardService(
+	baseService := service.NewDashboardService(
 		c.ProjectRepository(),
 		c.LanguageRepository(),
 		c.TranslationRepository(),
 	)
+
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedDashboardService(baseService, c.CacheService())
 }

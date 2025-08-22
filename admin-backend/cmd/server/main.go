@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"i18n-flow/docs" // 导入自动生成的 docs 包
 	"i18n-flow/internal/api/middleware"
 	"i18n-flow/internal/api/routes"
@@ -70,6 +71,15 @@ func main() {
 
 	// 创建依赖注入容器
 	container := container.NewContainer(db, cfg)
+
+	// 初始化Redis连接
+	utils.AppInfo("Initializing Redis connection")
+	redisClient := container.RedisClient()
+	if err := redisClient.Ping(context.Background()); err != nil {
+		utils.AppWarn("Failed to connect to Redis, cache will be disabled", zap.Error(err))
+	} else {
+		utils.AppInfo("Redis connection established successfully")
+	}
 
 	// 初始化Swagger文档
 	docs.SwaggerInfo.BasePath = "/api"

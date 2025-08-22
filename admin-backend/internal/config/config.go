@@ -26,6 +26,15 @@ type JWTConfig struct {
 	RefreshExpirationHours int
 }
 
+// RedisConfig Redis配置
+type RedisConfig struct {
+	Host     string
+	Port     int
+	Password string
+	DB       int
+	Prefix   string
+}
+
 // CLIConfig CLI配置
 type CLIConfig struct {
 	APIKey string
@@ -47,10 +56,11 @@ type LogConfig struct {
 
 // Config 应用配置
 type Config struct {
-	DB  DBConfig
-	JWT JWTConfig
-	CLI CLIConfig
-	Log LogConfig
+	DB    DBConfig
+	JWT   JWTConfig
+	CLI   CLIConfig
+	Log   LogConfig
+	Redis RedisConfig
 }
 
 // Load 加载配置
@@ -77,6 +87,13 @@ func Load() (*Config, error) {
 		},
 		CLI: CLIConfig{
 			APIKey: getEnv("CLI_API_KEY", "testapikey"),
+		},
+		Redis: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnvAsInt("REDIS_PORT", 6379),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
+			Prefix:   getEnv("REDIS_PREFIX", "i18n_flow:"),
 		},
 		Log: LogConfig{
 			Level:         getEnv("LOG_LEVEL", "info"),
@@ -151,6 +168,13 @@ func loadWithoutValidation() *Config {
 		},
 		CLI: CLIConfig{
 			APIKey: getEnv("CLI_API_KEY", "testapikey"),
+		},
+		Redis: RedisConfig{
+			Host:     getEnv("REDIS_HOST", "localhost"),
+			Port:     getEnvAsInt("REDIS_PORT", 6379),
+			Password: getEnv("REDIS_PASSWORD", ""),
+			DB:       getEnvAsInt("REDIS_DB", 0),
+			Prefix:   getEnv("REDIS_PREFIX", "i18n_flow:"),
 		},
 		Log: LogConfig{
 			Level:         getEnv("LOG_LEVEL", "info"),

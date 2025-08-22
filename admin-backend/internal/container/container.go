@@ -3,6 +3,7 @@ package container
 import (
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/repository"
 
 	"gorm.io/gorm"
 )
@@ -17,6 +18,7 @@ type Container struct {
 	projectRepo     domain.ProjectRepository
 	languageRepo    domain.LanguageRepository
 	translationRepo domain.TranslationRepository
+	redisClient     *repository.RedisClient
 
 	// Services
 	authService        domain.AuthService
@@ -25,6 +27,7 @@ type Container struct {
 	languageService    domain.LanguageService
 	translationService domain.TranslationService
 	dashboardService   domain.DashboardService
+	cacheService       domain.CacheService
 }
 
 // NewContainer 创建新的容器实例
