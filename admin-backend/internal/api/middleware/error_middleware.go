@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"i18n-flow/internal/api/response"
 	"i18n-flow/utils"
-	"net/http"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
@@ -49,22 +48,6 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		}
 		c.Abort()
 	})
-}
-
-// RequestValidationMiddleware 请求验证中间件
-func RequestValidationMiddleware() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		// 检查Content-Type（对于POST、PUT请求）
-		if c.Request.Method == http.MethodPost || c.Request.Method == http.MethodPut {
-			contentType := c.GetHeader("Content-Type")
-			if contentType != "" && contentType != "application/json" && contentType != "multipart/form-data" {
-				response.BadRequest(c, fmt.Sprintf("不支持的Content-Type: %s", contentType))
-				return
-			}
-		}
-
-		c.Next()
-	}
 }
 
 // getRequestIDFromContext 从上下文获取请求ID

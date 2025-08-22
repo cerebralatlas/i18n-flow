@@ -136,8 +136,14 @@ func setupMiddleware(router *gin.Engine) {
 	// 全局错误处理中间件
 	router.Use(middleware.ErrorHandlerMiddleware())
 
+	// 请求大小限制中间件 (32MB)
+	router.Use(middleware.RequestSizeLimitMiddleware(32 << 20))
+
 	// 请求验证中间件
 	router.Use(middleware.RequestValidationMiddleware())
+
+	// 分页参数验证中间件
+	router.Use(middleware.PaginationValidationMiddleware())
 
 	// 允许跨域请求
 	router.Use(middleware.CORSMiddleware())
