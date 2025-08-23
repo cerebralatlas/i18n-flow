@@ -1,6 +1,6 @@
 # i18n-flow Backend
 
-A powerful backend service for internationalization management in application development.
+A powerful backend service for internationalization management in application development. Built with Go 1.23, Gin, GORM, and Redis.
 
 ## Overview
 
@@ -20,12 +20,14 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 ## Tech Stack
 
-- **Language**: Go (Golang)
-- **Web Framework**: Gin
-- **ORM**: GORM
-- **Database**: MySQL/MariaDB
+- **Language**: Go 1.23
+- **Web Framework**: Gin 1.9.1
+- **ORM**: GORM 1.30.0
+- **Database**: MySQL/MariaDB, SQLite (for testing)
 - **Documentation**: Swagger/OpenAPI
 - **Authentication**: JWT & API keys
+- **Caching**: Redis
+- **Logging**: Zap with lumberjack rotation
 
 ## API Endpoints
 
@@ -76,9 +78,10 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 ### Prerequisites
 
-- Go 1.16+
-- MySQL/MariaDB
+- Go 1.23+
+- MySQL
 - Git
+- Redis (for caching)
 
 ### Installation
 
@@ -88,6 +91,8 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
    git clone https://github.com/yourusername/i18n-flow.git
    cd i18n-flow/admin-backend
    ```
+
+   Or download the latest release from the releases page.
 
 2. Install dependencies:
 
@@ -104,28 +109,44 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
    Edit `.env` file with your database credentials and settings:
 
    ```
+   DB_DRIVER=mysql           # mysql
    DB_USERNAME=your_db_user
    DB_PASSWORD=your_db_password
    DB_HOST=localhost
    DB_PORT=3306
    DB_NAME=i18n_flow
+   
    JWT_SECRET=your_secure_jwt_secret
    JWT_EXPIRATION_HOURS=24
    JWT_REFRESH_SECRET=your_secure_refresh_secret
    JWT_REFRESH_EXPIRATION_HOURS=168
+   
    CLI_API_KEY=your_secure_api_key
+   
    ADMIN_NAME=your_name
    ADMIN_PASSWORD=your_password
+   
+   REDIS_HOST=localhost
+   REDIS_PORT=6379
+   REDIS_PASSWORD=
+   REDIS_DB=0
+   
+   LOG_LEVEL=info           # debug, info, warn, error
+   LOG_FILE=./logs/app.log
    ```
 
 4. Start the server:
 
    ```bash
+   # Using air for hot-reload during development
    air
    
-   or
-
-   go run main.go
+   # Or run directly
+   go run cmd/server/main.go
+   
+   # Or build and run the binary
+   go build -o i18n-flow
+   ./i18n-flow
    ```
 
    The server will start on port 8080 by default. The database tables will be automatically created.
@@ -138,12 +159,12 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 ### Initial Access
 
-On first run, the system creates a default admin user:
+On first run, the system creates a default admin user based on your environment variables:
 
-- Username: your_username
-- Password: your_password
+- Username: Value from `ADMIN_NAME` in .env file
+- Password: Value from `ADMIN_PASSWORD` in .env file
 
-It's highly recommended to change this password after the first login.
+It's highly recommended to change this password after the first login through the admin interface.
 
 ## Development
 
@@ -155,19 +176,49 @@ The API documentation is automatically generated with Swagger. You can access it
 http://localhost:8080/swagger/index.html
 ```
 
+### Hot Reload Development
+
+This project uses [Air](https://github.com/cosmtrek/air) for hot reloading during development. The configuration is in `.air.toml`.
+
+To install Air:
+
+```bash
+go install github.com/cosmtrek/air@latest
+```
+
+Then run:
+
+```bash
+air
+```
+
 ### Project Structure
 
-- `/controller`: HTTP request handlers
-- `/service`: Business logic layer
-- `/model`: Data models and database operations
-- `/middleware`: Request processing middleware
-- `/config`: Application configuration
+- `/cmd/server`: Application entry point
+- `/internal/api/handlers`: HTTP request handlers
+- `/internal/api/middleware`: Request processing middleware
+- `/internal/api/response`: Response formatting
+- `/internal/api/routes`: API route definitions
+- `/internal/config`: Application configuration
+- `/internal/container`: Dependency injection container
+- `/internal/domain`: Core domain models and interfaces
+- `/internal/repository`: Data access layer
+- `/internal/service`: Business logic layer
+- `/internal/utils`: Utility functions
 - `/docs`: Auto-generated API documentation
+- `/migrations`: Database migration files
+- `/utils`: Shared utility functions
+- `/tests`: Test files
 
 ### Running Tests
 
 ```bash
+# Run all tests
 go test ./...
+
+# Run tests with coverage report
+go test ./... -coverprofile=coverage.out
+go tool cover -html=coverage.out -o coverage.html
 ```
 
 ## CLI Tool Integration
@@ -185,8 +236,21 @@ The backend provides dedicated endpoints for CLI tool integration, allowing auto
 # Build image
 docker build -t i18n-flow-backend .
 
-# Run container
+# Run container with MySQL
 docker run -p 8080:8080 --env-file .env i18n-flow-backend
+
+# Or run with Docker Compose (recommended for production)
+# Create a docker-compose.yml file with MySQL and Redis services
+docker-compose up -d
+```
+
+### Environment Variables for Docker
+
+When running in Docker, you may want to adjust these environment variables:
+
+```
+DB_HOST=mysql  # Use service name from docker-compose
+REDIS_HOST=redis  # Use service name from docker-compose
 ```
 
 ## License
