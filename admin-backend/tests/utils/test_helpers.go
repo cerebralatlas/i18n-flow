@@ -1,6 +1,7 @@
 package utils
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"testing"
@@ -8,7 +9,7 @@ import (
 	"github.com/stretchr/testify/require"
 	"go.uber.org/zap"
 	"go.uber.org/zap/zaptest/observer"
-	"gorm.io/driver/sqlite"
+	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 
 	"i18n-flow/internal/domain"
@@ -49,9 +50,36 @@ func SetupTestLogger(t *testing.T) (*zap.Logger, *observer.ObservedLogs) {
 	return logger, logs
 }
 
-// SetupTestDB 创建内存数据库用于测试
+// SetupTestDB 创建测试数据库
 func SetupTestDB(t *testing.T) *gorm.DB {
-	db, err := gorm.Open(sqlite.Open("file::memory:?cache=shared"), &gorm.Config{})
+	// 使用环境变量或默认测试配置
+	dbUser := getEnvOrDefault("TEST_DB_USER", "root")
+	dbPass := getEnvOrDefault("TEST_DB_PASS", "")
+	dbHost := getEnvOrDefault("TEST_DB_HOST", "localhost")
+	dbPort := getEnvOrDefault("TEST_DB_PORT", "3306")
+	dbName := getEnvOrDefault("TEST_DB_NAME", fmt.Sprintf("i18n_flow_test_%d", os.Getpid()))
+
+	// 构建DSN
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+		dbUser, dbPass, dbHost, dbPort, dbName)
+
+	// 先连接到MySQL服务器
+	rootDsn := fmt.Sprintf("%s:%s@tcp(%s:%s)/", dbUser, dbPass, dbHost, dbPort)
+	rootDB, err := gorm.Open(mysql.Open(rootDsn), &gorm.Config{})
+	if err != nil {
+		t.Skipf("跳过测试：无法连接到MySQL服务器: %v", err)
+		return nil
+	}
+
+	// 创建测试数据库
+	err = rootDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName)).Error
+	require.NoError(t, err)
+
+	err = rootDB.Exec(fmt.Sprintf("CREATE DATABASE %s", dbName)).Error
+	require.NoError(t, err)
+
+	// 连接到测试数据库
+	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
 	require.NoError(t, err)
 
 	// 自动迁移模型
@@ -63,7 +91,31 @@ func SetupTestDB(t *testing.T) *gorm.DB {
 	)
 	require.NoError(t, err)
 
+	// 在测试结束时清理
+	t.Cleanup(func() {
+		sqlDB, _ := db.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+
+		// 删除测试数据库
+		rootDB.Exec(fmt.Sprintf("DROP DATABASE IF EXISTS %s", dbName))
+		sqlDB, _ = rootDB.DB()
+		if sqlDB != nil {
+			sqlDB.Close()
+		}
+	})
+
 	return db
+}
+
+// getEnvOrDefault 获取环境变量或默认值
+func getEnvOrDefault(key, defaultValue string) string {
+	value := os.Getenv(key)
+	if value == "" {
+		return defaultValue
+	}
+	return value
 }
 
 // CreateTestFile 创建测试文件并返回路径

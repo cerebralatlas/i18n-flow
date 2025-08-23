@@ -23,7 +23,7 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 - **Language**: Go 1.23
 - **Web Framework**: Gin 1.9.1
 - **ORM**: GORM 1.30.0
-- **Database**: MySQL/MariaDB, SQLite (for testing)
+- **Database**: MySQL
 - **Documentation**: Swagger/OpenAPI
 - **Authentication**: JWT & API keys
 - **Caching**: Redis
