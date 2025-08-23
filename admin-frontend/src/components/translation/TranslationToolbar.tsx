@@ -31,6 +31,7 @@ interface TranslationToolbarProps {
   projects: Project[];
   selectedProject: number | null;
   keyword: string;
+  isSearching?: boolean;
   onProjectChange: (projectId: number) => void;
   onKeywordChange: (keyword: string) => void;
   onSearch: () => void;
@@ -51,6 +52,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
   projects,
   selectedProject,
   keyword,
+  isSearching = false,
   onProjectChange,
   onKeywordChange,
   onSearch,
@@ -139,7 +141,7 @@ const TranslationToolbar: React.FC<TranslationToolbarProps> = ({
             placeholder={t("translation.toolbar.searchPlaceholder")}
             value={localKeyword}
             onChange={handleInputChange}
-            prefix={<SearchOutlined />}
+            prefix={<SearchOutlined style={{ color: isSearching ? '#1890ff' : undefined }} />}
             style={{ width: 250, marginRight: 16 }}
             allowClear
             onPressEnter={handlePressEnter}

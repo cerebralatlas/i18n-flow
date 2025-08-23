@@ -47,6 +47,7 @@ const TranslationManagement: React.FC = () => {
     selectedProject,
     loading,
     keyword,
+    isSearching,
     paginatedMatrix,
     localPagination,
     selectedKeys,
@@ -403,6 +404,7 @@ const TranslationManagement: React.FC = () => {
         projects={projects}
         selectedProject={selectedProject}
         keyword={keyword}
+        isSearching={isSearching}
         onProjectChange={setSelectedProject}
         onKeywordChange={setKeyword}
         onSearch={fetchTranslations}

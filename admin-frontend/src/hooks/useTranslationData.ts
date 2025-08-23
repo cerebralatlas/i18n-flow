@@ -11,6 +11,7 @@ import {
 import { Project } from "../types/project";
 import { TranslationMatrix } from "../components/translation/TranslationTable";
 import { ColumnProps } from "antd/es/table";
+import { useDebounce } from "./useDebounce";
 
 export const useTranslationData = (initialProjectId?: string) => {
   const [projects, setProjects] = useState<Project[]>([]);
@@ -19,6 +20,12 @@ export const useTranslationData = (initialProjectId?: string) => {
   const [selectedProject, setSelectedProject] = useState<number | null>(initialProjectId ? parseInt(initialProjectId) : null);
   const [loading, setLoading] = useState<boolean>(false);
   const [keyword, setKeyword] = useState<string>("");
+  
+  // Debounce keyword to reduce API calls
+  const debouncedKeyword = useDebounce(keyword, 500);
+  
+  // Track if search is in progress (debouncing)
+  const isSearching = keyword !== debouncedKeyword;
 
   // Pagination state
   const [localPagination, setLocalPagination] = useState({
@@ -44,7 +51,17 @@ export const useTranslationData = (initialProjectId?: string) => {
     if (selectedProject) {
       fetchTranslations();
     }
-  }, [selectedProject, keyword]);
+  }, [selectedProject]);
+
+  // When debouncedKeyword changes, reset to first page
+  useEffect(() => {
+    if (selectedProject && debouncedKeyword !== undefined) {
+      setLocalPagination(prev => ({
+        ...prev,
+        current: 1
+      }));
+    }
+  }, [debouncedKeyword, selectedProject]);
 
 
 
@@ -86,7 +103,7 @@ export const useTranslationData = (initialProjectId?: string) => {
         selectedProject,
         localPagination.current,
         localPagination.pageSize,
-        keyword
+        debouncedKeyword
       );
 
       setPaginatedMatrix(result.data);
@@ -252,7 +269,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     if (selectedProject) {
       fetchTranslations();
     }
-  }, [localPagination.current, localPagination.pageSize, selectedProject, keyword]);
+  }, [localPagination.current, localPagination.pageSize, selectedProject, debouncedKeyword]);
 
   return {
     // State
@@ -262,6 +279,7 @@ export const useTranslationData = (initialProjectId?: string) => {
     selectedProject,
     loading,
     keyword,
+    isSearching,
     paginatedMatrix,
     localPagination,
     selectedKeys,
