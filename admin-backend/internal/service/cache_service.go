@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/repository"
+	"math/rand"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -93,6 +94,66 @@ func (s *CacheService) HDel(ctx context.Context, key string, fields ...string) e
 	return s.redisClient.HDel(ctx, key, fields...)
 }
 
+// SetWithEmptyCache 设置缓存，对于空结果也缓存一小段时间防止缓存穿透
+func (s *CacheService) SetWithEmptyCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	// 如果值为空，设置较短的过期时间防止缓存穿透
+	if value == nil || isEmptyValue(value) {
+		return s.redisClient.Set(ctx, key, "empty", 5*time.Minute) // 空值缓存5分钟
+	}
+	return s.redisClient.Set(ctx, key, value, expiration)
+}
+
+// GetWithEmptyCheck 获取缓存，处理空值缓存
+func (s *CacheService) GetWithEmptyCheck(ctx context.Context, key string) (string, error) {
+	val, err := s.redisClient.Get(ctx, key)
+	if err == redis.Nil {
+		return "", domain.ErrCacheMiss
+	}
+	
+	// 如果是空值标记，也返回缓存未命中
+	if val == "empty" {
+		return "", domain.ErrCacheMiss
+	}
+	
+	return val, err
+}
+
+// GetJSONWithEmptyCheck 获取JSON缓存，处理空值缓存
+func (s *CacheService) GetJSONWithEmptyCheck(ctx context.Context, key string, dest interface{}) error {
+	val, err := s.redisClient.Get(ctx, key)
+	if err == redis.Nil {
+		return domain.ErrCacheMiss
+	}
+	
+	// 如果是空值标记，也返回缓存未命中
+	if val == "empty" {
+		return domain.ErrCacheMiss
+	}
+	
+	// 解析JSON
+	err = s.redisClient.GetJSON(ctx, key, dest)
+	if err == redis.Nil {
+		return domain.ErrCacheMiss
+	}
+	return err
+}
+
+// SetJSONWithEmptyCache 设置JSON缓存，对于空结果也缓存一小段时间防止缓存穿透
+func (s *CacheService) SetJSONWithEmptyCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
+	// 如果值为空，设置较短的过期时间防止缓存穿透
+	if value == nil || isEmptyValue(value) {
+		return s.redisClient.Set(ctx, key, "empty", 5*time.Minute) // 空值缓存5分钟
+	}
+	return s.redisClient.SetJSON(ctx, key, value, expiration)
+}
+
+// AddRandomExpiration 给缓存添加随机过期时间防止雪崩
+func (s *CacheService) AddRandomExpiration(baseExpiration time.Duration) time.Duration {
+	// 添加1-10分钟的随机时间
+	randomMinutes := time.Duration(rand.Intn(10)+1) * time.Minute
+	return baseExpiration + randomMinutes
+}
+
 // GetTranslationKey 获取翻译缓存键
 func (s *CacheService) GetTranslationKey(projectID uint) string {
 	return fmt.Sprintf("%s%d", domain.TranslationKeyPrefix, projectID)
@@ -124,4 +185,20 @@ func (s *CacheService) GetProjectKey(projectID uint) string {
 // GetProjectsKey 获取项目列表缓存键
 func (s *CacheService) GetProjectsKey() string {
 	return domain.ProjectsKey
+}
+
+// isEmptyValue 检查值是否为空
+func isEmptyValue(value interface{}) bool {
+	switch v := value.(type) {
+	case string:
+		return v == ""
+	case []interface{}:
+		return len(v) == 0
+	case map[string]interface{}:
+		return len(v) == 0
+	case nil:
+		return true
+	default:
+		return false
+	}
 }

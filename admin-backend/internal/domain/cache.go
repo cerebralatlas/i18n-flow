@@ -18,6 +18,12 @@ type CacheService interface {
 	SetJSON(ctx context.Context, key string, value interface{}, expiration time.Duration) error
 	GetJSON(ctx context.Context, key string, dest interface{}) error
 
+	// 带空值缓存的操作
+	SetWithEmptyCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	GetWithEmptyCheck(ctx context.Context, key string) (string, error)
+	SetJSONWithEmptyCache(ctx context.Context, key string, value interface{}, expiration time.Duration) error
+	GetJSONWithEmptyCheck(ctx context.Context, key string, dest interface{}) error
+
 	// 哈希表操作
 	HSet(ctx context.Context, key, field string, value interface{}) error
 	HGet(ctx context.Context, key, field string) (string, error)
@@ -31,6 +37,9 @@ type CacheService interface {
 	GetLanguagesKey() string
 	GetProjectKey(projectID uint) string
 	GetProjectsKey() string
+	
+	// 添加随机过期时间防止雪崩
+	AddRandomExpiration(baseExpiration time.Duration) time.Duration
 }
 
 // 缓存键常量
@@ -38,6 +47,7 @@ const (
 	// 过期时间
 	DefaultExpiration = 30 * time.Minute
 	LongExpiration    = 12 * time.Hour
+	ShortExpiration   = 5 * time.Minute // 用于空值缓存
 
 	// 缓存键前缀
 	TranslationKeyPrefix    = "translation:"

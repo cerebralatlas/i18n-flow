@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"strconv"
+	"sync"
 	"time"
 )
 
@@ -13,6 +14,9 @@ import (
 type CachedTranslationService struct {
 	translationService *TranslationService
 	cacheService       domain.CacheService
+	// 用于防止缓存击穿的互斥锁
+	cacheMutexes map[string]*sync.Mutex
+	mutexLock    sync.RWMutex
 }
 
 // NewCachedTranslationService 创建带缓存的翻译服务实例
@@ -23,7 +27,30 @@ func NewCachedTranslationService(
 	return &CachedTranslationService{
 		translationService: translationService,
 		cacheService:       cacheService,
+		cacheMutexes:       make(map[string]*sync.Mutex),
 	}
+}
+
+// getMutex 获取指定键的互斥锁，用于防止缓存击穿
+func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
+	s.mutexLock.Lock()
+	defer s.mutexLock.Unlock()
+	
+	if mutex, exists := s.cacheMutexes[key]; exists {
+		return mutex
+	}
+	
+	mutex := &sync.Mutex{}
+	s.cacheMutexes[key] = mutex
+	return mutex
+}
+
+// removeMutex 移除指定键的互斥锁
+func (s *CachedTranslationService) removeMutex(key string) {
+	s.mutexLock.Lock()
+	defer s.mutexLock.Unlock()
+	
+	delete(s.cacheMutexes, key)
 }
 
 // Create 创建翻译（更新缓存）
@@ -88,12 +115,20 @@ type TranslationCacheResult struct {
 func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
 	// 生成缓存键
 	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationKey(projectID), limit, offset)
+	
+	// 使用互斥锁防止缓存击穿
+	mutex := s.getMutex(cacheKey)
+	mutex.Lock()
+	defer func() {
+		mutex.Unlock()
+		s.removeMutex(cacheKey) // 请求完成后移除锁
+	}()
 
 	// 尝试从缓存获取
 	var cachedResult TranslationCacheResult
-	err := s.cacheService.GetJSON(ctx, cacheKey, &cachedResult)
+	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &cachedResult)
 	if err == nil {
-		fmt.Printf("翻译列表缓存命中 [project=%d, total=%d]\n", projectID, cachedResult.Total)
+		//fmt.Printf("翻译列表缓存命中 [project=%d, total=%d]\n", projectID, cachedResult.Total)
 		return cachedResult.Translations, cachedResult.Total, nil
 	}
 
@@ -103,18 +138,19 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 		return nil, 0, err
 	}
 
-	// 更新缓存
+	// 更新缓存，添加随机过期时间防止雪崩
 	cachedResult = TranslationCacheResult{
 		Translations: translations,
 		Total:        total,
 	}
 
-	if err := s.cacheService.SetJSON(ctx, cacheKey, cachedResult, domain.DefaultExpiration); err != nil {
+	expiration := s.cacheService.AddRandomExpiration(domain.DefaultExpiration)
+	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, cachedResult, expiration); err != nil {
 		// 缓存更新失败，但不影响返回结果，记录日志用于调试
-		fmt.Printf("翻译列表缓存更新失败 [project=%d, limit=%d, offset=%d]: %v\n", projectID, limit, offset, err)
-	} else {
+		//fmt.Printf("翻译列表缓存更新失败 [project=%d, limit=%d, offset=%d]: %v\n", projectID, limit, offset, err)
+	} /*else {
 		fmt.Printf("翻译列表缓存更新成功 [project=%d, total=%d]\n", projectID, total)
-	}
+	}*/
 
 	return translations, total, nil
 }
@@ -136,12 +172,20 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 		// 非搜索查询使用较长的缓存时间
 		cacheKey = fmt.Sprintf("%s:all:%d:%d", s.cacheService.GetTranslationMatrixKey(projectID, ""), limit, offset)
 	}
+	
+	// 使用互斥锁防止缓存击穿
+	mutex := s.getMutex(cacheKey)
+	mutex.Lock()
+	defer func() {
+		mutex.Unlock()
+		s.removeMutex(cacheKey) // 请求完成后移除锁
+	}()
 
 	// 尝试从缓存获取
 	var cachedResult MatrixCacheResult
-	err := s.cacheService.GetJSON(ctx, cacheKey, &cachedResult)
+	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &cachedResult)
 	if err == nil {
-		fmt.Printf("翻译矩阵缓存命中 [project=%d, keyword=%s, total=%d]\n", projectID, keyword, cachedResult.Total)
+		//fmt.Printf("翻译矩阵缓存命中 [project=%d, keyword=%s, total=%d]\n", projectID, keyword, cachedResult.Total)
 		return cachedResult.Matrix, cachedResult.Total, nil
 	}
 
@@ -151,7 +195,7 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 		return nil, 0, err
 	}
 
-	// 更新缓存
+	// 更新缓存，添加随机过期时间防止雪崩
 	cachedResult = MatrixCacheResult{
 		Matrix: matrix,
 		Total:  total,
@@ -161,18 +205,18 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 	var expiration time.Duration
 	if keyword != "" {
 		// 搜索查询缓存较短时间
-		expiration = 5 * time.Minute
+		expiration = s.cacheService.AddRandomExpiration(5 * time.Minute)
 	} else {
 		// 非搜索查询缓存较长时间
-		expiration = domain.DefaultExpiration
+		expiration = s.cacheService.AddRandomExpiration(domain.DefaultExpiration)
 	}
 
-	if err := s.cacheService.SetJSON(ctx, cacheKey, cachedResult, expiration); err != nil {
+	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, cachedResult, expiration); err != nil {
 		// 缓存更新失败，但不影响返回结果，记录日志用于调试
-		fmt.Printf("翻译矩阵缓存更新失败 [project=%d, keyword=%s, limit=%d, offset=%d]: %v\n", projectID, keyword, limit, offset, err)
-	} else {
+		//fmt.Printf("翻译矩阵缓存更新失败 [project=%d, keyword=%s, limit=%d, offset=%d]: %v\n", projectID, keyword, limit, offset, err)
+	} /*else {
 		fmt.Printf("翻译矩阵缓存更新成功 [project=%d, keyword=%s, total=%d, keys=%d]\n", projectID, keyword, total, len(matrix))
-	}
+	}*/
 
 	return matrix, total, nil
 }
@@ -276,12 +320,32 @@ func (s *CachedTranslationService) Import(ctx context.Context, projectID uint, d
 
 // invalidateProjectCache 清除项目相关的所有缓存
 func (s *CachedTranslationService) invalidateProjectCache(ctx context.Context, projectID uint) {
+	// 使用管道操作提高性能
 	// 清除翻译列表缓存
 	s.cacheService.DeleteByPattern(ctx, s.cacheService.GetTranslationKey(projectID)+"*")
 
 	// 清除翻译矩阵缓存
 	s.cacheService.DeleteByPattern(ctx, s.cacheService.GetTranslationMatrixKey(projectID, "")+"*")
 
+	// 清除仪表板缓存
+	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
+}
+
+// invalidateLanguageCache 清除语言相关的缓存（当语言被修改时调用）
+func (s *CachedTranslationService) invalidateLanguageCache(ctx context.Context) {
+	// 清除所有项目的翻译矩阵缓存，因为语言变更可能影响所有项目
+	s.cacheService.DeleteByPattern(ctx, domain.TranslationMatrixPrefix+"*")
+	
+	// 清除仪表板缓存
+	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
+}
+
+// invalidateSpecificTranslationCache 清除特定翻译键的缓存
+func (s *CachedTranslationService) invalidateSpecificTranslationCache(ctx context.Context, projectID uint, keyName string) {
+	// 清除包含特定键名的翻译矩阵缓存
+	pattern := fmt.Sprintf("%s%d:*%s*", domain.TranslationMatrixPrefix, projectID, keyName)
+	s.cacheService.DeleteByPattern(ctx, pattern)
+	
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
 }

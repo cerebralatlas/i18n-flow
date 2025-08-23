@@ -44,25 +44,37 @@ func (c *Container) CacheService() domain.CacheService {
 
 // createAuthService 创建认证服务实例
 func (c *Container) createAuthService() domain.AuthService {
-	return service.NewAuthService(c.config.JWT)
+	baseService := service.NewAuthService(c.config.JWT)
+	
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedAuthService(baseService, c.CacheService())
 }
 
 // createUserService 创建用户服务实例
 func (c *Container) createUserService() domain.UserService {
-	return service.NewUserService(
+	baseService := service.NewUserService(
 		c.UserRepository(),
 		c.AuthService(),
 	)
+	
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedUserService(baseService, c.CacheService())
 }
 
 // createProjectService 创建项目服务实例
 func (c *Container) createProjectService() domain.ProjectService {
-	return service.NewProjectService(c.ProjectRepository())
+	baseService := service.NewProjectService(c.ProjectRepository())
+	
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedProjectService(baseService, c.CacheService())
 }
 
 // createLanguageService 创建语言服务实例
 func (c *Container) createLanguageService() domain.LanguageService {
-	return service.NewLanguageService(c.LanguageRepository())
+	baseService := service.NewLanguageService(c.LanguageRepository())
+	
+	// 使用缓存装饰器包装基础服务
+	return service.NewCachedLanguageService(baseService, c.CacheService())
 }
 
 // createTranslationService 创建翻译服务实例

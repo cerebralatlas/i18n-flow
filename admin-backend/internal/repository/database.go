@@ -6,6 +6,7 @@ import (
 	"i18n-flow/internal/domain"
 	"log"
 	"os"
+	"strings"
 	"time"
 
 	"golang.org/x/crypto/bcrypt"
@@ -182,21 +183,44 @@ func createDefaultLanguages(db *gorm.DB) error {
 // createOptimizationIndexes 创建额外的性能优化索引
 func createOptimizationIndexes(db *gorm.DB) error {
 	// 这些索引将在模型标签中自动创建，但我们可以添加一些复合索引
-	indexes := []string{
-		// 为常用查询组合创建复合索引
-		"CREATE INDEX IF NOT EXISTS idx_translations_project_status ON translations(project_id, status)",
-		"CREATE INDEX IF NOT EXISTS idx_translations_search_key ON translations(project_id, key_name, status)",
-		// 对于TEXT字段，指定索引长度
-		"CREATE INDEX IF NOT EXISTS idx_translations_search_value ON translations(project_id, value(191), status)",
-		"CREATE INDEX IF NOT EXISTS idx_projects_status_name ON projects(status, name)",
-		// 为翻译值创建前缀索引，用于搜索
-		"CREATE INDEX IF NOT EXISTS idx_translations_value_prefix ON translations(value(191))",
+	indexes := []struct {
+		name string
+		sql  string
+	}{
+		{"idx_translations_project_status", "CREATE INDEX idx_translations_project_status ON translations(project_id, status)"},
+		{"idx_translations_search_key", "CREATE INDEX idx_translations_search_key ON translations(project_id, key_name, status)"},
+		{"idx_translations_search_value", "CREATE INDEX idx_translations_search_value ON translations(project_id, value(191), status)"},
+		{"idx_projects_status_name", "CREATE INDEX idx_projects_status_name ON projects(status, name)"},
+		{"idx_translations_value_prefix", "CREATE INDEX idx_translations_value_prefix ON translations(value(191))"},
 	}
 
-	for _, indexSQL := range indexes {
-		if err := db.Exec(indexSQL).Error; err != nil {
-			// 记录警告但不中断启动过程，因为索引可能已存在
-			log.Printf("创建索引警告: %v, SQL: %s", err, indexSQL)
+	for _, index := range indexes {
+		// 先检查索引是否已存在
+		var count int64
+		checkSQL := "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?"
+		tableName := ""
+		
+		// 根据索引名称确定表名
+		if strings.Contains(index.name, "translations") {
+			tableName = "translations"
+		} else if strings.Contains(index.name, "projects") {
+			tableName = "projects"
+		}
+		
+		if tableName != "" {
+			db.Raw(checkSQL, tableName, index.name).Scan(&count)
+			if count > 0 {
+				// 索引已存在，跳过创建
+				continue
+			}
+		}
+		
+		// 尝试创建索引
+		if err := db.Exec(index.sql).Error; err != nil {
+			// 只有在错误不是索引已存在的情况下才记录警告
+			if !strings.Contains(err.Error(), "Duplicate key name") && !strings.Contains(err.Error(), "already exists") && !strings.Contains(err.Error(), "Duplicate entry") {
+				log.Printf("创建索引警告: %v, SQL: %s", err, index.sql)
+			}
 		}
 	}
 
