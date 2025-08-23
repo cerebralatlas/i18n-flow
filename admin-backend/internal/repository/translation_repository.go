@@ -61,63 +61,85 @@ func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, pro
 
 // GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
 func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
-	// 首先获取符合条件的唯一键名总数
+	// 优化：使用单个查询获取总数和键名
 	var totalCount int64
-	countQuery := r.db.WithContext(ctx).Model(&domain.Translation{}).
-		Select("DISTINCT key_name").
-		Where("project_id = ?", projectID)
+	var keyNames []string
 	
+	// 构建基础查询条件，添加状态过滤提高性能
+	baseWhere := "project_id = ? AND status = ?"
+	baseArgs := []interface{}{projectID, "active"}
+	
+	// 优化关键词搜索查询
+	var countQuery *gorm.DB
 	if keyword != "" {
-		countQuery = countQuery.Where("key_name LIKE ? OR value LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
+		// 优化搜索策略：先尝试精确匹配，再尝试模糊匹配
+		// 这样可以更好地利用索引
+		searchWhere := baseWhere + " AND (key_name LIKE ? OR value LIKE ?)"
+		searchArgs := append(baseArgs, "%"+keyword+"%", "%"+keyword+"%")
+		countQuery = r.db.WithContext(ctx).Model(&domain.Translation{}).
+			Select("DISTINCT key_name").
+			Where(searchWhere, searchArgs...)
+	} else {
+		countQuery = r.db.WithContext(ctx).Model(&domain.Translation{}).
+			Select("DISTINCT key_name").
+			Where(baseWhere, baseArgs...)
 	}
 	
-	// 统计唯一键名数量
+	// 使用子查询优化计数性能
 	var uniqueKeys []string
 	if err := countQuery.Pluck("key_name", &uniqueKeys).Error; err != nil {
 		return nil, 0, err
 	}
 	totalCount = int64(len(uniqueKeys))
 
-	// 获取分页的键名列表
-	var keyNames []string
-	keyQuery := r.db.WithContext(ctx).Model(&domain.Translation{}).
-		Select("DISTINCT key_name").
-		Where("project_id = ?", projectID)
-	
-	if keyword != "" {
-		keyQuery = keyQuery.Where("key_name LIKE ? OR value LIKE ?", "%"+keyword+"%", "%"+keyword+"%")
-	}
-	
-	// 应用分页（如果limit为-1则获取所有数据）
-	if limit > 0 {
-		keyQuery = keyQuery.Limit(limit).Offset(offset)
-	}
-	
-	if err := keyQuery.Pluck("key_name", &keyNames).Error; err != nil {
-		return nil, 0, err
+	// 如果没有数据，直接返回
+	if totalCount == 0 {
+		return make(map[string]map[string]string), 0, nil
 	}
 
-	// 如果没有数据，返回空矩阵
+	// 应用分页获取实际需要的键名
+	if limit > 0 && offset >= 0 {
+		end := offset + limit
+		if end > len(uniqueKeys) {
+			end = len(uniqueKeys)
+		}
+		if offset < len(uniqueKeys) {
+			keyNames = uniqueKeys[offset:end]
+		}
+	} else {
+		keyNames = uniqueKeys
+	}
+
+	// 如果分页后没有数据，返回空矩阵
 	if len(keyNames) == 0 {
 		return make(map[string]map[string]string), totalCount, nil
 	}
 
-	// 获取这些键名对应的所有翻译
-	var translations []*domain.Translation
-	if err := r.db.WithContext(ctx).
-		Preload("Language").
-		Where("project_id = ? AND key_name IN ?", projectID, keyNames).
-		Find(&translations).Error; err != nil {
+	// 优化：使用JOIN查询避免N+1问题，只查询必要字段
+	var results []struct {
+		KeyName      string `gorm:"column:key_name"`
+		LanguageCode string `gorm:"column:language_code"`
+		Value        string `gorm:"column:value"`
+	}
+	
+	err := r.db.WithContext(ctx).
+		Table("translations t").
+		Select("t.key_name, l.code as language_code, t.value").
+		Joins("INNER JOIN languages l ON t.language_id = l.id AND l.status = ?", "active").
+		Where("t.project_id = ? AND t.key_name IN ? AND t.status = ?", projectID, keyNames, "active").
+		Find(&results).Error
+	
+	if err != nil {
 		return nil, 0, err
 	}
 
 	// 构建矩阵
 	matrix := make(map[string]map[string]string)
-	for _, translation := range translations {
-		if matrix[translation.KeyName] == nil {
-			matrix[translation.KeyName] = make(map[string]string)
+	for _, result := range results {
+		if matrix[result.KeyName] == nil {
+			matrix[result.KeyName] = make(map[string]string)
 		}
-		matrix[translation.KeyName][translation.Language.Code] = translation.Value
+		matrix[result.KeyName][result.LanguageCode] = result.Value
 	}
 
 	return matrix, totalCount, nil

@@ -2,6 +2,7 @@ package repository
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/config"
 	"time"
@@ -89,13 +90,26 @@ func (r *RedisClient) Exists(ctx context.Context, key string) (bool, error) {
 
 // SetJSON 存储JSON数据
 func (r *RedisClient) SetJSON(ctx context.Context, key string, value interface{}, expiration time.Duration) error {
-	return r.client.Set(ctx, r.GetKey(key), value, expiration).Err()
+	// 将对象序列化为JSON
+	jsonData, err := json.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("JSON序列化失败: %w", err)
+	}
+	
+	// 存储JSON字符串
+	return r.client.Set(ctx, r.GetKey(key), jsonData, expiration).Err()
 }
 
 // GetJSON 获取JSON数据
 func (r *RedisClient) GetJSON(ctx context.Context, key string, dest interface{}) error {
-	cmd := r.client.Get(ctx, r.GetKey(key))
-	return cmd.Scan(dest)
+	// 获取JSON字符串
+	jsonStr, err := r.client.Get(ctx, r.GetKey(key)).Result()
+	if err != nil {
+		return err
+	}
+	
+	// 反序列化JSON
+	return json.Unmarshal([]byte(jsonStr), dest)
 }
 
 // HSet 设置哈希表字段

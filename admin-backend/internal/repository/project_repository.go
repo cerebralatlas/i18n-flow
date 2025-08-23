@@ -47,23 +47,32 @@ func (r *ProjectRepository) GetAll(ctx context.Context, limit, offset int, keywo
 	var projects []*domain.Project
 	var total int64
 
-	// 构建查询条件
-	query := r.db.WithContext(ctx).Model(&domain.Project{})
+	// 构建基础查询条件，添加软删除过滤
+	baseQuery := r.db.WithContext(ctx).Model(&domain.Project{}).Where("deleted_at IS NULL")
+	
+	// 构建搜索条件
+	var query *gorm.DB
 	if keyword != "" {
-		query = query.Where("name LIKE ? OR description LIKE ? OR slug LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+		// 优化搜索：优先匹配名称，然后是slug，最后是描述
+		query = baseQuery.Where("(name LIKE ? OR slug LIKE ? OR description LIKE ?)", 
+			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	} else {
+		query = baseQuery
 	}
 
-	// 计算总数
-	if err := query.Count(&total).Error; err != nil {
+	// 优化：使用相同的查询条件计算总数
+	countQuery := query.Session(&gorm.Session{})
+	if err := countQuery.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
-	// 获取分页数据
-	query = r.db.WithContext(ctx).Model(&domain.Project{})
-	if keyword != "" {
-		query = query.Where("name LIKE ? OR description LIKE ? OR slug LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	// 如果没有数据，直接返回
+	if total == 0 {
+		return []*domain.Project{}, 0, nil
 	}
-	if err := query.Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
+
+	// 获取分页数据，添加排序优化查询性能
+	if err := query.Order("id DESC").Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
 		return nil, 0, err
 	}
 

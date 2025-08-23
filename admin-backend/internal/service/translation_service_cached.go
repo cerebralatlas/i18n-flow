@@ -5,6 +5,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/domain"
+	"strconv"
+	"time"
 )
 
 // CachedTranslationService 带缓存的翻译服务实现
@@ -76,19 +78,22 @@ func (s *CachedTranslationService) GetByID(ctx context.Context, id uint) (*domai
 	return s.translationService.GetByID(ctx, id)
 }
 
+// TranslationCacheResult 定义翻译缓存结果结构体
+type TranslationCacheResult struct {
+	Translations []*domain.Translation `json:"translations"`
+	Total        int64                 `json:"total"`
+}
+
 // GetByProjectID 根据项目ID获取翻译（使用缓存）
 func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
 	// 生成缓存键
 	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationKey(projectID), limit, offset)
 
 	// 尝试从缓存获取
-	var cachedResult struct {
-		Translations []*domain.Translation `json:"translations"`
-		Total        int64                 `json:"total"`
-	}
-
+	var cachedResult TranslationCacheResult
 	err := s.cacheService.GetJSON(ctx, cacheKey, &cachedResult)
 	if err == nil {
+		fmt.Printf("翻译列表缓存命中 [project=%d, total=%d]\n", projectID, cachedResult.Total)
 		return cachedResult.Translations, cachedResult.Total, nil
 	}
 
@@ -99,35 +104,44 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 	}
 
 	// 更新缓存
-	cachedResult = struct {
-		Translations []*domain.Translation `json:"translations"`
-		Total        int64                 `json:"total"`
-	}{
+	cachedResult = TranslationCacheResult{
 		Translations: translations,
 		Total:        total,
 	}
 
 	if err := s.cacheService.SetJSON(ctx, cacheKey, cachedResult, domain.DefaultExpiration); err != nil {
-		// 缓存更新失败，但不影响返回结果
-		fmt.Printf("缓存更新失败: %v\n", err)
+		// 缓存更新失败，但不影响返回结果，记录日志用于调试
+		fmt.Printf("翻译列表缓存更新失败 [project=%d, limit=%d, offset=%d]: %v\n", projectID, limit, offset, err)
+	} else {
+		fmt.Printf("翻译列表缓存更新成功 [project=%d, total=%d]\n", projectID, total)
 	}
 
 	return translations, total, nil
 }
 
+// MatrixCacheResult 定义缓存结果结构体
+type MatrixCacheResult struct {
+	Matrix map[string]map[string]string `json:"matrix"`
+	Total  int64                        `json:"total"`
+}
+
 // GetMatrix 获取翻译矩阵（使用缓存）
 func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
-	// 生成缓存键
-	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationMatrixKey(projectID, keyword), limit, offset)
-
-	// 尝试从缓存获取
-	var cachedResult struct {
-		Matrix map[string]map[string]string `json:"matrix"`
-		Total  int64                        `json:"total"`
+	// 优化缓存键生成，区分搜索和非搜索查询
+	var cacheKey string
+	if keyword != "" {
+		// 搜索查询使用较短的缓存时间
+		cacheKey = fmt.Sprintf("%s:search:%s:%d:%d", s.cacheService.GetTranslationMatrixKey(projectID, ""), s.hashKeyword(keyword), limit, offset)
+	} else {
+		// 非搜索查询使用较长的缓存时间
+		cacheKey = fmt.Sprintf("%s:all:%d:%d", s.cacheService.GetTranslationMatrixKey(projectID, ""), limit, offset)
 	}
 
+	// 尝试从缓存获取
+	var cachedResult MatrixCacheResult
 	err := s.cacheService.GetJSON(ctx, cacheKey, &cachedResult)
 	if err == nil {
+		fmt.Printf("翻译矩阵缓存命中 [project=%d, keyword=%s, total=%d]\n", projectID, keyword, cachedResult.Total)
 		return cachedResult.Matrix, cachedResult.Total, nil
 	}
 
@@ -138,17 +152,26 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 	}
 
 	// 更新缓存
-	cachedResult = struct {
-		Matrix map[string]map[string]string `json:"matrix"`
-		Total  int64                        `json:"total"`
-	}{
+	cachedResult = MatrixCacheResult{
 		Matrix: matrix,
 		Total:  total,
 	}
 
-	if err := s.cacheService.SetJSON(ctx, cacheKey, cachedResult, domain.DefaultExpiration); err != nil {
-		// 缓存更新失败，但不影响返回结果
-		fmt.Printf("缓存更新失败: %v\n", err)
+	// 根据查询类型设置不同的缓存时间
+	var expiration time.Duration
+	if keyword != "" {
+		// 搜索查询缓存较短时间
+		expiration = 5 * time.Minute
+	} else {
+		// 非搜索查询缓存较长时间
+		expiration = domain.DefaultExpiration
+	}
+
+	if err := s.cacheService.SetJSON(ctx, cacheKey, cachedResult, expiration); err != nil {
+		// 缓存更新失败，但不影响返回结果，记录日志用于调试
+		fmt.Printf("翻译矩阵缓存更新失败 [project=%d, keyword=%s, limit=%d, offset=%d]: %v\n", projectID, keyword, limit, offset, err)
+	} else {
+		fmt.Printf("翻译矩阵缓存更新成功 [project=%d, keyword=%s, total=%d, keys=%d]\n", projectID, keyword, total, len(matrix))
 	}
 
 	return matrix, total, nil
@@ -261,4 +284,14 @@ func (s *CachedTranslationService) invalidateProjectCache(ctx context.Context, p
 
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
+}
+
+// hashKeyword 对关键词进行简单哈希，避免缓存键过长
+func (s *CachedTranslationService) hashKeyword(keyword string) string {
+	// 简单的哈希函数，生产环境可以使用更复杂的哈希
+	hash := 0
+	for _, char := range keyword {
+		hash = 31*hash + int(char)
+	}
+	return strconv.Itoa(hash)
 }

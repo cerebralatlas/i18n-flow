@@ -6,25 +6,55 @@ import (
 	"i18n-flow/internal/domain"
 	"log"
 	"os"
+	"time"
 
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 // InitDB 初始化数据库连接
 func InitDB(cfg *config.Config) (*gorm.DB, error) {
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local",
+	// 优化DSN配置，添加连接参数
+	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=10s&readTimeout=30s&writeTimeout=30s&interpolateParams=true",
 		cfg.DB.Username,
 		cfg.DB.Password,
 		cfg.DB.Host,
 		cfg.DB.Port,
 		cfg.DB.DBName)
 
-	db, err := gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	// GORM配置优化
+	gormConfig := &gorm.Config{
+		// 禁用默认事务以提高性能
+		SkipDefaultTransaction: true,
+		// 批量插入优化
+		CreateBatchSize: 1000,
+		// 准备语句缓存
+		PrepareStmt: true,
+	}
+
+	// 在生产环境中禁用详细日志
+	if os.Getenv("GO_ENV") == "production" {
+		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
+	}
+
+	db, err := gorm.Open(mysql.Open(dsn), gormConfig)
 	if err != nil {
 		return nil, fmt.Errorf("数据库连接失败: %w", err)
 	}
+
+	// 获取底层的sql.DB对象进行连接池优化
+	sqlDB, err := db.DB()
+	if err != nil {
+		return nil, fmt.Errorf("获取数据库连接失败: %w", err)
+	}
+
+	// 连接池优化配置
+	sqlDB.SetMaxIdleConns(10)                   // 最大空闲连接数
+	sqlDB.SetMaxOpenConns(100)                  // 最大打开连接数
+	sqlDB.SetConnMaxLifetime(time.Hour)         // 连接最大生存时间
+	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // 连接最大空闲时间
 
 	// 自动迁移表结构
 	err = db.AutoMigrate(
@@ -35,6 +65,11 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	)
 	if err != nil {
 		return nil, fmt.Errorf("自动迁移表结构失败: %w", err)
+	}
+
+	// 创建额外的性能优化索引
+	if err := createOptimizationIndexes(db); err != nil {
+		log.Printf("创建优化索引时出现警告: %v", err)
 	}
 
 	// 初始化种子数据
@@ -139,6 +174,30 @@ func createDefaultLanguages(db *gorm.DB) error {
 		log.Println("已创建默认语言列表")
 	} else {
 		log.Println("语言列表已存在，无需创建")
+	}
+
+	return nil
+}
+
+// createOptimizationIndexes 创建额外的性能优化索引
+func createOptimizationIndexes(db *gorm.DB) error {
+	// 这些索引将在模型标签中自动创建，但我们可以添加一些复合索引
+	indexes := []string{
+		// 为常用查询组合创建复合索引
+		"CREATE INDEX IF NOT EXISTS idx_translations_project_status ON translations(project_id, status)",
+		"CREATE INDEX IF NOT EXISTS idx_translations_search_key ON translations(project_id, key_name, status)",
+		// 对于TEXT字段，指定索引长度
+		"CREATE INDEX IF NOT EXISTS idx_translations_search_value ON translations(project_id, value(191), status)",
+		"CREATE INDEX IF NOT EXISTS idx_projects_status_name ON projects(status, name)",
+		// 为翻译值创建前缀索引，用于搜索
+		"CREATE INDEX IF NOT EXISTS idx_translations_value_prefix ON translations(value(191))",
+	}
+
+	for _, indexSQL := range indexes {
+		if err := db.Exec(indexSQL).Error; err != nil {
+			// 记录警告但不中断启动过程，因为索引可能已存在
+			log.Printf("创建索引警告: %v, SQL: %s", err, indexSQL)
+		}
 	}
 
 	return nil
