@@ -1,66 +1,182 @@
 basePath: /api
 definitions:
-  errors.ErrorCode:
-    enum:
-    - 0
-    - 1000
-    - 1001
-    - 1002
-    - 1003
-    - 1004
-    - 1005
-    - 2000
-    - 2001
-    - 2002
-    - 2003
-    - 2004
-    - 3000
-    - 3001
-    - 3002
-    - 3003
-    - 3004
-    - 3005
-    - 3006
-    - 4000
-    - 4001
-    - 4002
-    - 5000
-    type: integer
-    x-enum-varnames:
-    - Success
-    - InternalError
-    - InvalidParams
-    - NotFound
-    - AlreadyExists
-    - Forbidden
-    - TooManyRequests
-    - Unauthorized
-    - InvalidToken
-    - TokenExpired
-    - InvalidAPIKey
-    - LoginFailed
-    - ProjectNotFound
-    - ProjectExists
-    - LanguageNotFound
-    - LanguageExists
-    - TranslationNotFound
-    - UserNotFound
-    - InvalidFileFormat
-    - DatabaseError
-    - TransactionError
-    - ConnectionError
-    - ExternalAPIError
-  errors.Response:
+  domain.BatchTranslationRequest:
+    properties:
+      context:
+        type: string
+      key_name:
+        type: string
+      project_id:
+        type: integer
+      translations:
+        additionalProperties:
+          type: string
+        type: object
+    required:
+    - key_name
+    - project_id
+    - translations
+    type: object
+  domain.CreateLanguageRequest:
     properties:
       code:
-        $ref: '#/definitions/errors.ErrorCode'
-      data: {}
-      details:
         type: string
-      message:
+      is_default:
+        type: boolean
+      name:
+        type: string
+    required:
+    - code
+    - name
+    type: object
+  domain.CreateProjectRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  domain.CreateTranslationRequest:
+    properties:
+      context:
+        type: string
+      key_name:
+        type: string
+      language_id:
+        type: integer
+      project_id:
+        type: integer
+      value:
+        type: string
+    required:
+    - key_name
+    - language_id
+    - project_id
+    - value
+    type: object
+  domain.DashboardStats:
+    properties:
+      total_keys:
+        type: integer
+      total_languages:
+        type: integer
+      total_projects:
+        type: integer
+      total_translations:
+        type: integer
+    type: object
+  domain.Language:
+    properties:
+      code:
+        description: 语言代码，如 en, zh-CN
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      is_default:
+        description: 是否为默认语言
+        type: boolean
+      name:
+        description: 语言名称，如 English, 简体中文
+        type: string
+      status:
+        description: 状态：active, inactive
+        type: string
+      updated_at:
         type: string
     type: object
-  model.User:
+  domain.LoginRequest:
+    properties:
+      password:
+        example: password
+        type: string
+      username:
+        example: admin
+        type: string
+    required:
+    - password
+    - username
+    type: object
+  domain.LoginResponse:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+      user:
+        $ref: '#/definitions/domain.User'
+    type: object
+  domain.Project:
+    properties:
+      created_at:
+        type: string
+      description:
+        description: 项目描述
+        type: string
+      id:
+        type: integer
+      name:
+        description: 项目名称
+        type: string
+      slug:
+        description: 项目标识，用于URL
+        type: string
+      status:
+        description: 项目状态：active, archived
+        type: string
+      updated_at:
+        type: string
+    type: object
+  domain.RefreshRequest:
+    properties:
+      refresh_token:
+        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        type: string
+    required:
+    - refresh_token
+    type: object
+  domain.Translation:
+    properties:
+      context:
+        description: 上下文说明
+        type: string
+      created_at:
+        type: string
+      id:
+        type: integer
+      key_name:
+        description: 翻译键名
+        type: string
+      language_id:
+        description: 语言ID
+        type: integer
+      project_id:
+        description: 关联的项目ID
+        type: integer
+      status:
+        description: 状态：active, deprecated
+        type: string
+      updated_at:
+        type: string
+      value:
+        description: 翻译值
+        type: string
+    type: object
+  domain.UpdateProjectRequest:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      status:
+        type: string
+    type: object
+  domain.User:
     properties:
       created_at:
         type: string
@@ -73,49 +189,12 @@ definitions:
       username:
         type: string
     type: object
-  service.BatchTranslationRequest:
-    properties:
-      context:
-        description: 上下文说明
-        example: 欢迎消息
-        type: string
-      key_name:
-        description: 翻译键名
-        example: welcome_message
-        type: string
-      project_id:
-        description: 项目ID
-        example: 1
-        type: integer
-      translations:
-        additionalProperties:
-          type: string
-        description: 语言代码 -> 翻译值
-        example:
-          '''en''': '''Welcome''}'
-          '{''zh-CN''': '''欢迎'''
-        type: object
-    required:
-    - key_name
-    - project_id
-    type: object
-  service.DashboardStats:
-    properties:
-      language_count:
-        type: integer
-      project_count:
-        type: integer
-      translation_count:
-        type: integer
-      user_count:
-        type: integer
-    type: object
-  service.KeysPushRequest:
+  handlers.PushKeysRequest:
     properties:
       defaults:
         additionalProperties:
           type: string
-        description: 默认值，通常是源语言文本
+        description: 保持向后兼容（已废弃）
         type: object
       keys:
         items:
@@ -123,200 +202,46 @@ definitions:
         type: array
       project_id:
         type: string
+      translations:
+        additionalProperties:
+          additionalProperties:
+            type: string
+          type: object
+        description: 新增：语言代码 -> 键值对映射
+        type: object
     required:
     - keys
     - project_id
     type: object
-  service.LanguageRequest:
+  response.APIResponse:
+    properties:
+      data: {}
+      error:
+        $ref: '#/definitions/response.ErrorInfo'
+      meta:
+        $ref: '#/definitions/response.Meta'
+      success:
+        type: boolean
+    type: object
+  response.ErrorInfo:
     properties:
       code:
-        description: 语言代码
-        example: fr
         type: string
-      is_default:
-        description: 是否为默认语言
-        example: false
-        type: boolean
-      name:
-        description: 语言名称
-        example: Français
+      details:
         type: string
-    required:
-    - code
-    - name
+      message:
+        type: string
     type: object
-  service.LanguageResponse:
+  response.Meta:
     properties:
-      code:
-        description: 语言代码
-        example: fr
-        type: string
-      created_at:
-        description: 创建时间
-        example: "2023-04-01 12:00:00"
-        type: string
-      id:
-        description: 语言ID
-        example: 1
+      page:
         type: integer
-      is_default:
-        description: 是否为默认语言
-        example: false
-        type: boolean
-      name:
-        description: 语言名称
-        example: Français
-        type: string
-      status:
-        description: 语言状态
-        example: active
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-04-01 12:00:00"
-        type: string
-    type: object
-  service.LoginRequest:
-    properties:
-      password:
-        description: 密码
-        example: password
-        type: string
-      username:
-        description: 用户名
-        example: admin
-        type: string
-    required:
-    - password
-    - username
-    type: object
-  service.LoginResponse:
-    properties:
-      refresh_token:
-        description: 刷新令牌
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-      token:
-        description: JWT访问令牌
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-      user:
-        $ref: '#/definitions/model.User'
-    type: object
-  service.ProjectRequest:
-    properties:
-      description:
-        type: string
-      name:
-        type: string
-      slug:
-        type: string
-    required:
-    - name
-    type: object
-  service.ProjectResponse:
-    properties:
-      created_at:
-        type: string
-      description:
-        type: string
-      id:
+      page_size:
         type: integer
-      name:
-        type: string
-      slug:
-        type: string
-      status:
-        type: string
-      updated_at:
-        type: string
-    type: object
-  service.RefreshRequest:
-    properties:
-      refresh_token:
-        description: 刷新令牌
-        example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-        type: string
-    required:
-    - refresh_token
-    type: object
-  service.TranslationRequest:
-    properties:
-      context:
-        description: 上下文说明
-        example: 主页欢迎消息
-        type: string
-      key_name:
-        description: 翻译键名
-        example: welcome_message
-        type: string
-      language_id:
-        description: 语言ID
-        example: 2
+      total_count:
         type: integer
-      project_id:
-        description: 项目ID
-        example: 1
+      total_pages:
         type: integer
-      value:
-        description: 翻译值
-        example: 欢迎使用
-        type: string
-    required:
-    - key_name
-    - language_id
-    - project_id
-    type: object
-  service.TranslationResponse:
-    properties:
-      context:
-        description: 上下文说明
-        example: 欢迎消息
-        type: string
-      created_at:
-        description: 创建时间
-        example: "2023-04-01 12:00:00"
-        type: string
-      id:
-        description: 翻译ID
-        example: 1
-        type: integer
-      key_name:
-        description: 翻译键名
-        example: welcome_message
-        type: string
-      language_code:
-        description: 语言代码
-        example: zh-CN
-        type: string
-      language_id:
-        description: 语言ID
-        example: 2
-        type: integer
-      language_name:
-        description: 语言名称
-        example: 简体中文
-        type: string
-      project_id:
-        description: 项目ID
-        example: 1
-        type: integer
-      project_name:
-        description: 项目名称
-        example: 网站翻译
-        type: string
-      status:
-        description: 状态
-        example: active
-        type: string
-      updated_at:
-        description: 更新时间
-        example: "2023-04-01 12:00:00"
-        type: string
-      value:
-        description: 翻译值
-        example: 欢迎使用
-        type: string
     type: object
 host: localhost:8080
 info:
@@ -336,63 +261,65 @@ paths:
     get:
       consumes:
       - application/json
-      description: 用于CLI工具测试连接
+      description: 验证CLI API Key
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "401":
           description: Unauthorized
           schema:
-            $ref: '#/definitions/errors.Response'
-      summary: 检查API Key是否有效
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: CLI身份验证
       tags:
       - CLI
   /cli/keys:
     post:
       consumes:
       - application/json
-      description: 推送新的翻译键到服务器
+      description: 从CLI推送新的翻译键
       parameters:
-      - description: 键值请求
+      - description: 推送键请求
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/service.KeysPushRequest'
+          $ref: '#/definitions/handlers.PushKeysRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.Response'
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
           schema:
-            $ref: '#/definitions/errors.Response'
-      summary: 推送新的翻译键
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: 推送翻译键
       tags:
       - CLI
   /cli/translations:
     get:
       consumes:
       - application/json
-      description: 获取所有翻译，供CLI工具使用
+      description: 获取项目翻译数据供CLI使用
       parameters:
       - description: 项目ID
         in: query
         name: project_id
-        type: integer
+        type: string
       - description: 语言代码
         in: query
         name: locale
@@ -403,92 +330,86 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            $ref: '#/definitions/errors.Response'
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
           schema:
-            $ref: '#/definitions/errors.Response'
-      summary: 获取所有翻译
+            $ref: '#/definitions/response.APIResponse'
+      security:
+      - ApiKeyAuth: []
+      summary: 获取翻译数据
       tags:
       - CLI
   /dashboard/stats:
     get:
       consumes:
       - application/json
-      description: 获取系统的各种统计数据，包括项目总数、翻译总数、语言总数和用户总数
+      description: 获取项目、语言、翻译等统计信息
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.DashboardStats'
+            $ref: '#/definitions/domain.DashboardStats'
         "500":
           description: Internal Server Error
           schema:
-            $ref: '#/definitions/errors.Response'
+            additionalProperties:
+              type: string
+            type: object
       security:
       - BearerAuth: []
-      summary: 获取仪表板统计数据
+      summary: 获取仪表板统计信息
       tags:
-      - Dashboard
+      - 仪表板
   /exports/project/{project_id}:
     get:
       consumes:
       - application/json
-      description: 导出指定项目的所有翻译，支持不同格式
+      description: 导出项目翻译数据
       parameters:
       - description: 项目ID
         in: path
         name: project_id
         required: true
         type: integer
-      - description: 导出格式，默认json
-        in: query
-        name: format
-        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
-      summary: 导出项目翻译
+      summary: 导出翻译
       tags:
       - 翻译管理
   /imports/project/{project_id}:
     post:
       consumes:
       - application/json
-      description: 为指定项目导入翻译数据
+      description: 导入项目翻译数据
       parameters:
       - description: 项目ID
         in: path
         name: project_id
         required: true
         type: integer
-      - description: 翻译数据
+      - description: 翻译数据，格式为 {\
         in: body
         name: data
         required: true
@@ -498,36 +419,36 @@ paths:
               type: string
             type: object
           type: object
+      - default: '"json"'
+        description: 导入格式
+        in: query
+        name: format
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
+            $ref: '#/definitions/response.APIResponse'
+        "404":
+          description: Not Found
           schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
-      summary: 导入项目翻译
+      summary: 导入翻译
       tags:
       - 翻译管理
   /languages:
     get:
       consumes:
       - application/json
-      description: 获取系统中所有可用的语言列表
+      description: 获取所有语言列表
       produces:
       - application/json
       responses:
@@ -535,7 +456,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/service.LanguageResponse'
+              $ref: '#/definitions/domain.Language'
             type: array
         "500":
           description: Internal Server Error
@@ -545,49 +466,49 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: 获取所有语言
+      summary: 获取语言列表
       tags:
       - 语言管理
     post:
       consumes:
       - application/json
-      description: 在系统中添加一种新的语言
+      description: 创建新的语言
       parameters:
       - description: 语言信息
         in: body
         name: language
         required: true
         schema:
-          $ref: '#/definitions/service.LanguageRequest'
+          $ref: '#/definitions/domain.CreateLanguageRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/service.LanguageResponse'
+            $ref: '#/definitions/domain.Language'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "409":
+          description: Conflict
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: 创建新语言
+      summary: 创建语言
       tags:
       - 语言管理
   /languages/{id}:
     delete:
       consumes:
       - application/json
-      description: 从系统中删除指定的语言
+      description: 删除指定的语言
       parameters:
       - description: 语言ID
         in: path
@@ -597,20 +518,16 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -623,7 +540,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: 更新系统中现有语言的信息
+      description: 更新语言信息
       parameters:
       - description: 语言ID
         in: path
@@ -635,22 +552,22 @@ paths:
         name: language
         required: true
         schema:
-          $ref: '#/definitions/service.LanguageRequest'
+          $ref: '#/definitions/domain.CreateLanguageRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.LanguageResponse'
+            $ref: '#/definitions/domain.Language'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -671,14 +588,14 @@ paths:
         name: credentials
         required: true
         schema:
-          $ref: '#/definitions/service.LoginRequest'
+          $ref: '#/definitions/domain.LoginRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.LoginResponse'
+            $ref: '#/definitions/domain.LoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -698,13 +615,15 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取所有项目列表，支持分页和搜索
+      description: 获取项目列表，支持分页和关键词搜索
       parameters:
-      - description: 页码，默认1
+      - default: 1
+        description: 页码
         in: query
         name: page
         type: integer
-      - description: 每页数量，默认10
+      - default: 10
+        description: 每页数量
         in: query
         name: page_size
         type: integer
@@ -720,8 +639,8 @@ paths:
           schema:
             additionalProperties: true
             type: object
-        "500":
-          description: Internal Server Error
+        "400":
+          description: Bad Request
           schema:
             additionalProperties:
               type: string
@@ -734,43 +653,43 @@ paths:
     post:
       consumes:
       - application/json
-      description: 创建一个新的翻译项目
+      description: 创建新的翻译项目
       parameters:
       - description: 项目信息
         in: body
         name: project
         required: true
         schema:
-          $ref: '#/definitions/service.ProjectRequest'
+          $ref: '#/definitions/domain.CreateProjectRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/service.ProjectResponse'
+            $ref: '#/definitions/domain.Project'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "409":
+          description: Conflict
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: 创建新项目
+      summary: 创建项目
       tags:
       - 项目管理
   /projects/delete/{id}:
     delete:
       consumes:
       - application/json
-      description: 通过项目ID删除项目
+      description: 删除指定的项目
       parameters:
       - description: 项目ID
         in: path
@@ -780,47 +699,8 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "400":
-          description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-      security:
-      - BearerAuth: []
-      summary: 删除项目
-      tags:
-      - 项目管理
-  /projects/detail/{id}:
-    get:
-      consumes:
-      - application/json
-      description: 通过项目ID获取项目详细信息
-      parameters:
-      - description: 项目ID
-        in: path
-        name: id
-        required: true
-        type: integer
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/service.ProjectResponse'
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
@@ -835,14 +715,49 @@ paths:
             type: object
       security:
       - BearerAuth: []
-      summary: 根据ID获取项目
+      summary: 删除项目
+      tags:
+      - 项目管理
+  /projects/detail/{id}:
+    get:
+      consumes:
+      - application/json
+      description: 根据项目ID获取项目详细信息
+      parameters:
+      - description: 项目ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/domain.Project'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      security:
+      - BearerAuth: []
+      summary: 获取项目详情
       tags:
       - 项目管理
   /projects/update/{id}:
     put:
       consumes:
       - application/json
-      description: 通过项目ID更新项目信息
+      description: 更新项目信息
       parameters:
       - description: 项目ID
         in: path
@@ -854,22 +769,22 @@ paths:
         name: project
         required: true
         schema:
-          $ref: '#/definitions/service.ProjectRequest'
+          $ref: '#/definitions/domain.UpdateProjectRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.ProjectResponse'
+            $ref: '#/definitions/domain.Project'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -890,14 +805,14 @@ paths:
         name: refresh_token
         required: true
         schema:
-          $ref: '#/definitions/service.RefreshRequest'
+          $ref: '#/definitions/domain.RefreshRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.LoginResponse'
+            $ref: '#/definitions/domain.LoginResponse'
         "400":
           description: Bad Request
           schema:
@@ -917,43 +832,37 @@ paths:
     post:
       consumes:
       - application/json
-      description: 为特定项目和语言创建新的翻译条目
+      description: 创建新的翻译
       parameters:
       - description: 翻译信息
         in: body
         name: translation
         required: true
         schema:
-          $ref: '#/definitions/service.TranslationRequest'
+          $ref: '#/definitions/domain.CreateTranslationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/service.TranslationResponse'
+            $ref: '#/definitions/domain.Translation'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
       security:
       - BearerAuth: []
-      summary: 创建翻译条目
+      summary: 创建翻译
       tags:
       - 翻译管理
   /translations/{id}:
     delete:
       consumes:
       - application/json
-      description: 删除特定的翻译条目
+      description: 删除指定的翻译
       parameters:
       - description: 翻译ID
         in: path
@@ -963,20 +872,16 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+        "204":
+          description: No Content
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -989,7 +894,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: 通过ID获取特定翻译条目的详细信息
+      description: 根据翻译ID获取翻译详细信息
       parameters:
       - description: 翻译ID
         in: path
@@ -1002,7 +907,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.TranslationResponse'
+            $ref: '#/definitions/domain.Translation'
         "400":
           description: Bad Request
           schema:
@@ -1023,7 +928,7 @@ paths:
     put:
       consumes:
       - application/json
-      description: 更新特定翻译条目的内容
+      description: 更新翻译信息
       parameters:
       - description: 翻译ID
         in: path
@@ -1035,22 +940,22 @@ paths:
         name: translation
         required: true
         schema:
-          $ref: '#/definitions/service.TranslationRequest'
+          $ref: '#/definitions/domain.CreateTranslationRequest'
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/service.TranslationResponse'
+            $ref: '#/definitions/domain.Translation'
         "400":
           description: Bad Request
           schema:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1064,36 +969,25 @@ paths:
     post:
       consumes:
       - application/json
-      description: 为特定项目批量创建多种语言的翻译
+      description: 批量创建多个翻译，支持两种格式：数组格式和前端对象格式
       parameters:
-      - description: 批量翻译信息，translations 字段为语言代码到翻译值的映射，如 {'zh-CN':'中文值','en':'English
-          value'}
+      - description: 批量翻译请求
         in: body
         name: translations
         required: true
         schema:
-          $ref: '#/definitions/service.BatchTranslationRequest'
+          $ref: '#/definitions/domain.BatchTranslationRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Created
           schema:
-            items:
-              $ref: '#/definitions/service.TranslationResponse'
-            type: array
+            $ref: '#/definitions/response.APIResponse'
         "400":
           description: Bad Request
           schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
-          schema:
-            additionalProperties:
-              type: string
-            type: object
+            $ref: '#/definitions/response.APIResponse'
       security:
       - BearerAuth: []
       summary: 批量创建翻译
@@ -1103,9 +997,9 @@ paths:
     post:
       consumes:
       - application/json
-      description: 批量删除多个翻译条目
+      description: 批量删除多个翻译
       parameters:
-      - description: 翻译ID数组
+      - description: 翻译ID列表
         in: body
         name: ids
         required: true
@@ -1116,19 +1010,10 @@ paths:
       produces:
       - application/json
       responses:
-        "200":
-          description: OK
-          schema:
-            additionalProperties: true
-            type: object
+        "204":
+          description: No Content
         "400":
           description: Bad Request
-          schema:
-            additionalProperties:
-              type: string
-            type: object
-        "500":
-          description: Internal Server Error
           schema:
             additionalProperties:
               type: string
@@ -1142,25 +1027,23 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取指定项目的所有翻译条目，支持分页和搜索
+      description: 根据项目ID获取翻译列表
       parameters:
       - description: 项目ID
         in: path
         name: project_id
         required: true
         type: integer
-      - description: 页码，默认1
+      - default: 1
+        description: 页码
         in: query
         name: page
         type: integer
-      - description: 每页数量，默认10
+      - default: 10
+        description: 每页数量
         in: query
         name: page_size
         type: integer
-      - description: 搜索关键词
-        in: query
-        name: keyword
-        type: string
       produces:
       - application/json
       responses:
@@ -1175,8 +1058,8 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
@@ -1190,18 +1073,20 @@ paths:
     get:
       consumes:
       - application/json
-      description: 获取指定项目的翻译矩阵，按键名分组，每组包含各语言的翻译，支持分页和搜索
+      description: 获取项目的翻译矩阵（键-语言映射），支持分页
       parameters:
       - description: 项目ID
         in: path
         name: project_id
         required: true
         type: integer
-      - description: 页码，默认1
+      - default: 1
+        description: 页码
         in: query
         name: page
         type: integer
-      - description: 每页数量，默认10
+      - default: 10
+        description: 每页数量
         in: query
         name: page_size
         type: integer
@@ -1223,15 +1108,15 @@ paths:
             additionalProperties:
               type: string
             type: object
-        "500":
-          description: Internal Server Error
+        "404":
+          description: Not Found
           schema:
             additionalProperties:
               type: string
             type: object
       security:
       - BearerAuth: []
-      summary: 获取项目翻译矩阵
+      summary: 获取翻译矩阵
       tags:
       - 翻译管理
   /user/info:
@@ -1245,8 +1130,7 @@ paths:
         "200":
           description: OK
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/domain.User'
         "401":
           description: Unauthorized
           schema:

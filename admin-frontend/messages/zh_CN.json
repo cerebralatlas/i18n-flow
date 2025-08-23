@@ -23,9 +23,9 @@
     "welcome": "欢迎使用 i18n-flow 管理系统！",
     "stats": {
       "projectCount": "项目数量",
-      "translationCount": "翻译键数量",
+      "translationCount": "翻译数量",
       "languageCount": "语言数量",
-      "userCount": "用户数量"
+      "userCount": "翻译键数量"
     }
   },
   "layout": {

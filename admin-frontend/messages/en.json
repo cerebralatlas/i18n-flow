@@ -23,9 +23,9 @@
     "welcome": "Welcome to i18n-flow management system!",
     "stats": {
       "projectCount": "Project Count",
-      "translationCount": "Translation Key Count",
+      "translationCount": "Translation Count",
       "languageCount": "Language Count",
-      "userCount": "User Count"
+      "userCount": "Translation Key Count"
     }
   },
   "layout": {

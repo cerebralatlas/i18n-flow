@@ -43,17 +43,27 @@ func (r *ProjectRepository) GetBySlug(ctx context.Context, slug string) (*domain
 }
 
 // GetAll 获取所有项目（分页）
-func (r *ProjectRepository) GetAll(ctx context.Context, limit, offset int) ([]*domain.Project, int64, error) {
+func (r *ProjectRepository) GetAll(ctx context.Context, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
 	var projects []*domain.Project
 	var total int64
 
+	// 构建查询条件
+	query := r.db.WithContext(ctx).Model(&domain.Project{})
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR description LIKE ? OR slug LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+
 	// 计算总数
-	if err := r.db.WithContext(ctx).Model(&domain.Project{}).Count(&total).Error; err != nil {
+	if err := query.Count(&total).Error; err != nil {
 		return nil, 0, err
 	}
 
 	// 获取分页数据
-	if err := r.db.WithContext(ctx).Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
+	query = r.db.WithContext(ctx).Model(&domain.Project{})
+	if keyword != "" {
+		query = query.Where("name LIKE ? OR description LIKE ? OR slug LIKE ?", "%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
+	}
+	if err := query.Limit(limit).Offset(offset).Find(&projects).Error; err != nil {
 		return nil, 0, err
 	}
 

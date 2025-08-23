@@ -30,7 +30,7 @@ func (s *DashboardService) GetStats(ctx context.Context) (*domain.DashboardStats
 	stats := &domain.DashboardStats{}
 
 	// 获取项目总数
-	projects, totalProjects, err := s.projectRepo.GetAll(ctx, 1000000, 0) // 大数获取全部
+	projects, totalProjects, err := s.projectRepo.GetAll(ctx, 1000000, 0, "") // 大数获取全部，无关键词过滤
 	if err != nil {
 		return nil, err
 	}

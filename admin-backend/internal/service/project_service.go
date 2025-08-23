@@ -55,7 +55,7 @@ func (s *ProjectService) GetByID(ctx context.Context, id uint) (*domain.Project,
 }
 
 // GetAll 获取所有项目
-func (s *ProjectService) GetAll(ctx context.Context, limit, offset int) ([]*domain.Project, int64, error) {
+func (s *ProjectService) GetAll(ctx context.Context, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
 	if limit <= 0 {
 		limit = 10
 	}
@@ -66,7 +66,7 @@ func (s *ProjectService) GetAll(ctx context.Context, limit, offset int) ([]*doma
 		offset = 0
 	}
 
-	return s.projectRepo.GetAll(ctx, limit, offset)
+	return s.projectRepo.GetAll(ctx, limit, offset, keyword)
 }
 
 // Update 更新项目

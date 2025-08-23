@@ -26,7 +26,12 @@ const docTemplate = `{
     "paths": {
         "/cli/auth": {
             "get": {
-                "description": "用于CLI工具测试连接",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "验证CLI API Key",
                 "consumes": [
                     "application/json"
                 ],
@@ -36,19 +41,18 @@ const docTemplate = `{
                 "tags": [
                     "CLI"
                 ],
-                "summary": "检查API Key是否有效",
+                "summary": "CLI身份验证",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -56,7 +60,12 @@ const docTemplate = `{
         },
         "/cli/keys": {
             "post": {
-                "description": "推送新的翻译键到服务器",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "从CLI推送新的翻译键",
                 "consumes": [
                     "application/json"
                 ],
@@ -66,15 +75,15 @@ const docTemplate = `{
                 "tags": [
                     "CLI"
                 ],
-                "summary": "推送新的翻译键",
+                "summary": "推送翻译键",
                 "parameters": [
                     {
-                        "description": "键值请求",
+                        "description": "推送键请求",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.KeysPushRequest"
+                            "$ref": "#/definitions/handlers.PushKeysRequest"
                         }
                     }
                 ],
@@ -82,20 +91,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -103,7 +111,12 @@ const docTemplate = `{
         },
         "/cli/translations": {
             "get": {
-                "description": "获取所有翻译，供CLI工具使用",
+                "security": [
+                    {
+                        "ApiKeyAuth": []
+                    }
+                ],
+                "description": "获取项目翻译数据供CLI使用",
                 "consumes": [
                     "application/json"
                 ],
@@ -113,10 +126,10 @@ const docTemplate = `{
                 "tags": [
                     "CLI"
                 ],
-                "summary": "获取所有翻译",
+                "summary": "获取翻译数据",
                 "parameters": [
                     {
-                        "type": "integer",
+                        "type": "string",
                         "description": "项目ID",
                         "name": "project_id",
                         "in": "query"
@@ -132,20 +145,19 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -158,7 +170,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取系统的各种统计数据，包括项目总数、翻译总数、语言总数和用户总数",
+                "description": "获取项目、语言、翻译等统计信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -166,20 +178,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "Dashboard"
+                    "仪表板"
                 ],
-                "summary": "获取仪表板统计数据",
+                "summary": "获取仪表板统计信息",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.DashboardStats"
+                            "$ref": "#/definitions/domain.DashboardStats"
                         }
                     },
                     "500": {
                         "description": "Internal Server Error",
                         "schema": {
-                            "$ref": "#/definitions/errors.Response"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     }
                 }
@@ -192,7 +207,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "导出指定项目的所有翻译，支持不同格式",
+                "description": "导出项目翻译数据",
                 "consumes": [
                     "application/json"
                 ],
@@ -202,7 +217,7 @@ const docTemplate = `{
                 "tags": [
                     "翻译管理"
                 ],
-                "summary": "导出项目翻译",
+                "summary": "导出翻译",
                 "parameters": [
                     {
                         "type": "integer",
@@ -210,38 +225,25 @@ const docTemplate = `{
                         "name": "project_id",
                         "in": "path",
                         "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "导出格式，默认json",
-                        "name": "format",
-                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -254,7 +256,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "为指定项目导入翻译数据",
+                "description": "导入项目翻译数据",
                 "consumes": [
                     "application/json"
                 ],
@@ -264,7 +266,7 @@ const docTemplate = `{
                 "tags": [
                     "翻译管理"
                 ],
-                "summary": "导入项目翻译",
+                "summary": "导入翻译",
                 "parameters": [
                     {
                         "type": "integer",
@@ -274,7 +276,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "翻译数据",
+                        "description": "翻译数据，格式为 {\\",
                         "name": "data",
                         "in": "body",
                         "required": true,
@@ -287,32 +289,32 @@ const docTemplate = `{
                                 }
                             }
                         }
+                    },
+                    {
+                        "type": "string",
+                        "default": "\"json\"",
+                        "description": "导入格式",
+                        "name": "format",
+                        "in": "query"
                     }
                 ],
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -325,7 +327,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取系统中所有可用的语言列表",
+                "description": "获取所有语言列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -335,14 +337,14 @@ const docTemplate = `{
                 "tags": [
                     "语言管理"
                 ],
-                "summary": "获取所有语言",
+                "summary": "获取语言列表",
                 "responses": {
                     "200": {
                         "description": "OK",
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/service.LanguageResponse"
+                                "$ref": "#/definitions/domain.Language"
                             }
                         }
                     },
@@ -363,7 +365,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "在系统中添加一种新的语言",
+                "description": "创建新的语言",
                 "consumes": [
                     "application/json"
                 ],
@@ -373,7 +375,7 @@ const docTemplate = `{
                 "tags": [
                     "语言管理"
                 ],
-                "summary": "创建新语言",
+                "summary": "创建语言",
                 "parameters": [
                     {
                         "description": "语言信息",
@@ -381,7 +383,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.LanguageRequest"
+                            "$ref": "#/definitions/domain.CreateLanguageRequest"
                         }
                     }
                 ],
@@ -389,7 +391,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/service.LanguageResponse"
+                            "$ref": "#/definitions/domain.Language"
                         }
                     },
                     "400": {
@@ -401,8 +403,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -420,7 +422,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "更新系统中现有语言的信息",
+                "description": "更新语言信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -445,7 +447,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.LanguageRequest"
+                            "$ref": "#/definitions/domain.CreateLanguageRequest"
                         }
                     }
                 ],
@@ -453,7 +455,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.LanguageResponse"
+                            "$ref": "#/definitions/domain.Language"
                         }
                     },
                     "400": {
@@ -465,8 +467,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -482,7 +484,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "从系统中删除指定的语言",
+                "description": "删除指定的语言",
                 "consumes": [
                     "application/json"
                 ],
@@ -503,14 +505,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -521,8 +517,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -553,7 +549,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.LoginRequest"
+                            "$ref": "#/definitions/domain.LoginRequest"
                         }
                     }
                 ],
@@ -561,7 +557,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.LoginResponse"
+                            "$ref": "#/definitions/domain.LoginResponse"
                         }
                     },
                     "400": {
@@ -592,7 +588,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取所有项目列表，支持分页和搜索",
+                "description": "获取项目列表，支持分页和关键词搜索",
                 "consumes": [
                     "application/json"
                 ],
@@ -606,13 +602,15 @@ const docTemplate = `{
                 "parameters": [
                     {
                         "type": "integer",
-                        "description": "页码，默认1",
+                        "default": 1,
+                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认10",
+                        "default": 10,
+                        "description": "每页数量",
                         "name": "page_size",
                         "in": "query"
                     },
@@ -631,8 +629,8 @@ const docTemplate = `{
                             "additionalProperties": true
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "400": {
+                        "description": "Bad Request",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -648,7 +646,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "创建一个新的翻译项目",
+                "description": "创建新的翻译项目",
                 "consumes": [
                     "application/json"
                 ],
@@ -658,7 +656,7 @@ const docTemplate = `{
                 "tags": [
                     "项目管理"
                 ],
-                "summary": "创建新项目",
+                "summary": "创建项目",
                 "parameters": [
                     {
                         "description": "项目信息",
@@ -666,7 +664,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.ProjectRequest"
+                            "$ref": "#/definitions/domain.CreateProjectRequest"
                         }
                     }
                 ],
@@ -674,7 +672,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/service.ProjectResponse"
+                            "$ref": "#/definitions/domain.Project"
                         }
                     },
                     "400": {
@@ -686,8 +684,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "409": {
+                        "description": "Conflict",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -705,7 +703,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "通过项目ID删除项目",
+                "description": "删除指定的项目",
                 "consumes": [
                     "application/json"
                 ],
@@ -726,14 +724,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -744,8 +736,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -763,7 +755,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "通过项目ID获取项目详细信息",
+                "description": "根据项目ID获取项目详细信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -773,7 +765,7 @@ const docTemplate = `{
                 "tags": [
                     "项目管理"
                 ],
-                "summary": "根据ID获取项目",
+                "summary": "获取项目详情",
                 "parameters": [
                     {
                         "type": "integer",
@@ -787,7 +779,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.ProjectResponse"
+                            "$ref": "#/definitions/domain.Project"
                         }
                     },
                     "400": {
@@ -818,7 +810,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "通过项目ID更新项目信息",
+                "description": "更新项目信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -843,7 +835,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.ProjectRequest"
+                            "$ref": "#/definitions/domain.UpdateProjectRequest"
                         }
                     }
                 ],
@@ -851,7 +843,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.ProjectResponse"
+                            "$ref": "#/definitions/domain.Project"
                         }
                     },
                     "400": {
@@ -863,8 +855,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -895,7 +887,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.RefreshRequest"
+                            "$ref": "#/definitions/domain.RefreshRequest"
                         }
                     }
                 ],
@@ -903,7 +895,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.LoginResponse"
+                            "$ref": "#/definitions/domain.LoginResponse"
                         }
                     },
                     "400": {
@@ -934,7 +926,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "为特定项目和语言创建新的翻译条目",
+                "description": "创建新的翻译",
                 "consumes": [
                     "application/json"
                 ],
@@ -944,7 +936,7 @@ const docTemplate = `{
                 "tags": [
                     "翻译管理"
                 ],
-                "summary": "创建翻译条目",
+                "summary": "创建翻译",
                 "parameters": [
                     {
                         "description": "翻译信息",
@@ -952,7 +944,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.TranslationRequest"
+                            "$ref": "#/definitions/domain.CreateTranslationRequest"
                         }
                     }
                 ],
@@ -960,20 +952,11 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/service.TranslationResponse"
+                            "$ref": "#/definitions/domain.Translation"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -991,7 +974,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "为特定项目批量创建多种语言的翻译",
+                "description": "批量创建多个翻译，支持两种格式：数组格式和前端对象格式",
                 "consumes": [
                     "application/json"
                 ],
@@ -1004,12 +987,12 @@ const docTemplate = `{
                 "summary": "批量创建翻译",
                 "parameters": [
                     {
-                        "description": "批量翻译信息，translations 字段为语言代码到翻译值的映射，如 {'zh-CN':'中文值','en':'English value'}",
+                        "description": "批量翻译请求",
                         "name": "translations",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.BatchTranslationRequest"
+                            "$ref": "#/definitions/domain.BatchTranslationRequest"
                         }
                     }
                 ],
@@ -1017,28 +1000,13 @@ const docTemplate = `{
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/service.TranslationResponse"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     },
                     "400": {
                         "description": "Bad Request",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
+                            "$ref": "#/definitions/response.APIResponse"
                         }
                     }
                 }
@@ -1051,7 +1019,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "批量删除多个翻译条目",
+                "description": "批量删除多个翻译",
                 "consumes": [
                     "application/json"
                 ],
@@ -1064,7 +1032,7 @@ const docTemplate = `{
                 "summary": "批量删除翻译",
                 "parameters": [
                     {
-                        "description": "翻译ID数组",
+                        "description": "翻译ID列表",
                         "name": "ids",
                         "in": "body",
                         "required": true,
@@ -1077,24 +1045,11 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": true
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1112,7 +1067,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取指定项目的所有翻译条目，支持分页和搜索",
+                "description": "根据项目ID获取翻译列表",
                 "consumes": [
                     "application/json"
                 ],
@@ -1133,20 +1088,16 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "页码，默认1",
+                        "default": 1,
+                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认10",
+                        "default": 10,
+                        "description": "每页数量",
                         "name": "page_size",
-                        "in": "query"
-                    },
-                    {
-                        "type": "string",
-                        "description": "搜索关键词",
-                        "name": "keyword",
                         "in": "query"
                     }
                 ],
@@ -1167,8 +1118,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1186,7 +1137,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "获取指定项目的翻译矩阵，按键名分组，每组包含各语言的翻译，支持分页和搜索",
+                "description": "获取项目的翻译矩阵（键-语言映射），支持分页",
                 "consumes": [
                     "application/json"
                 ],
@@ -1196,7 +1147,7 @@ const docTemplate = `{
                 "tags": [
                     "翻译管理"
                 ],
-                "summary": "获取项目翻译矩阵",
+                "summary": "获取翻译矩阵",
                 "parameters": [
                     {
                         "type": "integer",
@@ -1207,13 +1158,15 @@ const docTemplate = `{
                     },
                     {
                         "type": "integer",
-                        "description": "页码，默认1",
+                        "default": 1,
+                        "description": "页码",
                         "name": "page",
                         "in": "query"
                     },
                     {
                         "type": "integer",
-                        "description": "每页数量，默认10",
+                        "default": 10,
+                        "description": "每页数量",
                         "name": "page_size",
                         "in": "query"
                     },
@@ -1241,8 +1194,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1260,7 +1213,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "通过ID获取特定翻译条目的详细信息",
+                "description": "根据翻译ID获取翻译详细信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -1284,7 +1237,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.TranslationResponse"
+                            "$ref": "#/definitions/domain.Translation"
                         }
                     },
                     "400": {
@@ -1313,7 +1266,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "更新特定翻译条目的内容",
+                "description": "更新翻译信息",
                 "consumes": [
                     "application/json"
                 ],
@@ -1338,7 +1291,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/service.TranslationRequest"
+                            "$ref": "#/definitions/domain.CreateTranslationRequest"
                         }
                     }
                 ],
@@ -1346,7 +1299,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/service.TranslationResponse"
+                            "$ref": "#/definitions/domain.Translation"
                         }
                     },
                     "400": {
@@ -1358,8 +1311,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1375,7 +1328,7 @@ const docTemplate = `{
                         "BearerAuth": []
                     }
                 ],
-                "description": "删除特定的翻译条目",
+                "description": "删除指定的翻译",
                 "consumes": [
                     "application/json"
                 ],
@@ -1396,14 +1349,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "type": "object",
-                            "additionalProperties": {
-                                "type": "string"
-                            }
-                        }
+                    "204": {
+                        "description": "No Content"
                     },
                     "400": {
                         "description": "Bad Request",
@@ -1414,8 +1361,8 @@ const docTemplate = `{
                             }
                         }
                     },
-                    "500": {
-                        "description": "Internal Server Error",
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "type": "object",
                             "additionalProperties": {
@@ -1448,8 +1395,7 @@ const docTemplate = `{
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/domain.User"
                         }
                     },
                     "401": {
@@ -1466,75 +1412,264 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "errors.ErrorCode": {
-            "type": "integer",
-            "enum": [
-                0,
-                1000,
-                1001,
-                1002,
-                1003,
-                1004,
-                1005,
-                2000,
-                2001,
-                2002,
-                2003,
-                2004,
-                3000,
-                3001,
-                3002,
-                3003,
-                3004,
-                3005,
-                3006,
-                4000,
-                4001,
-                4002,
-                5000
-            ],
-            "x-enum-varnames": [
-                "Success",
-                "InternalError",
-                "InvalidParams",
-                "NotFound",
-                "AlreadyExists",
-                "Forbidden",
-                "TooManyRequests",
-                "Unauthorized",
-                "InvalidToken",
-                "TokenExpired",
-                "InvalidAPIKey",
-                "LoginFailed",
-                "ProjectNotFound",
-                "ProjectExists",
-                "LanguageNotFound",
-                "LanguageExists",
-                "TranslationNotFound",
-                "UserNotFound",
-                "InvalidFileFormat",
-                "DatabaseError",
-                "TransactionError",
-                "ConnectionError",
-                "ExternalAPIError"
-            ]
-        },
-        "errors.Response": {
+        "domain.BatchTranslationRequest": {
             "type": "object",
+            "required": [
+                "key_name",
+                "project_id",
+                "translations"
+            ],
             "properties": {
-                "code": {
-                    "$ref": "#/definitions/errors.ErrorCode"
-                },
-                "data": {},
-                "details": {
+                "context": {
                     "type": "string"
                 },
-                "message": {
+                "key_name": {
+                    "type": "string"
+                },
+                "project_id": {
+                    "type": "integer"
+                },
+                "translations": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                }
+            }
+        },
+        "domain.CreateLanguageRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "name"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "is_default": {
+                    "type": "boolean"
+                },
+                "name": {
                     "type": "string"
                 }
             }
         },
-        "model.User": {
+        "domain.CreateProjectRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.CreateTranslationRequest": {
+            "type": "object",
+            "required": [
+                "key_name",
+                "language_id",
+                "project_id",
+                "value"
+            ],
+            "properties": {
+                "context": {
+                    "type": "string"
+                },
+                "key_name": {
+                    "type": "string"
+                },
+                "language_id": {
+                    "type": "integer"
+                },
+                "project_id": {
+                    "type": "integer"
+                },
+                "value": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.DashboardStats": {
+            "type": "object",
+            "properties": {
+                "total_keys": {
+                    "type": "integer"
+                },
+                "total_languages": {
+                    "type": "integer"
+                },
+                "total_projects": {
+                    "type": "integer"
+                },
+                "total_translations": {
+                    "type": "integer"
+                }
+            }
+        },
+        "domain.Language": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "description": "语言代码，如 en, zh-CN",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "is_default": {
+                    "description": "是否为默认语言",
+                    "type": "boolean"
+                },
+                "name": {
+                    "description": "语言名称，如 English, 简体中文",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "状态：active, inactive",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.LoginRequest": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string",
+                    "example": "password"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "admin"
+                }
+            }
+        },
+        "domain.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                },
+                "user": {
+                    "$ref": "#/definitions/domain.User"
+                }
+            }
+        },
+        "domain.Project": {
+            "type": "object",
+            "properties": {
+                "created_at": {
+                    "type": "string"
+                },
+                "description": {
+                    "description": "项目描述",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "name": {
+                    "description": "项目名称",
+                    "type": "string"
+                },
+                "slug": {
+                    "description": "项目标识，用于URL",
+                    "type": "string"
+                },
+                "status": {
+                    "description": "项目状态：active, archived",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.RefreshRequest": {
+            "type": "object",
+            "required": [
+                "refresh_token"
+            ],
+            "properties": {
+                "refresh_token": {
+                    "type": "string",
+                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                }
+            }
+        },
+        "domain.Translation": {
+            "type": "object",
+            "properties": {
+                "context": {
+                    "description": "上下文说明",
+                    "type": "string"
+                },
+                "created_at": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "integer"
+                },
+                "key_name": {
+                    "description": "翻译键名",
+                    "type": "string"
+                },
+                "language_id": {
+                    "description": "语言ID",
+                    "type": "integer"
+                },
+                "project_id": {
+                    "description": "关联的项目ID",
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "状态：active, deprecated",
+                    "type": "string"
+                },
+                "updated_at": {
+                    "type": "string"
+                },
+                "value": {
+                    "description": "翻译值",
+                    "type": "string"
+                }
+            }
+        },
+        "domain.UpdateProjectRequest": {
+            "type": "object",
+            "properties": {
+                "description": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "domain.User": {
             "type": "object",
             "properties": {
                 "created_at": {
@@ -1554,59 +1689,7 @@ const docTemplate = `{
                 }
             }
         },
-        "service.BatchTranslationRequest": {
-            "type": "object",
-            "required": [
-                "key_name",
-                "project_id"
-            ],
-            "properties": {
-                "context": {
-                    "description": "上下文说明",
-                    "type": "string",
-                    "example": "欢迎消息"
-                },
-                "key_name": {
-                    "description": "翻译键名",
-                    "type": "string",
-                    "example": "welcome_message"
-                },
-                "project_id": {
-                    "description": "项目ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "translations": {
-                    "description": "语言代码 -\u003e 翻译值",
-                    "type": "object",
-                    "additionalProperties": {
-                        "type": "string"
-                    },
-                    "example": {
-                        "'en'": "'Welcome'}",
-                        "{'zh-CN'": "'欢迎'"
-                    }
-                }
-            }
-        },
-        "service.DashboardStats": {
-            "type": "object",
-            "properties": {
-                "language_count": {
-                    "type": "integer"
-                },
-                "project_count": {
-                    "type": "integer"
-                },
-                "translation_count": {
-                    "type": "integer"
-                },
-                "user_count": {
-                    "type": "integer"
-                }
-            }
-        },
-        "service.KeysPushRequest": {
+        "handlers.PushKeysRequest": {
             "type": "object",
             "required": [
                 "keys",
@@ -1614,7 +1697,7 @@ const docTemplate = `{
             ],
             "properties": {
                 "defaults": {
-                    "description": "默认值，通常是源语言文本",
+                    "description": "保持向后兼容（已废弃）",
                     "type": "object",
                     "additionalProperties": {
                         "type": "string"
@@ -1628,263 +1711,62 @@ const docTemplate = `{
                 },
                 "project_id": {
                     "type": "string"
+                },
+                "translations": {
+                    "description": "新增：语言代码 -\u003e 键值对映射",
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
-        "service.LanguageRequest": {
+        "response.APIResponse": {
             "type": "object",
-            "required": [
-                "code",
-                "name"
-            ],
+            "properties": {
+                "data": {},
+                "error": {
+                    "$ref": "#/definitions/response.ErrorInfo"
+                },
+                "meta": {
+                    "$ref": "#/definitions/response.Meta"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "response.ErrorInfo": {
+            "type": "object",
             "properties": {
                 "code": {
-                    "description": "语言代码",
-                    "type": "string",
-                    "example": "fr"
-                },
-                "is_default": {
-                    "description": "是否为默认语言",
-                    "type": "boolean",
-                    "example": false
-                },
-                "name": {
-                    "description": "语言名称",
-                    "type": "string",
-                    "example": "Français"
-                }
-            }
-        },
-        "service.LanguageResponse": {
-            "type": "object",
-            "properties": {
-                "code": {
-                    "description": "语言代码",
-                    "type": "string",
-                    "example": "fr"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-04-01 12:00:00"
-                },
-                "id": {
-                    "description": "语言ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "is_default": {
-                    "description": "是否为默认语言",
-                    "type": "boolean",
-                    "example": false
-                },
-                "name": {
-                    "description": "语言名称",
-                    "type": "string",
-                    "example": "Français"
-                },
-                "status": {
-                    "description": "语言状态",
-                    "type": "string",
-                    "example": "active"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-04-01 12:00:00"
-                }
-            }
-        },
-        "service.LoginRequest": {
-            "type": "object",
-            "required": [
-                "password",
-                "username"
-            ],
-            "properties": {
-                "password": {
-                    "description": "密码",
-                    "type": "string",
-                    "example": "password"
-                },
-                "username": {
-                    "description": "用户名",
-                    "type": "string",
-                    "example": "admin"
-                }
-            }
-        },
-        "service.LoginResponse": {
-            "type": "object",
-            "properties": {
-                "refresh_token": {
-                    "description": "刷新令牌",
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                },
-                "token": {
-                    "description": "JWT访问令牌",
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                },
-                "user": {
-                    "$ref": "#/definitions/model.User"
-                }
-            }
-        },
-        "service.ProjectRequest": {
-            "type": "object",
-            "required": [
-                "name"
-            ],
-            "properties": {
-                "description": {
                     "type": "string"
                 },
-                "name": {
+                "details": {
                     "type": "string"
                 },
-                "slug": {
+                "message": {
                     "type": "string"
                 }
             }
         },
-        "service.ProjectResponse": {
+        "response.Meta": {
             "type": "object",
             "properties": {
-                "created_at": {
-                    "type": "string"
-                },
-                "description": {
-                    "type": "string"
-                },
-                "id": {
+                "page": {
                     "type": "integer"
                 },
-                "name": {
-                    "type": "string"
+                "page_size": {
+                    "type": "integer"
                 },
-                "slug": {
-                    "type": "string"
+                "total_count": {
+                    "type": "integer"
                 },
-                "status": {
-                    "type": "string"
-                },
-                "updated_at": {
-                    "type": "string"
-                }
-            }
-        },
-        "service.RefreshRequest": {
-            "type": "object",
-            "required": [
-                "refresh_token"
-            ],
-            "properties": {
-                "refresh_token": {
-                    "description": "刷新令牌",
-                    "type": "string",
-                    "example": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-                }
-            }
-        },
-        "service.TranslationRequest": {
-            "type": "object",
-            "required": [
-                "key_name",
-                "language_id",
-                "project_id"
-            ],
-            "properties": {
-                "context": {
-                    "description": "上下文说明",
-                    "type": "string",
-                    "example": "主页欢迎消息"
-                },
-                "key_name": {
-                    "description": "翻译键名",
-                    "type": "string",
-                    "example": "welcome_message"
-                },
-                "language_id": {
-                    "description": "语言ID",
-                    "type": "integer",
-                    "example": 2
-                },
-                "project_id": {
-                    "description": "项目ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "value": {
-                    "description": "翻译值",
-                    "type": "string",
-                    "example": "欢迎使用"
-                }
-            }
-        },
-        "service.TranslationResponse": {
-            "type": "object",
-            "properties": {
-                "context": {
-                    "description": "上下文说明",
-                    "type": "string",
-                    "example": "欢迎消息"
-                },
-                "created_at": {
-                    "description": "创建时间",
-                    "type": "string",
-                    "example": "2023-04-01 12:00:00"
-                },
-                "id": {
-                    "description": "翻译ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "key_name": {
-                    "description": "翻译键名",
-                    "type": "string",
-                    "example": "welcome_message"
-                },
-                "language_code": {
-                    "description": "语言代码",
-                    "type": "string",
-                    "example": "zh-CN"
-                },
-                "language_id": {
-                    "description": "语言ID",
-                    "type": "integer",
-                    "example": 2
-                },
-                "language_name": {
-                    "description": "语言名称",
-                    "type": "string",
-                    "example": "简体中文"
-                },
-                "project_id": {
-                    "description": "项目ID",
-                    "type": "integer",
-                    "example": 1
-                },
-                "project_name": {
-                    "description": "项目名称",
-                    "type": "string",
-                    "example": "网站翻译"
-                },
-                "status": {
-                    "description": "状态",
-                    "type": "string",
-                    "example": "active"
-                },
-                "updated_at": {
-                    "description": "更新时间",
-                    "type": "string",
-                    "example": "2023-04-01 12:00:00"
-                },
-                "value": {
-                    "description": "翻译值",
-                    "type": "string",
-                    "example": "欢迎使用"
+                "total_pages": {
+                    "type": "integer"
                 }
             }
         }

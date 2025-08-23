@@ -92,12 +92,13 @@ func (h *ProjectHandler) GetByID(ctx *gin.Context) {
 
 // GetAll 获取项目列表
 // @Summary      获取项目列表
-// @Description  获取项目列表，支持分页
+// @Description  获取项目列表，支持分页和关键词搜索
 // @Tags         项目管理
 // @Accept       json
 // @Produce      json
-// @Param        page      query     int  false  "页码"  default(1)
-// @Param        page_size query     int  false  "每页数量"  default(10)
+// @Param        page      query     int     false  "页码"  default(1)
+// @Param        page_size query     int     false  "每页数量"  default(10)
+// @Param        keyword   query     string  false  "搜索关键词"
 // @Success      200       {object}  map[string]interface{}
 // @Failure      400       {object}  map[string]string
 // @Security     BearerAuth
@@ -106,6 +107,7 @@ func (h *ProjectHandler) GetAll(ctx *gin.Context) {
 	// 解析分页参数
 	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
 	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+	keyword := ctx.DefaultQuery("keyword", "")
 
 	if page < 1 {
 		page = 1
@@ -116,7 +118,7 @@ func (h *ProjectHandler) GetAll(ctx *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	projects, total, err := h.projectService.GetAll(ctx.Request.Context(), pageSize, offset)
+	projects, total, err := h.projectService.GetAll(ctx.Request.Context(), pageSize, offset, keyword)
 	if err != nil {
 		response.InternalServerError(ctx, "获取项目列表失败")
 		return

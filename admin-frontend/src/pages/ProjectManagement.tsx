@@ -23,6 +23,7 @@ import ProjectDetailModal from "../components/ProjectDetailModal";
 import { Project } from "../types/project";
 import { ApiResponse, PaginatedResponse } from "../types/api";
 import { useTranslation } from "react-i18next";
+import { useDebounce } from "../hooks/useDebounce";
 
 const { Title } = Typography;
 
@@ -32,6 +33,7 @@ const ProjectManagement: React.FC = () => {
   const [page, setPage] = useState<number>(1);
   const [pageSize, setPageSize] = useState<number>(10);
   const [keyword, setKeyword] = useState<string>("");
+  const [searchInput, setSearchInput] = useState<string>("");
   const [loading, setLoading] = useState<boolean>(false);
   const [modalVisible, setModalVisible] = useState<boolean>(false);
   const [detailVisible, setDetailVisible] = useState<boolean>(false);
@@ -40,6 +42,24 @@ const ProjectManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [form] = Form.useForm();
   const { t } = useTranslation();
+
+  // Debounce search input with 500ms delay
+  const debouncedSearchInput = useDebounce(searchInput, 500);
+  
+  // Track if search is in progress (debouncing)
+  const isSearching = searchInput !== debouncedSearchInput;
+
+  // Update keyword when debounced search input changes
+  useEffect(() => {
+    setKeyword(debouncedSearchInput);
+  }, [debouncedSearchInput]);
+
+  // Reset to first page when keyword changes (but not on initial load)
+  useEffect(() => {
+    if (keyword !== "" && page !== 1) {
+      setPage(1);
+    }
+  }, [keyword]);
 
   // Get project list
   const fetchProjects = useCallback(async () => {
@@ -234,11 +254,12 @@ const ProjectManagement: React.FC = () => {
         <Space size="middle">
           <Input
             placeholder={t("project.search")}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            prefix={<SearchOutlined />}
+            value={searchInput}
+            onChange={(e) => setSearchInput(e.target.value)}
+            prefix={<SearchOutlined style={{ color: isSearching ? '#1890ff' : undefined }} />}
             style={{ width: 250 }}
             allowClear
+            onClear={() => setSearchInput("")}
           />
           <Button
             type="primary"

@@ -15,7 +15,7 @@ type UserRepository interface {
 type ProjectRepository interface {
 	GetByID(ctx context.Context, id uint) (*Project, error)
 	GetBySlug(ctx context.Context, slug string) (*Project, error)
-	GetAll(ctx context.Context, limit, offset int) ([]*Project, int64, error)
+	GetAll(ctx context.Context, limit, offset int, keyword string) ([]*Project, int64, error)
 	Create(ctx context.Context, project *Project) error
 	Update(ctx context.Context, project *Project) error
 	Delete(ctx context.Context, id uint) error
