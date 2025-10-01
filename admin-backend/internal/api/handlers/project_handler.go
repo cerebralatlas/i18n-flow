@@ -134,6 +134,57 @@ func (h *ProjectHandler) GetAll(ctx *gin.Context) {
 	response.SuccessWithMeta(ctx, projects, meta)
 }
 
+// GetAccessibleProjects 获取用户可访问的项目列表
+// @Summary      获取用户可访问的项目列表
+// @Description  根据用户权限返回可访问的项目列表，管理员返回所有项目，普通用户返回参与的项目
+// @Tags         项目管理
+// @Accept       json
+// @Produce      json
+// @Param        page      query     int     false  "页码"        default(1)
+// @Param        page_size query     int     false  "每页数量"     default(10)
+// @Param        keyword   query     string  false  "搜索关键词"
+// @Success      200       {object}  map[string]interface{}
+// @Failure      400       {object}  map[string]string
+// @Security     BearerAuth
+// @Router       /projects/accessible [get]
+func (h *ProjectHandler) GetAccessibleProjects(ctx *gin.Context) {
+	// 从上下文中获取用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "用户未登录")
+		return
+	}
+
+	// 解析分页参数
+	page, _ := strconv.Atoi(ctx.DefaultQuery("page", "1"))
+	pageSize, _ := strconv.Atoi(ctx.DefaultQuery("page_size", "10"))
+	keyword := ctx.DefaultQuery("keyword", "")
+
+	if page < 1 {
+		page = 1
+	}
+	if pageSize < 1 || pageSize > 100 {
+		pageSize = 10
+	}
+
+	offset := (page - 1) * pageSize
+
+	projects, total, err := h.projectService.GetAccessibleProjects(ctx.Request.Context(), userID.(uint), pageSize, offset, keyword)
+	if err != nil {
+		response.InternalServerError(ctx, "获取可访问项目列表失败")
+		return
+	}
+
+	meta := &response.Meta{
+		Page:       page,
+		PageSize:   pageSize,
+		TotalCount: total,
+		TotalPages: (total + int64(pageSize) - 1) / int64(pageSize),
+	}
+
+	response.SuccessWithMeta(ctx, projects, meta)
+}
+
 // Update 更新项目
 // @Summary      更新项目
 // @Description  更新项目信息

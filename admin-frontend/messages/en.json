@@ -32,7 +32,8 @@
     "menu": {
       "dashboard": "Dashboard",
       "projectManagement": "Project Management",
-      "translationManagement": "Translation Management"
+      "translationManagement": "Translation Management",
+      "userManagement": "User Management"
     },
     "user": {
       "profile": "Profile",
@@ -95,6 +96,10 @@
       "close": "Close",
       "editButton": "Edit project",
       "noDescription": "No description",
+      "tabs": {
+        "details": "Project Info",
+        "members": "Members"
+      },
       "fields": {
         "id": "Project ID",
         "name": "Project Name",
@@ -251,6 +256,112 @@
       "clear": "Clear",
       "default": "Default",
       "buttonText": "Show Columns ({{selected}}/{{total}})"
+    },
+    "noProjectAccess": {
+      "title": "No Project Access",
+      "description": "You don't have access to any translation projects yet.",
+      "instructions": "To get started, please contact your administrator to be added to a project.",
+      "currentUser": "Current User",
+      "currentRole": "Current Role",
+      "contactAdmin": "Contact Administrator"
+    }
+  },
+  "userManagement": {
+    "title": "User Management",
+    "createUser": "Create User",
+    "editUser": "Edit User",
+    "searchPlaceholder": "Search by username or email",
+    "adminRequired": "Only administrators can access user management",
+    "confirmDelete": "Are you sure you want to delete this user?",
+    "table": {
+      "id": "ID",
+      "username": "Username",
+      "email": "Email",
+      "role": "Role",
+      "status": "Status",
+      "createdAt": "Created At",
+      "actions": "Actions"
+    },
+    "form": {
+      "username": "Username",
+      "usernamePlaceholder": "Please enter username",
+      "usernameRequired": "Username is required",
+      "usernameMinLength": "Username must be at least 3 characters",
+      "usernameMaxLength": "Username cannot exceed 50 characters",
+      "email": "Email",
+      "emailPlaceholder": "Please enter email",
+      "emailRequired": "Email is required",
+      "emailInvalid": "Please enter a valid email",
+      "password": "Password",
+      "passwordPlaceholder": "Please enter password",
+      "passwordRequired": "Password is required",
+      "passwordMinLength": "Password must be at least 6 characters",
+      "generatePassword": "Generate",
+      "passwordTooltip": "Generate a secure random password",
+      "copyPassword": "Copy password to clipboard",
+      "role": "Role",
+      "rolePlaceholder": "Please select role",
+      "roleRequired": "Role is required",
+      "status": "Status",
+      "statusPlaceholder": "Please select status",
+      "statusRequired": "Status is required"
+    },
+    "roles": {
+      "admin": "Administrator",
+      "member": "Member",
+      "viewer": "Viewer"
+    },
+    "status": {
+      "active": "Active",
+      "disabled": "Disabled"
+    },
+    "messages": {
+      "createSuccess": "User created successfully",
+      "createError": "Failed to create user",
+      "updateSuccess": "User updated successfully",
+      "updateError": "Failed to update user",
+      "deleteSuccess": "User deleted successfully",
+      "deleteError": "Failed to delete user",
+      "fetchError": "Failed to fetch users",
+      "passwordGenerated": "Secure password generated successfully",
+      "passwordCopied": "Password copied to clipboard",
+      "userCreatedTitle": "User Created Successfully",
+      "userCreatedContent": "Please save the following login credentials and share them with the new user:",
+      "passwordReminder": "⚠️ Please save this information securely. The password will not be shown again."
+    }
+  },
+  "projectMember": {
+    "title": "Project Members - {{projectName}}",
+    "addMember": "Add Member",
+    "confirmRemove": "Are you sure you want to remove this member?",
+    "table": {
+      "username": "Username",
+      "email": "Email",
+      "role": "Role",
+      "actions": "Actions"
+    },
+    "form": {
+      "user": "User",
+      "userPlaceholder": "Please select user",
+      "userRequired": "User is required",
+      "role": "Role",
+      "rolePlaceholder": "Please select role",
+      "roleRequired": "Role is required"
+    },
+    "roles": {
+      "owner": "Owner",
+      "editor": "Editor",
+      "viewer": "Viewer"
+    },
+    "messages": {
+      "addSuccess": "Member added successfully",
+      "addError": "Failed to add member",
+      "updateSuccess": "Member role updated successfully",
+      "updateError": "Failed to update member role",
+      "removeSuccess": "Member removed successfully",
+      "removeError": "Failed to remove member",
+      "fetchError": "Failed to fetch members",
+      "fetchUsersError": "Failed to fetch users"
     }
   },
   "common": {
@@ -264,16 +375,23 @@
     },
     "buttons": {
       "yes": "Yes",
+      "no": "No",
       "cancel": "Cancel",
       "confirm": "Confirm",
       "save": "Save",
       "create": "Create",
       "edit": "Edit",
       "delete": "Delete",
+      "remove": "Remove",
+      "add": "Add",
       "close": "Close",
       "submit": "Submit",
       "reset": "Reset",
       "ok": "OK"
+    },
+    "noPermission": "Access Denied",
+    "pagination": {
+      "total": "Total {{total}} items, showing {{start}}-{{end}}"
     }
   }
 }

@@ -63,6 +63,7 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		&domain.Project{},
 		&domain.Language{},
 		&domain.Translation{},
+		&domain.ProjectMember{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("自动迁移表结构失败: %w", err)
@@ -121,7 +122,10 @@ func createAdminUser(db *gorm.DB) error {
 
 		admin := domain.User{
 			Username: adminUsername,
+			Email:    "admin@i18n-flow.com", // 默认管理员邮箱
 			Password: string(password),
+			Role:     "admin",
+			Status:   "active",
 		}
 
 		if err := db.Create(&admin).Error; err != nil {
@@ -130,6 +134,31 @@ func createAdminUser(db *gorm.DB) error {
 
 		log.Printf("已创建默认管理员用户: %s", adminUsername)
 	} else {
+		// 检查现有用户是否需要更新角色和邮箱
+		var admin domain.User
+		if err := db.Where("username = ?", "admin").First(&admin).Error; err == nil {
+			needUpdate := false
+			if admin.Role != "admin" {
+				admin.Role = "admin"
+				needUpdate = true
+			}
+			if admin.Email == "" {
+				admin.Email = "admin@i18n-flow.com"
+				needUpdate = true
+			}
+			if admin.Status == "" {
+				admin.Status = "active"
+				needUpdate = true
+			}
+
+			if needUpdate {
+				if err := db.Save(&admin).Error; err != nil {
+					log.Printf("更新管理员用户信息失败: %v", err)
+				} else {
+					log.Println("已更新管理员用户信息")
+				}
+			}
+		}
 		log.Println("管理员用户已存在，无需创建")
 	}
 
@@ -228,6 +257,25 @@ func createOptimizationIndexes(db *gorm.DB) error {
 			TableName: "translations",
 			Columns:   []string{"project_id", "key_name", "language_id"},
 			Unique:    true,
+		},
+		// 项目成员相关索引
+		{
+			Name:      "idx_project_members_project",
+			TableName: "project_members",
+			Columns:   []string{"project_id"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_project_members_user",
+			TableName: "project_members",
+			Columns:   []string{"user_id"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_project_members_role",
+			TableName: "project_members",
+			Columns:   []string{"project_id", "role"},
+			Unique:    false,
 		},
 	}
 

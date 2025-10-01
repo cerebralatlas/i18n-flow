@@ -192,3 +192,9 @@ func (s *CachedProjectService) Delete(ctx context.Context, id uint) error {
 
 	return nil
 }
+
+// GetAccessibleProjects 获取用户可访问的项目列表（不缓存，因为依赖用户权限）
+func (s *CachedProjectService) GetAccessibleProjects(ctx context.Context, userID uint, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
+	// 用户权限相关的查询不缓存，直接调用基础服务
+	return s.projectService.GetAccessibleProjects(ctx, userID, limit, offset, keyword)
+}

@@ -9,6 +9,7 @@ import {
   UserOutlined,
   LogoutOutlined,
   GlobalOutlined,
+  TeamOutlined,
 } from "@ant-design/icons";
 import { useAuthStore } from "../stores/authStore";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
@@ -18,7 +19,7 @@ import { useTranslation } from "react-i18next";
 const { Header, Sider, Content } = Layout;
 
 const DashboardLayout: React.FC = () => {
-  const { user, logout } = useAuthStore();
+  const { user, logout, loading } = useAuthStore();
   const [collapsed, setCollapsed] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
@@ -29,6 +30,7 @@ const DashboardLayout: React.FC = () => {
     const path = location.pathname;
     if (path.includes("/projects")) return "2";
     if (path.includes("/translations")) return "3";
+    if (path.includes("/users")) return "4";
     return "1"; // default dashboard
   };
 
@@ -90,6 +92,9 @@ const DashboardLayout: React.FC = () => {
               case "3":
                 navigate("/translations");
                 break;
+              case "4":
+                navigate("/users");
+                break;
             }
           }}
           items={[
@@ -108,6 +113,12 @@ const DashboardLayout: React.FC = () => {
               icon: <TranslationOutlined />,
               label: t("layout.menu.translationManagement"),
             },
+            // 只有在用户信息加载完成且是管理员时才显示用户管理菜单
+            ...(!loading && user?.role === 'admin' ? [{
+              key: "4",
+              icon: <TeamOutlined />,
+              label: t("layout.menu.userManagement"),
+            }] : []),
           ]}
           style={{
             background: "transparent",
@@ -131,7 +142,7 @@ const DashboardLayout: React.FC = () => {
                     {user?.username}
                   </span>
                   <span className="text-gray-400 text-xs">
-                    {t("layout.user.role")}
+                    {user?.role && t(`userManagement.roles.${user.role}`)}
                   </span>
                 </div>
               </div>
@@ -167,6 +178,8 @@ const DashboardLayout: React.FC = () => {
                 t("layout.menu.projectManagement")}
               {location.pathname.includes("/translations") &&
                 t("layout.menu.translationManagement")}
+              {location.pathname.includes("/users") &&
+                t("layout.menu.userManagement")}
               {location.pathname === "/dashboard" && t("layout.menu.dashboard")}
             </span>
           </div>

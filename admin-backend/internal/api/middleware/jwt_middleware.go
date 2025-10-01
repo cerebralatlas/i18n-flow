@@ -9,8 +9,8 @@ import (
 )
 
 // JWTAuthMiddleware JWT鉴权中间件
-// 接受authService作为参数，支持依赖注入
-func JWTAuthMiddleware(authService domain.AuthService) gin.HandlerFunc {
+// 接受authService和userService作为参数，支持依赖注入
+func JWTAuthMiddleware(authService domain.AuthService, userService domain.UserService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 从Authorization头获取token
 		authHeader := c.GetHeader("Authorization")
@@ -38,9 +38,24 @@ func JWTAuthMiddleware(authService domain.AuthService) gin.HandlerFunc {
 			return
 		}
 
+		// 获取完整的用户信息以获取角色
+		fullUser, err := userService.GetUserInfo(c.Request.Context(), user.ID)
+		if err != nil {
+			response.Unauthorized(c, "用户信息获取失败")
+			return
+		}
+
 		// 将用户信息存储到上下文中
-		c.Set("userID", user.ID)
-		c.Set("username", user.Username)
+		c.Set("userID", fullUser.ID)
+		c.Set("username", fullUser.Username)
+		c.Set("userRole", fullUser.Role)
+		c.Set("userStatus", fullUser.Status)
+
+		// 检查用户状态
+		if fullUser.Status != "active" {
+			response.Forbidden(c, "用户账户已被禁用")
+			return
+		}
 
 		c.Next()
 	}

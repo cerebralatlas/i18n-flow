@@ -47,3 +47,8 @@ func (f *HandlerFactory) CLIHandler() *CLIHandler {
 		f.container.LanguageService(),
 	)
 }
+
+// ProjectMemberHandler 获取项目成员处理器
+func (f *HandlerFactory) ProjectMemberHandler() *ProjectMemberHandler {
+	return NewProjectMemberHandler(f.container.ProjectMemberService())
+}

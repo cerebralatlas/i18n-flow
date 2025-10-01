@@ -1,7 +1,8 @@
 import React from "react";
-import { Modal, Descriptions, Button, Spin } from "antd";
+import { Modal, Descriptions, Button, Spin, Tabs } from "antd";
 import { Project } from "../types/project";
 import { useTranslation } from "react-i18next";
+import ProjectMemberManagement from "./project/ProjectMemberManagement";
 
 interface ProjectDetailModalProps {
   project: Project | null;
@@ -42,37 +43,58 @@ const ProjectDetailModal: React.FC<ProjectDetailModalProps> = ({
           <Spin size="large" />
         </div>
       ) : (
-        <Descriptions bordered column={1}>
-          <Descriptions.Item label={t("project.detail.fields.id")}>
-            {project.id}
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.name")}>
-            {project.name}
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.slug")}>
-            {project.slug}
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.description")}>
-            {project.description || t("project.detail.noDescription")}
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.status")}>
-            <span
-              style={{
-                color: project.status === "active" ? "green" : "orange",
-              }}
-            >
-              {project.status === "active"
-                ? t("project.table.status.active")
-                : t("project.table.status.archived")}
-            </span>
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.createdAt")}>
-            {project.created_at}
-          </Descriptions.Item>
-          <Descriptions.Item label={t("project.detail.fields.updatedAt")}>
-            {project.updated_at}
-          </Descriptions.Item>
-        </Descriptions>
+        <Tabs
+          defaultActiveKey="details"
+          items={[
+            {
+              key: 'details',
+              label: t("project.detail.tabs.details"),
+              children: (
+                <Descriptions bordered column={1}>
+                  <Descriptions.Item label={t("project.detail.fields.id")}>
+                    {project.id}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.name")}>
+                    {project.name}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.slug")}>
+                    {project.slug}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.description")}>
+                    {project.description || t("project.detail.noDescription")}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.status")}>
+                    <span
+                      style={{
+                        color: project.status === "active" ? "green" : "orange",
+                      }}
+                    >
+                      {project.status === "active"
+                        ? t("project.table.status.active")
+                        : t("project.table.status.archived")}
+                    </span>
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.createdAt")}>
+                    {project.created_at}
+                  </Descriptions.Item>
+                  <Descriptions.Item label={t("project.detail.fields.updatedAt")}>
+                    {project.updated_at}
+                  </Descriptions.Item>
+                </Descriptions>
+              ),
+            },
+            {
+              key: 'members',
+              label: t("project.detail.tabs.members"),
+              children: (
+                <ProjectMemberManagement
+                  projectId={project.id}
+                  projectName={project.name}
+                />
+              ),
+            },
+          ]}
+        />
       )}
     </Modal>
   );

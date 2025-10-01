@@ -32,7 +32,8 @@
     "menu": {
       "dashboard": "仪表盘",
       "projectManagement": "项目管理",
-      "translationManagement": "翻译管理"
+      "translationManagement": "翻译管理",
+      "userManagement": "用户管理"
     },
     "user": {
       "profile": "个人信息",
@@ -95,6 +96,10 @@
       "close": "关闭",
       "editButton": "编辑项目",
       "noDescription": "暂无描述",
+      "tabs": {
+        "details": "项目信息",
+        "members": "成员"
+      },
       "fields": {
         "id": "项目ID",
         "name": "项目名称",
@@ -251,6 +256,112 @@
       "clear": "清空",
       "default": "默认",
       "buttonText": "显示列 ({{selected}}/{{total}})"
+    },
+    "noProjectAccess": {
+      "title": "暂无项目权限",
+      "description": "您还没有任何翻译项目的访问权限。",
+      "instructions": "要开始使用，请联系管理员将您添加到项目中。",
+      "currentUser": "当前用户",
+      "currentRole": "当前角色",
+      "contactAdmin": "联系管理员"
+    }
+  },
+  "userManagement": {
+    "title": "用户管理",
+    "createUser": "创建用户",
+    "editUser": "编辑用户",
+    "searchPlaceholder": "按用户名或邮箱搜索",
+    "adminRequired": "只有管理员可以访问用户管理",
+    "confirmDelete": "确定要删除这个用户吗？",
+    "table": {
+      "id": "ID",
+      "username": "用户名",
+      "email": "邮箱",
+      "role": "角色",
+      "status": "状态",
+      "createdAt": "创建时间",
+      "actions": "操作"
+    },
+    "form": {
+      "username": "用户名",
+      "usernamePlaceholder": "请输入用户名",
+      "usernameRequired": "用户名是必填的",
+      "usernameMinLength": "用户名至少3个字符",
+      "usernameMaxLength": "用户名不能超过50个字符",
+      "email": "邮箱",
+      "emailPlaceholder": "请输入邮箱",
+      "emailRequired": "邮箱是必填的",
+      "emailInvalid": "请输入有效的邮箱",
+      "password": "密码",
+      "passwordPlaceholder": "请输入密码",
+      "passwordRequired": "密码是必填的",
+      "passwordMinLength": "密码至少6个字符",
+      "generatePassword": "生成",
+      "passwordTooltip": "生成安全的随机密码",
+      "copyPassword": "复制密码到剪贴板",
+      "role": "角色",
+      "rolePlaceholder": "请选择角色",
+      "roleRequired": "角色是必填的",
+      "status": "状态",
+      "statusPlaceholder": "请选择状态",
+      "statusRequired": "状态是必填的"
+    },
+    "roles": {
+      "admin": "管理员",
+      "member": "成员",
+      "viewer": "查看者"
+    },
+    "status": {
+      "active": "激活",
+      "disabled": "禁用"
+    },
+    "messages": {
+      "createSuccess": "用户创建成功",
+      "createError": "创建用户失败",
+      "updateSuccess": "用户更新成功",
+      "updateError": "更新用户失败",
+      "deleteSuccess": "用户删除成功",
+      "deleteError": "删除用户失败",
+      "fetchError": "获取用户列表失败",
+      "passwordGenerated": "安全密码生成成功",
+      "passwordCopied": "密码已复制到剪贴板",
+      "userCreatedTitle": "用户创建成功",
+      "userCreatedContent": "请保存以下登录凭据并分享给新用户：",
+      "passwordReminder": "⚠️ 请安全保存此信息。密码不会再次显示。"
+    }
+  },
+  "projectMember": {
+    "title": "项目成员 - {{projectName}}",
+    "addMember": "添加成员",
+    "confirmRemove": "确定要移除这个成员吗？",
+    "table": {
+      "username": "用户名",
+      "email": "邮箱",
+      "role": "角色",
+      "actions": "操作"
+    },
+    "form": {
+      "user": "用户",
+      "userPlaceholder": "请选择用户",
+      "userRequired": "用户是必填的",
+      "role": "角色",
+      "rolePlaceholder": "请选择角色",
+      "roleRequired": "角色是必填的"
+    },
+    "roles": {
+      "owner": "所有者",
+      "editor": "编辑者",
+      "viewer": "查看者"
+    },
+    "messages": {
+      "addSuccess": "成员添加成功",
+      "addError": "添加成员失败",
+      "updateSuccess": "成员角色更新成功",
+      "updateError": "更新成员角色失败",
+      "removeSuccess": "成员移除成功",
+      "removeError": "移除成员失败",
+      "fetchError": "获取成员列表失败",
+      "fetchUsersError": "获取用户列表失败"
     }
   },
   "common": {
@@ -264,16 +375,23 @@
     },
     "buttons": {
       "yes": "是",
+      "no": "否",
       "cancel": "取消",
       "confirm": "确认",
       "save": "保存",
       "create": "创建",
       "edit": "编辑",
       "delete": "删除",
+      "remove": "移除",
+      "add": "添加",
       "close": "关闭",
       "submit": "提交",
       "reset": "重置",
       "ok": "确定"
+    },
+    "noPermission": "访问被拒绝",
+    "pagination": {
+      "total": "共 {{total}} 条，显示 {{start}}-{{end}} 条"
     }
   }
 }

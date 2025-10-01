@@ -6,6 +6,8 @@ import "context"
 type UserRepository interface {
 	GetByID(ctx context.Context, id uint) (*User, error)
 	GetByUsername(ctx context.Context, username string) (*User, error)
+	GetByEmail(ctx context.Context, email string) (*User, error)
+	GetAll(ctx context.Context, limit, offset int, keyword string) ([]*User, int64, error)
 	Create(ctx context.Context, user *User) error
 	Update(ctx context.Context, user *User) error
 	Delete(ctx context.Context, id uint) error
@@ -45,4 +47,14 @@ type TranslationRepository interface {
 	Update(ctx context.Context, translation *Translation) error
 	Delete(ctx context.Context, id uint) error
 	DeleteBatch(ctx context.Context, ids []uint) error
+}
+
+// ProjectMemberRepository 项目成员数据访问接口
+type ProjectMemberRepository interface {
+	GetByProjectAndUser(ctx context.Context, projectID, userID uint) (*ProjectMember, error)
+	GetByProjectID(ctx context.Context, projectID uint) ([]*ProjectMember, error)
+	GetByUserID(ctx context.Context, userID uint) ([]*ProjectMember, error)
+	Create(ctx context.Context, member *ProjectMember) error
+	Update(ctx context.Context, member *ProjectMember) error
+	Delete(ctx context.Context, projectID, userID uint) error
 }

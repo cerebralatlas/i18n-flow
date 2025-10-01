@@ -95,3 +95,57 @@ func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint) (*doma
 
 	return user, nil
 }
+
+// CreateUser 创建用户（不缓存）
+func (s *CachedUserService) CreateUser(ctx context.Context, req domain.CreateUserRequest) (*domain.User, error) {
+	return s.userService.CreateUser(ctx, req)
+}
+
+// GetAllUsers 获取用户列表（不缓存）
+func (s *CachedUserService) GetAllUsers(ctx context.Context, limit, offset int, keyword string) ([]*domain.User, int64, error) {
+	return s.userService.GetAllUsers(ctx, limit, offset, keyword)
+}
+
+// GetUserByID 根据ID获取用户（使用缓存）
+func (s *CachedUserService) GetUserByID(ctx context.Context, id uint) (*domain.User, error) {
+	// 复用GetUserInfo的缓存逻辑
+	return s.GetUserInfo(ctx, id)
+}
+
+// UpdateUser 更新用户（清除缓存）
+func (s *CachedUserService) UpdateUser(ctx context.Context, id uint, req domain.UpdateUserRequest) (*domain.User, error) {
+	user, err := s.userService.UpdateUser(ctx, id, req)
+	if err != nil {
+		return nil, err
+	}
+
+	// 清除用户缓存
+	cacheKey := fmt.Sprintf("user:%d", id)
+	s.cacheService.Delete(ctx, cacheKey)
+
+	return user, nil
+}
+
+// ChangePassword 修改密码（不缓存）
+func (s *CachedUserService) ChangePassword(ctx context.Context, userID uint, req domain.ChangePasswordRequest) error {
+	return s.userService.ChangePassword(ctx, userID, req)
+}
+
+// ResetPassword 重置密码（不缓存）
+func (s *CachedUserService) ResetPassword(ctx context.Context, userID uint, req domain.ResetPasswordRequest) error {
+	return s.userService.ResetPassword(ctx, userID, req)
+}
+
+// DeleteUser 删除用户（清除缓存）
+func (s *CachedUserService) DeleteUser(ctx context.Context, id uint) error {
+	err := s.userService.DeleteUser(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	// 清除用户缓存
+	cacheKey := fmt.Sprintf("user:%d", id)
+	s.cacheService.Delete(ctx, cacheKey)
+
+	return nil
+}

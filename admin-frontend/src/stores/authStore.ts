@@ -7,6 +7,9 @@ import { ApiResponse } from '../types/api';
 interface User {
   id: number;
   username: string;
+  email: string;
+  role: 'admin' | 'member' | 'viewer';
+  status: 'active' | 'disabled';
 }
 
 interface AuthState {
@@ -18,6 +21,8 @@ interface AuthState {
   checkAuthStatus: () => Promise<void>;
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
+  hasRole: (role: string) => boolean;
+  isAdmin: () => boolean;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
@@ -39,7 +44,7 @@ export const useAuthStore = create<AuthState>((set) => ({
       }
 
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      const response = await axios.get('/api/user/info');
+      const response = await api.get('/api/user/info');
       set({ user: response.data, isAuthenticated: true });
     } catch (error) {
       console.error('Validate user session failed:', error);
@@ -74,5 +79,26 @@ export const useAuthStore = create<AuthState>((set) => ({
     delete axios.defaults.headers.common['Authorization'];
     message.success('Logout successfully');
     set({ user: null, isAuthenticated: false });
+  },
+
+  hasRole: (role: string) => {
+    const { user } = useAuthStore.getState();
+    if (!user) return false;
+    
+    const roleLevel = {
+      'viewer': 1,
+      'member': 2,
+      'admin': 3
+    };
+    
+    const userLevel = roleLevel[user.role as keyof typeof roleLevel] || 0;
+    const requiredLevel = roleLevel[role as keyof typeof roleLevel] || 0;
+    
+    return userLevel >= requiredLevel;
+  },
+
+  isAdmin: () => {
+    const { user } = useAuthStore.getState();
+    return user?.role === 'admin';
   },
 })); 

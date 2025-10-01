@@ -15,20 +15,22 @@ type Container struct {
 	config *config.Config
 
 	// Repositories
-	userRepo        domain.UserRepository
-	projectRepo     domain.ProjectRepository
-	languageRepo    domain.LanguageRepository
-	translationRepo domain.TranslationRepository
-	redisClient     *repository.RedisClient
+	userRepo          domain.UserRepository
+	projectRepo       domain.ProjectRepository
+	languageRepo      domain.LanguageRepository
+	translationRepo   domain.TranslationRepository
+	projectMemberRepo domain.ProjectMemberRepository
+	redisClient       *repository.RedisClient
 
 	// Services
-	authService        domain.AuthService
-	userService        domain.UserService
-	projectService     domain.ProjectService
-	languageService    domain.LanguageService
-	translationService domain.TranslationService
-	dashboardService   domain.DashboardService
-	cacheService       domain.CacheService
+	authService          domain.AuthService
+	userService          domain.UserService
+	projectService       domain.ProjectService
+	languageService      domain.LanguageService
+	translationService   domain.TranslationService
+	dashboardService     domain.DashboardService
+	projectMemberService domain.ProjectMemberService
+	cacheService         domain.CacheService
 }
 
 // NewContainer 创建新的容器实例
@@ -81,6 +83,14 @@ func (c *Container) TranslationRepository() domain.TranslationRepository {
 	return c.translationRepo
 }
 
+// ProjectMemberRepository 获取项目成员仓储
+func (c *Container) ProjectMemberRepository() domain.ProjectMemberRepository {
+	if c.projectMemberRepo == nil {
+		c.projectMemberRepo = c.createProjectMemberRepository()
+	}
+	return c.projectMemberRepo
+}
+
 // AuthService 获取认证服务
 func (c *Container) AuthService() domain.AuthService {
 	if c.authService == nil {
@@ -129,6 +139,14 @@ func (c *Container) DashboardService() domain.DashboardService {
 	return c.dashboardService
 }
 
+// ProjectMemberService 获取项目成员服务
+func (c *Container) ProjectMemberService() domain.ProjectMemberService {
+	if c.projectMemberService == nil {
+		c.projectMemberService = c.createProjectMemberService()
+	}
+	return c.projectMemberService
+}
+
 // RedisClient 获取Redis客户端
 func (c *Container) RedisClient() *repository.RedisClient {
 	if c.redisClient == nil {
@@ -167,6 +185,11 @@ func (c *Container) createTranslationRepository() domain.TranslationRepository {
 	return repository.NewTranslationRepository(c.db)
 }
 
+// createProjectMemberRepository 创建项目成员仓储
+func (c *Container) createProjectMemberRepository() domain.ProjectMemberRepository {
+	return repository.NewProjectMemberRepository(c.db)
+}
+
 // createRedisClient 创建Redis客户端
 func (c *Container) createRedisClient() *repository.RedisClient {
 	return repository.NewRedisClient(&c.config.Redis)
@@ -191,7 +214,11 @@ func (c *Container) createUserService() domain.UserService {
 
 // createProjectService 创建项目服务
 func (c *Container) createProjectService() domain.ProjectService {
-	baseService := service.NewProjectService(c.ProjectRepository())
+	baseService := service.NewProjectService(
+		c.ProjectRepository(),
+		c.UserRepository(),
+		c.ProjectMemberRepository(),
+	)
 	// 如果有缓存服务，返回带缓存的版本
 	if c.CacheService() != nil {
 		return service.NewCachedProjectService(baseService, c.CacheService())
@@ -235,6 +262,15 @@ func (c *Container) createDashboardService() domain.DashboardService {
 		return service.NewCachedDashboardService(baseService, c.CacheService())
 	}
 	return baseService
+}
+
+// createProjectMemberService 创建项目成员服务
+func (c *Container) createProjectMemberService() domain.ProjectMemberService {
+	return service.NewProjectMemberService(
+		c.ProjectMemberRepository(),
+		c.UserRepository(),
+		c.ProjectRepository(),
+	)
 }
 
 // createCacheService 创建缓存服务

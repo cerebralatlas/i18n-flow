@@ -110,10 +110,13 @@ func NewAppErrorWithContext(errType ErrorType, code, message string, context map
 // 预定义的领域错误
 var (
 	// 用户相关错误
-	ErrUserNotFound    = NewAppError(ErrorTypeNotFound, "USER_NOT_FOUND", "用户不存在")
-	ErrInvalidPassword = NewAppError(ErrorTypeUnauthorized, "INVALID_PASSWORD", "密码错误")
-	ErrUserExists      = NewAppError(ErrorTypeConflict, "USER_EXISTS", "用户已存在")
-	ErrInvalidToken    = NewAppError(ErrorTypeUnauthorized, "INVALID_TOKEN", "无效的令牌")
+	ErrUserNotFound      = NewAppError(ErrorTypeNotFound, "USER_NOT_FOUND", "用户不存在")
+	ErrInvalidPassword   = NewAppError(ErrorTypeUnauthorized, "INVALID_PASSWORD", "密码错误")
+	ErrUserExists        = NewAppError(ErrorTypeConflict, "USER_EXISTS", "用户已存在")
+	ErrEmailExists       = NewAppError(ErrorTypeConflict, "EMAIL_EXISTS", "邮箱已存在")
+	ErrInvalidToken      = NewAppError(ErrorTypeUnauthorized, "INVALID_TOKEN", "无效的令牌")
+	ErrInvalidRole       = NewAppError(ErrorTypeValidation, "INVALID_ROLE", "无效的角色")
+	ErrCannotDeleteAdmin = NewAppError(ErrorTypeForbidden, "CANNOT_DELETE_ADMIN", "不能删除管理员用户")
 
 	// 项目相关错误
 	ErrProjectNotFound = NewAppError(ErrorTypeNotFound, "PROJECT_NOT_FOUND", "项目不存在")
@@ -129,6 +132,12 @@ var (
 	ErrTranslationNotFound = NewAppError(ErrorTypeNotFound, "TRANSLATION_NOT_FOUND", "翻译不存在")
 	ErrTranslationExists   = NewAppError(ErrorTypeConflict, "TRANSLATION_EXISTS", "翻译已存在")
 	ErrInvalidKey          = NewAppError(ErrorTypeValidation, "INVALID_KEY", "无效的翻译键")
+
+	// 项目成员相关错误
+	ErrMemberNotFound    = NewAppError(ErrorTypeNotFound, "MEMBER_NOT_FOUND", "项目成员不存在")
+	ErrMemberExists      = NewAppError(ErrorTypeConflict, "MEMBER_EXISTS", "用户已是项目成员")
+	ErrInsufficientPerm  = NewAppError(ErrorTypeForbidden, "INSUFFICIENT_PERMISSION", "权限不足")
+	ErrCannotRemoveOwner = NewAppError(ErrorTypeForbidden, "CANNOT_REMOVE_OWNER", "不能移除项目所有者")
 
 	// 通用错误
 	ErrInvalidInput  = NewAppError(ErrorTypeValidation, "INVALID_INPUT", "无效的输入参数")

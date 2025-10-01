@@ -6,6 +6,9 @@ import { useTranslation } from "react-i18next";
 interface User {
   id: number;
   username: string;
+  email: string;
+  role: 'admin' | 'member' | 'viewer';
+  status: 'active' | 'disabled';
 }
 
 interface AuthContextType {
@@ -14,6 +17,8 @@ interface AuthContextType {
   login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   isAuthenticated: boolean;
+  hasRole: (role: string) => boolean;
+  isAdmin: () => boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -90,6 +95,27 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
     setUser(null);
   };
 
+  // 检查用户是否具有指定角色
+  const hasRole = (role: string): boolean => {
+    if (!user) return false;
+    
+    const roleLevel = {
+      'viewer': 1,
+      'member': 2,
+      'admin': 3
+    };
+    
+    const userLevel = roleLevel[user.role as keyof typeof roleLevel] || 0;
+    const requiredLevel = roleLevel[role as keyof typeof roleLevel] || 0;
+    
+    return userLevel >= requiredLevel;
+  };
+
+  // 检查用户是否是管理员
+  const isAdmin = (): boolean => {
+    return user?.role === 'admin';
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -98,6 +124,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         login,
         logout,
         isAuthenticated: !!user,
+        hasRole,
+        isAdmin,
       }}
     >
       {children}

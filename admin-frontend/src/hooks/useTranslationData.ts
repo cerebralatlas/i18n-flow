@@ -65,10 +65,10 @@ export const useTranslationData = (initialProjectId?: string) => {
 
 
 
-  // 请求项目列表
+  // 请求项目列表（基于用户权限）
   const fetchProjects = async () => {
     try {
-      const response = await projectService.getProjects();
+      const response = await projectService.getAccessibleProjects();
       setProjects(response.data);
 
       // 如果未选择项目，但有项目列表，则默认选择第一个项目
@@ -76,8 +76,8 @@ export const useTranslationData = (initialProjectId?: string) => {
         setSelectedProject(response.data[0].id);
       }
     } catch (error) {
-      console.error("Failed to get project list:", error);
-      message.error("Get project list failed");
+      console.error("Failed to get accessible project list:", error);
+      message.error("Get accessible project list failed");
     }
   };
 
@@ -85,10 +85,19 @@ export const useTranslationData = (initialProjectId?: string) => {
   const fetchLanguages = async () => {
     try {
       const languages = await translationService.getLanguages();
-      setLanguages(languages);
+      // 确保返回的是数组
+      if (Array.isArray(languages)) {
+        setLanguages(languages);
+      } else {
+        console.error("Languages data is not an array:", languages);
+        setLanguages([]);
+        message.error("Invalid language data format");
+      }
     } catch (error) {
       console.error("Failed to get language list:", error);
       message.error("Get language list failed");
+      // 确保在错误情况下也设置为空数组
+      setLanguages([]);
     }
   };
 
@@ -113,7 +122,6 @@ export const useTranslationData = (initialProjectId?: string) => {
       });
     } catch (error) {
       console.error("Failed to get translation matrix:", error);
-      message.error("Get translation matrix failed");
     } finally {
       setLoading(false);
     }

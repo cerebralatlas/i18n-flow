@@ -24,6 +24,7 @@ import {
   saveSelectedColumns,
 } from "../utils/localStorage";
 import { processTranslationJSON } from "../utils/jsonFlattener";
+import NoProjectAccess from "../components/NoProjectAccess";
 
 // Types
 import {
@@ -109,25 +110,29 @@ const TranslationManagement: React.FC = () => {
 
   // Effect to initialize selected columns when languages load
   useEffect(() => {
-    if (languages.length > 0) {
+    if (Array.isArray(languages) && languages.length > 0) {
       // Try to load saved preferences from localStorage first
       const savedColumns = loadSelectedColumns();
 
-      if (savedColumns) {
+      if (savedColumns && Array.isArray(savedColumns)) {
         // Filter saved columns to only include languages that still exist
         const validSavedColumns = savedColumns.filter((code) =>
-          languages.some((lang) => lang.code === code)
+          Array.isArray(languages) && languages.some((lang) => lang && lang.code === code)
         );
 
         if (validSavedColumns.length > 0) {
           setSelectedLanguageColumns(validSavedColumns);
         } else {
           // If no valid saved columns, select all languages
-          setSelectedLanguageColumns(languages.map((lang) => lang.code));
+          if (Array.isArray(languages)) {
+            setSelectedLanguageColumns(languages.map((lang) => lang?.code || '').filter(Boolean));
+          }
         }
       } else {
         // If no saved columns, select all languages
-        setSelectedLanguageColumns(languages.map((lang) => lang.code));
+        if (Array.isArray(languages)) {
+          setSelectedLanguageColumns(languages.map((lang) => lang?.code || '').filter(Boolean));
+        }
       }
     }
   }, [languages]);
@@ -152,8 +157,8 @@ const TranslationManagement: React.FC = () => {
 
   // 初始化可见语言
   useEffect(() => {
-    if (languages.length > 0 && visibleLanguages.length === 0) {
-      setVisibleLanguages(languages.map((lang) => lang.code));
+    if (Array.isArray(languages) && languages.length > 0 && visibleLanguages.length === 0) {
+      setVisibleLanguages(languages.map((lang) => lang?.code || '').filter(Boolean));
     }
   }, [languages, visibleLanguages.length]);
 
@@ -396,6 +401,11 @@ const TranslationManagement: React.FC = () => {
       setExcelImportLoading(false);
     }
   };
+
+  // 如果用户没有任何项目权限，显示空状态
+  if (!loading && projects.length === 0) {
+    return <NoProjectAccess />;
+  }
 
   return (
     <div className="bg-white p-6 rounded-lg shadow">

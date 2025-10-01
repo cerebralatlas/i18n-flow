@@ -9,6 +9,7 @@ import DashboardLayout from "./pages/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import ProjectManagement from "./pages/ProjectManagement";
 import TranslationManagement from "./pages/TranslationManagement";
+import UserManagement from "./pages/UserManagement";
 import ProtectedRoute from "./components/ProtectedRoute";
 import { useEffect } from "react";
 import i18n from "./i18n";
@@ -48,6 +49,7 @@ function App() {
             path="translations/project/:projectId"
             element={<TranslationManagement />}
           />
+          <Route path="users" element={<UserManagement />} />
         </Route>
       </Routes>
     </Router>

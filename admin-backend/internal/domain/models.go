@@ -9,8 +9,11 @@ import (
 // User 用户领域模型
 type User struct {
 	ID        uint      `gorm:"primarykey" json:"id"`
-	Username  string    `gorm:"unique" json:"username"`
-	Password  string    `json:"password"`
+	Username  string    `gorm:"unique;size:50;not null" json:"username"`
+	Email     string    `gorm:"unique;size:100" json:"email"`
+	Password  string    `gorm:"not null" json:"password"`
+	Role      string    `gorm:"size:20;default:member;index:idx_user_role" json:"role"`     // admin, member, viewer
+	Status    string    `gorm:"size:20;default:active;index:idx_user_status" json:"status"` // active, disabled
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -55,4 +58,18 @@ type Translation struct {
 
 	Project  Project  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`   // 关联的项目
 	Language Language `gorm:"foreignKey:LanguageID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"-"` // 关联的语言
+}
+
+// ProjectMember 项目成员关联模型
+type ProjectMember struct {
+	ID        uint           `gorm:"primaryKey" json:"id"`
+	ProjectID uint           `gorm:"not null;index:idx_project_member;uniqueIndex:idx_project_member_unique,priority:1" json:"project_id"`
+	UserID    uint           `gorm:"not null;index:idx_project_member;uniqueIndex:idx_project_member_unique,priority:2" json:"user_id"`
+	Role      string         `gorm:"size:20;default:viewer;index:idx_project_member_role" json:"role"` // owner, editor, viewer
+	CreatedAt time.Time      `json:"created_at"`
+	UpdatedAt time.Time      `json:"updated_at"`
+	DeletedAt gorm.DeletedAt `gorm:"index" json:"-"`
+
+	Project Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
+	User    User    `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 }
