@@ -2,6 +2,32 @@
 
 All notable changes to this project will be documented in this file. See [standard-version](https://github.com/conventional-changelog/standard-version) for commit guidelines.
 
+### [0.0.8](https://github.com/cerebralatlas/i18n-flow/compare/v0.0.6...v0.0.8) (2025-10-01)
+
+
+### Features
+
+* Add Air configuration for live reload and update README with new admin credentials; enhance .env.example for better clarity ([8f624b3](https://github.com/cerebralatlas/i18n-flow/commit/8f624b3d4451915a95581c46d01827a8c4604ee0))
+* Add CLI handler and routes for translation management, including authentication and translation data retrieval; implement API key middleware for secure access. ([5316570](https://github.com/cerebralatlas/i18n-flow/commit/53165702ce56c59cb697b929c8d25e79842af883))
+* Add import functionality for translation data, supporting multiple formats and enhancing error handling; update API routes accordingly. ([9ecf3ab](https://github.com/cerebralatlas/i18n-flow/commit/9ecf3ab8cd84087a9e88e87a2b29e58aaf8af58d))
+* Add search functionality enhancements to TranslationToolbar and useTranslationData hook; implement debouncing for keyword input and update state management to improve search performance and user experience. ([e8bdf58](https://github.com/cerebralatlas/i18n-flow/commit/e8bdf58af6087c02c101f2ca94d42285c34f6335))
+* Enhance batch translation creation by supporting both array and frontend object formats; update API response structure for improved clarity and consistency. ([4a3c912](https://github.com/cerebralatlas/i18n-flow/commit/4a3c9123524670747e1bb8875d65f041f6f84944))
+* Enhance project management functionality by adding keyword search support for project listings; update API and service layers to accommodate search parameters, improving user experience and data retrieval efficiency. ([f179202](https://github.com/cerebralatlas/i18n-flow/commit/f1792023d58b839719fba173cebc40fbe5f26cc8))
+* Enhance translation management by adding internationalization support for UI elements and error messages; update JSON files for English and Chinese translations, and refactor components to utilize translation functions for improved user experience. ([845cb83](https://github.com/cerebralatlas/i18n-flow/commit/845cb83d361c91d14187ebe867a05a2955ba4a6e))
+* Enhance translation management by introducing a new multi-language data structure in the CLI, allowing for improved handling of translations; add support for nested translation objects and update API request structure for better compatibility with existing systems. ([b64d067](https://github.com/cerebralatlas/i18n-flow/commit/b64d0676c44447abe02f2e04d963ab652fb0a4aa))
+* Implement caching strategies across various services to enhance performance and prevent cache penetration; introduce new methods for handling empty cache scenarios and random expiration times to mitigate cache avalanche effects. ([419e121](https://github.com/cerebralatlas/i18n-flow/commit/419e12111d351b08bbc909633047d510ff54a6fa))
+* Implement export functionality for translation data in multiple formats (JSON, CSV, Excel) with improved user interface and error handling; update related components and services for enhanced usability. ([3ea425d](https://github.com/cerebralatlas/i18n-flow/commit/3ea425db4ecd0fdc9f1c9098f47137e6d7bcc9b7))
+* Implement global and specific rate limiting middleware for enhanced request management; add security headers middleware to improve application security. ([ba2d9d3](https://github.com/cerebralatlas/i18n-flow/commit/ba2d9d3faa5a59075d0891de415367505734827e))
+* Implement global error handling and request validation middleware; enhance API error responses with structured error codes and messages for improved clarity and consistency. ([4532301](https://github.com/cerebralatlas/i18n-flow/commit/4532301fc12f92c4a8bce1facda2db75008c6598))
+* Integrate multi-logger system with configurable logging options; enhance logging middleware for structured logging and error handling, improving observability and maintainability. ([cfa0d8f](https://github.com/cerebralatlas/i18n-flow/commit/cfa0d8f74bcacc524d4274cfe47048fa282bd702))
+* Integrate Redis caching support into the application, enhancing performance and scalability; add Redis configuration options and implement caching services for translation and dashboard functionalities. ([6910c01](https://github.com/cerebralatlas/i18n-flow/commit/6910c019bbfef19d190d2c5390c4e4374b41999f))
+* Introduce application error handling middleware and enhance error management in translation services; implement structured error responses and validation checks for translation creation and updates, improving robustness and user feedback. ([fe5c9cd](https://github.com/cerebralatlas/i18n-flow/commit/fe5c9cdfeeacd7c8a98d54dc780a27ec77f1e2f4))
+* Introduce new middleware for request size limits and pagination validation, and refactor request validation into a separate file for improved organization and maintainability. ([555b39d](https://github.com/cerebralatlas/i18n-flow/commit/555b39d65e993ac309d3e83d85dd684d4f9a0600))
+* Optimize database interactions and caching mechanisms; enhance model definitions with additional indexes for improved query performance, and refine translation service caching strategies to better handle search queries and reduce latency. ([d69635d](https://github.com/cerebralatlas/i18n-flow/commit/d69635d9ed0b85d7519586f51f8439314bb08d72))
+* Refactor API response handling across multiple handlers to utilize a unified response structure, improving consistency and clarity in error and success responses. ([5773e57](https://github.com/cerebralatlas/i18n-flow/commit/5773e5702ce92c5ea5ffce46f5f0d0e0761fc557))
+* Refactor project management and service files to utilize a unified API response structure, enhancing consistency in data handling and improving type safety across the application. ([cf3835b](https://github.com/cerebralatlas/i18n-flow/commit/cf3835b2f3a9129fe8018571c00d9286be3446bb))
+* Update dependencies and add comprehensive test coverage for domain models, services, and utility functions; introduce new test files for improved maintainability and reliability of the application. ([e9fde66](https://github.com/cerebralatlas/i18n-flow/commit/e9fde660880a13c0696d80a50b54a3d8344fe014))
+
 ### [0.0.6](https://github.com/cerebralatlas/i18n-flow/compare/v0.0.5...v0.0.6) (2025-05-04)
 
 
