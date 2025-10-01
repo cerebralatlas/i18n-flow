@@ -1,9 +1,6 @@
-FROM golang:1.22-alpine AS builder
+FROM golang:1.23-alpine AS builder
 
 WORKDIR /app
-
-# 设置GOTOOLCHAIN以允许使用较低版本的依赖
-ENV GOTOOLCHAIN=auto
 
 # 设置GOPROXY和更长的超时时间
 ENV GOPROXY=https://goproxy.cn,direct
@@ -21,7 +18,7 @@ RUN apk add --no-cache ca-certificates git && \
 COPY . .
 
 # 构建应用
-RUN CGO_ENABLED=0 GOOS=linux go build -o i18n-flow-backend .
+RUN CGO_ENABLED=0 GOOS=linux go build -o i18n-flow-backend ./cmd/server
 
 # 创建最终的轻量级镜像
 FROM alpine:latest

@@ -31,10 +31,11 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 ## API Endpoints
 
-### Authentication
+### Authentication & User
 
 - `POST /api/login`: Admin login
 - `POST /api/refresh`: Refresh JWT token
+- `GET /api/user/info`: Get current user info
 - `GET /api/cli/auth`: Validate CLI API key
 
 ### Projects
@@ -123,16 +124,25 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
    
    CLI_API_KEY=your_secure_api_key
    
-   ADMIN_NAME=your_name
+   ADMIN_USERNAME=admin
    ADMIN_PASSWORD=your_password
    
    REDIS_HOST=localhost
    REDIS_PORT=6379
    REDIS_PASSWORD=
    REDIS_DB=0
+   REDIS_PREFIX=i18n_flow:
    
-   LOG_LEVEL=info           # debug, info, warn, error
-   LOG_FILE=./logs/app.log
+   LOG_LEVEL=info           # debug, info, warn, error, fatal
+   LOG_FORMAT=console       # console, json
+   LOG_OUTPUT=both          # console, file, both
+   LOG_DIR=logs
+   LOG_DATE_FORMAT=2006-01-02
+   LOG_MAX_SIZE=100         # MB
+   LOG_MAX_AGE=7            # days
+   LOG_MAX_BACKUPS=5
+   LOG_COMPRESS=true
+   LOG_ENABLE_CONSOLE=true
    ```
 
 4. Start the server:
@@ -145,11 +155,11 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
    go run cmd/server/main.go
    
    # Or build and run the binary
-   go build -o i18n-flow
+   go build -o i18n-flow ./cmd/server
    ./i18n-flow
    ```
 
-   The server will start on port 8080 by default. The database tables will be automatically created.
+   The server will start on port 8080 by default. The database tables will be automatically created using GORM AutoMigrate, along with default admin user and language seed data.
 
 5. Access the Swagger documentation:
 
@@ -161,10 +171,12 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 On first run, the system creates a default admin user based on your environment variables:
 
-- Username: Value from `ADMIN_NAME` in .env file
-- Password: Value from `ADMIN_PASSWORD` in .env file
+- Username: Value from `ADMIN_USERNAME` in .env file (defaults to "admin")
+- Password: Value from `ADMIN_PASSWORD` in .env file (defaults to "admin123")
 
-It's highly recommended to change this password after the first login through the admin interface.
+The system also creates 20 default languages (English, Chinese, Japanese, Korean, French, German, Spanish, etc.).
+
+**Important:** It's highly recommended to change the default password after the first login through the admin interface.
 
 ## Development
 
@@ -206,7 +218,7 @@ air
 - `/internal/service`: Business logic layer
 - `/internal/utils`: Utility functions
 - `/docs`: Auto-generated API documentation
-- `/migrations`: Database migration files
+- `/migrations`: Database migration files (GORM AutoMigrate is used)
 - `/utils`: Shared utility functions
 - `/tests`: Test files
 
