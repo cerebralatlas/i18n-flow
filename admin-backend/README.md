@@ -8,7 +8,8 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 ## Features
 
-- **Project Management**: Create and organize multiple translation projects
+- **Project Management**: Create and organize multiple translation projects with role-based access control
+- **Project Member Management**: Invite users to projects with viewer, editor, or owner roles
 - **Multi-language Support**: Add, edit, and manage different languages and locales
 - **Translation Management**: Centralize all translations with context support
 - **API-driven Architecture**: RESTful API for seamless integration
@@ -17,6 +18,8 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 - **Export/Import**: Flexible data interchange in various formats
 - **Dashboard**: Statistics for monitoring translation progress
 - **Authentication**: JWT-based auth for admin interface and API key auth for CLI tools
+- **User Management**: Admin functionality for creating and managing system users
+- **Role-based Permissions**: Fine-grained access control for projects and translations
 
 ## Tech Stack
 
@@ -36,15 +39,32 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 - `POST /api/login`: Admin login
 - `POST /api/refresh`: Refresh JWT token
 - `GET /api/user/info`: Get current user info
+- `POST /api/user/change-password`: Change current user password
 - `GET /api/cli/auth`: Validate CLI API key
+
+### User Management (Admin)
+
+- `POST /api/users`: Create new user
+- `GET /api/users`: List all users with pagination
+- `GET /api/users/:id`: Get user details
+- `PUT /api/users/:id`: Update user information
+- `POST /api/users/:id/reset-password`: Reset user password
+- `DELETE /api/users/:id`: Delete user
+- `GET /api/user-projects/:user_id`: Get user's projects
 
 ### Projects
 
 - `POST /api/projects`: Create project
 - `GET /api/projects`: List projects with pagination
+- `GET /api/projects/accessible`: Get accessible projects for current user
 - `GET /api/projects/detail/:id`: Get project details
 - `PUT /api/projects/update/:id`: Update project
 - `DELETE /api/projects/delete/:id`: Delete project
+- `GET /api/projects/:project_id/members`: Get project members
+- `POST /api/projects/:project_id/members`: Add project member
+- `PUT /api/projects/:project_id/members/:user_id`: Update member role
+- `DELETE /api/projects/:project_id/members/:user_id`: Remove project member
+- `GET /api/projects/:project_id/members/:user_id/permission`: Check user permission in project
 
 ### Languages
 
@@ -70,6 +90,21 @@ i18n-flow is a comprehensive backend system designed to streamline the internati
 
 - `GET /api/cli/translations`: Get translations for CLI
 - `POST /api/cli/keys`: Push new translation keys from CLI
+
+### Permissions & Roles
+
+The system implements a role-based access control system with three permission levels:
+
+**Project Roles:**
+
+- **Viewer**: Can view projects, translations, and export data
+- **Editor**: Viewer permissions + can create, update, and delete translations
+- **Owner**: Editor permissions + can manage project settings and members
+
+**System Roles:**
+
+- **Admin**: Full system access, can manage users, languages, and all projects
+- **User**: Standard user with project-specific permissions
 
 ### Dashboard
 
@@ -221,6 +256,7 @@ air
 - `/migrations`: Database migration files (GORM AutoMigrate is used)
 - `/utils`: Shared utility functions
 - `/tests`: Test files
+- `/logs`: Application log files (created at runtime)
 
 ### Running Tests
 
@@ -241,6 +277,16 @@ The backend provides dedicated endpoints for CLI tool integration, allowing auto
 - Pulling translations for specific projects and languages
 - Pushing new translation keys
 - Checking API connection status
+
+### Recent Updates
+
+The system has been enhanced with comprehensive project member management functionality:
+
+- **Project Member Handler**: Complete CRUD operations for project members
+- **Role-based Access Control**: Three permission levels (viewer, editor, owner)
+- **User Management**: Admin interface for creating and managing system users
+- **Accessible Projects**: Users can view projects they have access to
+- **Permission Checking**: Real-time permission validation for project operations
 
 ## Docker Deployment
 

@@ -8,7 +8,8 @@ A comprehensive internationalization (i18n) management platform designed to stre
 
 ## 🌟 Features
 
-- **Project Management**: Organize translations by project for better workflow organization
+- **Project Management**: Organize translations by project for better workflow organization with role-based access control
+- **Project Member Management**: Invite users to projects with viewer, editor, or owner roles
 - **Multi-language Support**: Manage translations for unlimited languages with customizable language settings
 - **Key-based Translation System**: Maintain consistent translations across your application with a key-based approach
 - **Batch Operations**: Import, export, and update translations in batch to save time
@@ -16,6 +17,8 @@ A comprehensive internationalization (i18n) management platform designed to stre
 - **Excel Import/Export**: Support for standard formats to integrate with existing workflows
 - **RESTful API**: Well-documented API for integration with your systems
 - **User Authentication**: Secure JWT-based authentication system
+- **User Management**: Admin functionality for creating and managing system users
+- **Role-based Permissions**: Fine-grained access control for projects and translations
 - **Responsive UI**: Modern admin dashboard built with React and Ant Design
 - **CLI Integration**: Command-line tool for seamless integration with your development workflow
 
@@ -219,6 +222,7 @@ The admin dashboard provides an intuitive interface for:
 - Entering and editing translations
 - Importing and exporting translations in various formats
 - User management and access control
+- Project member management with role-based permissions
 - Monitoring translation status and progress
 
 ### CLI Tool
@@ -265,12 +269,13 @@ i18n-flow is built with a modern tech stack and follows a clean architecture app
 The typical workflow in i18n-flow:
 
 1. Create a project through the admin dashboard
-2. Define languages you need to support
-3. Use the CLI to scan your source code for translation keys
-4. Push new keys to the translation server with `i18n-flow push --scan`
-5. Translate keys through the admin dashboard
-6. Sync translations to your local project with `i18n-flow sync`
-7. Update translations as needed
+2. Invite team members with appropriate roles (viewer, editor, or owner)
+3. Define languages you need to support
+4. Use the CLI to scan your source code for translation keys
+5. Push new keys to the translation server with `i18n-flow push --scan`
+6. Translate keys through the admin dashboard
+7. Sync translations to your local project with `i18n-flow sync`
+8. Update translations as needed
 
 ## 📜 Contributing
 
