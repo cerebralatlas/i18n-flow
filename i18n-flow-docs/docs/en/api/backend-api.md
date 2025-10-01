@@ -404,6 +404,213 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
+## Project Member Management API
+
+### Get Project Members
+
+Get a list of all members in a project.
+
+**Request**:
+
+```
+GET /projects/{project_id}/members
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "username": "john_doe",
+      "email": "john@example.com",
+      "role": "editor",
+      "joined_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+### Add Project Member
+
+Add a new member to a project.
+
+**Request**:
+
+```
+POST /projects/{project_id}/members
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+
+```json
+{
+  "user_id": 2,
+  "role": "editor"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "project_id": 1,
+    "user_id": 2,
+    "role": "editor",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Update Member Role
+
+Update a project member's role.
+
+**Request**:
+
+```
+PUT /projects/{project_id}/members/{user_id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+
+```json
+{
+  "role": "owner"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "project_id": 1,
+    "user_id": 2,
+    "role": "owner",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Remove Project Member
+
+Remove a member from a project.
+
+**Request**:
+
+```
+DELETE /projects/{project_id}/members/{user_id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Member successfully removed from project"
+  }
+}
+```
+
+### Check User Permission
+
+Check if a user has specific permissions in a project.
+
+**Request**:
+
+```
+GET /projects/{project_id}/members/{user_id}/permission?required_role=editor
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "has_permission": true
+  }
+}
+```
+
+### Get User's Projects
+
+Get all projects that a specific user has access to.
+
+**Request**:
+
+```
+GET /user-projects/{user_id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "My Project",
+      "slug": "my-project",
+      "description": "Project description",
+      "role": "owner",
+      "member_count": 5,
+      "language_count": 3,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
 ## Language API
 
 ### Get Language List
@@ -1166,6 +1373,261 @@ Exceeding the limit will return HTTP status 429 with the following response:
     "details": {
       "retry_after": 30
     }
+  }
+}
+```
+
+## User Management API
+
+### Create User
+
+Create a new system user (admin only).
+
+**Request**:
+
+```
+POST /users
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+
+```json
+{
+  "username": "newuser",
+  "email": "newuser@example.com",
+  "password": "securepassword123",
+  "role": "user"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 3,
+    "username": "newuser",
+    "email": "newuser@example.com",
+    "role": "user",
+    "status": "active",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Get User List
+
+Get a list of all system users (admin only).
+
+**Request**:
+
+```
+GET /users
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "users": [
+      {
+        "id": 1,
+        "username": "admin",
+        "email": "admin@example.com",
+        "role": "admin",
+        "status": "active",
+        "created_at": "2024-01-01T00:00:00Z"
+      }
+    ],
+    "pagination": {
+      "page": 1,
+      "limit": 10,
+      "total": 1,
+      "total_pages": 1
+    }
+  }
+}
+```
+
+### Get User Details
+
+Get detailed information about a specific user.
+
+**Request**:
+
+```
+GET /users/{id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "admin",
+    "email": "admin@example.com",
+    "role": "admin",
+    "status": "active",
+    "created_at": "2024-01-01T00:00:00Z",
+    "updated_at": "2024-01-01T00:00:00Z"
+  }
+}
+```
+
+### Update User
+
+Update user information (admin only).
+
+**Request**:
+
+```
+PUT /users/{id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+
+```json
+{
+  "username": "updateduser",
+  "email": "updated@example.com",
+  "role": "admin"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "username": "updateduser",
+    "email": "updated@example.com",
+    "role": "admin",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### Reset User Password
+
+Reset a user's password (admin only).
+
+**Request**:
+
+```
+POST /users/{id}/reset-password
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Password reset successful",
+    "temporary_password": "temp123456"
+  }
+}
+```
+
+### Delete User
+
+Delete a user from the system (admin only).
+
+**Request**:
+
+```
+DELETE /users/{id}
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "User successfully deleted"
+  }
+}
+```
+
+### Change Current User Password
+
+Allow users to change their own password.
+
+**Request**:
+
+```
+POST /user/change-password
+```
+
+**Request Headers**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**Request Body**:
+
+```json
+{
+  "current_password": "oldpassword123",
+  "new_password": "newpassword456"
+}
+```
+
+**Response**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "Password changed successfully"
   }
 }
 ```

@@ -404,6 +404,213 @@ Authorization: Bearer <jwt-token>
 }
 ```
 
+## 项目成员管理 API
+
+### 获取项目成员
+
+获取项目中所有成员的列表。
+
+**请求**:
+
+```
+GET /projects/{project_id}/members
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "user_id": 2,
+      "username": "john_doe",
+      "email": "john@example.com",
+      "role": "editor",
+      "joined_at": "2024-01-15T10:30:00Z"
+    }
+  ]
+}
+```
+
+### 添加项目成员
+
+向项目添加新成员。
+
+**请求**:
+
+```
+POST /projects/{project_id}/members
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**请求体**:
+
+```json
+{
+  "user_id": 2,
+  "role": "editor"
+}
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "project_id": 1,
+    "user_id": 2,
+    "role": "editor",
+    "created_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### 更新成员角色
+
+更新项目成员的角色。
+
+**请求**:
+
+```
+PUT /projects/{project_id}/members/{user_id}
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+Content-Type: application/json
+```
+
+**请求体**:
+
+```json
+{
+  "role": "owner"
+}
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1,
+    "project_id": 1,
+    "user_id": 2,
+    "role": "owner",
+    "updated_at": "2024-01-15T10:30:00Z"
+  }
+}
+```
+
+### 移除项目成员
+
+从项目中移除成员。
+
+**请求**:
+
+```
+DELETE /projects/{project_id}/members/{user_id}
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "message": "成员已成功从项目中移除"
+  }
+}
+```
+
+### 检查用户权限
+
+检查用户在项目中是否具有特定权限。
+
+**请求**:
+
+```
+GET /projects/{project_id}/members/{user_id}/permission?required_role=editor
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": {
+    "has_permission": true
+  }
+}
+```
+
+### 获取用户的项目
+
+获取特定用户有权限访问的所有项目。
+
+**请求**:
+
+```
+GET /user-projects/{user_id}
+```
+
+**请求头**:
+
+```
+Authorization: Bearer <jwt-token>
+```
+
+**响应**:
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1,
+      "name": "我的项目",
+      "slug": "my-project",
+      "description": "项目描述",
+      "role": "owner",
+      "member_count": 5,
+      "language_count": 3,
+      "created_at": "2024-01-01T00:00:00Z"
+    }
+  ]
+}
+```
+
 ## 语言 API
 
 ### 获取语言列表

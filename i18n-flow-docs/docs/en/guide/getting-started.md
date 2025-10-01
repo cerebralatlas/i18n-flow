@@ -6,7 +6,8 @@ i18n Flow is a modern internationalization management system designed to streaml
 
 ## Key Features
 
-- **Project Management**: Organize translations by projects for better workflow management
+- **Project Management**: Organize translations by projects for better workflow management with role-based access control
+- **Project Member Management**: Invite users to projects with viewer, editor, or owner roles
 - **Multiple Language Support**: Manage unlimited languages with custom language settings
 - **Key-Value Translation System**: Maintain consistency in your application translations through key-value pairs
 - **Batch Operations**: Import, export, and update translations in bulk to save time
@@ -14,6 +15,8 @@ i18n Flow is a modern internationalization management system designed to streaml
 - **Excel Import/Export**: Support for standard formats for easy integration with existing workflows
 - **RESTful API**: Well-documented API for integration with your systems
 - **User Authentication**: Secure JWT-based authentication system
+- **User Management**: Admin functionality for creating and managing system users
+- **Role-based Permissions**: Fine-grained access control for projects and translations
 - **Responsive UI**: Modern admin dashboard built with React and Ant Design
 - **CLI Integration**: Command-line tools for seamless integration with development workflows
 
@@ -37,12 +40,13 @@ i18n Flow consists of three main components:
 The typical workflow in i18n Flow is as follows:
 
 1. Create a project through the admin dashboard
-2. Define the languages you need to support
-3. Use the CLI to scan source code for translation keys
-4. Push new keys to the translation server using `i18n-flow push --scan`
-5. Add translations through the admin interface
-6. Sync the latest translations to your project using `i18n-flow sync`
-7. Integrate translations in your application using translation functions
+2. Invite team members with appropriate roles (viewer, editor, or owner)
+3. Define the languages you need to support
+4. Use the CLI to scan source code for translation keys
+5. Push new keys to the translation server using `i18n-flow push --scan`
+6. Add translations through the admin interface
+7. Sync the latest translations to your project using `i18n-flow sync`
+8. Integrate translations in your application using translation functions
 
 ## Next Steps
 

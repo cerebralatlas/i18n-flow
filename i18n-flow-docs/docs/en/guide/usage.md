@@ -15,12 +15,13 @@ Before you start using i18n Flow, ensure you have completed the following prepar
 The typical workflow in i18n Flow is as follows:
 
 1. Create a project in the admin panel
-2. Define supported languages
-3. Use the CLI to scan source code for translation keys
-4. Push translation keys to the server
-5. Add translation content in the admin panel
-6. Sync translations back to your development project
-7. Integrate translations into your application
+2. Invite team members with appropriate roles (viewer, editor, or owner)
+3. Define supported languages
+4. Use the CLI to scan source code for translation keys
+5. Push translation keys to the server
+6. Add translation content in the admin panel
+7. Sync translations back to your development project
+8. Integrate translations into your application
 
 ## Step 1: Create a Project
 
@@ -35,7 +36,45 @@ First, you need to create a project in the i18n Flow admin interface:
    - **Project Identifier (Slug)**: Unique identifier for API and CLI calls, e.g., "my-online-store"
 5. Click the "Save" button
 
-## Step 2: Add Languages
+## Step 2: Manage Project Members
+
+After creating a project, you can invite team members and assign appropriate roles:
+
+### Understanding Roles and Permissions
+
+i18n Flow implements a role-based access control system with three permission levels:
+
+**Project Roles:**
+- **Viewer**: Can view projects, translations, and export data
+- **Editor**: Viewer permissions + can create, update, and delete translations
+- **Owner**: Editor permissions + can manage project settings and members
+
+**System Roles:**
+- **Admin**: Full system access, can manage users, languages, and all projects
+- **User**: Standard user with project-specific permissions
+
+### Adding Project Members
+
+1. Navigate to your project in the admin interface
+2. Click on the "Members" tab
+3. Click the "Add Member" button
+4. Enter the user's email or username
+5. Select the appropriate role for the user
+6. Click "Save" to send the invitation
+
+### Managing Member Permissions
+
+- **Update Role**: Change a member's role as project needs evolve
+- **Remove Member**: Remove users who no longer need access
+- **Check Permissions**: Verify what actions a specific user can perform
+
+### Best Practices for Team Collaboration
+
+1. **Assign roles based on responsibilities**: Give viewers to stakeholders who only need to review, editors to translators, and owners to project managers
+2. **Regular review**: Periodically review member access and adjust roles as needed
+3. **Use the accessible projects view**: Team members can easily see all projects they have access to
+
+## Step 3: Add Languages
 
 Next, add the languages your application needs to support:
 

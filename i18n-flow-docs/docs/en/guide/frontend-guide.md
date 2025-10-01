@@ -65,6 +65,56 @@ The project list page displays all projects and their basic information:
 Deleting a project will permanently remove all translation data for that project. This action cannot be undone!
 :::
 
+## Project Member Management
+
+### Understanding Roles and Permissions
+
+i18n Flow implements a comprehensive role-based access control system:
+
+**Project Roles:**
+- **Viewer**: Can view projects, translations, and export data
+- **Editor**: Viewer permissions + can create, update, and delete translations
+- **Owner**: Editor permissions + can manage project settings and members
+
+**System Roles:**
+- **Admin**: Full system access, can manage users, languages, and all projects
+- **User**: Standard user with project-specific permissions
+
+### Adding Project Members
+
+1. Navigate to your project in the project list
+2. Click on the project name to open project details
+3. Switch to the "Members" tab
+4. Click the "Add Member" button
+5. Enter the user's email or username
+6. Select the appropriate role from the dropdown
+7. Click "Save" to send the invitation
+
+### Managing Existing Members
+
+- **Update Role**: Click the "Edit" button next to a member to change their role
+- **Remove Member**: Click the "Remove" button to remove a member from the project
+- **View Member Details**: Click on a member's name to see their profile and permissions
+
+### Viewing Accessible Projects
+
+Users can easily see all projects they have access to:
+
+1. Click "Projects" in the sidebar menu
+2. The project list will show both projects you own and projects you've been invited to
+3. Use the filter options to view projects by role (All, Owner, Editor, Viewer)
+
+### Best Practices for Team Collaboration
+
+1. **Assign roles based on responsibilities**: 
+   - Viewers: Stakeholders who only need to review translations
+   - Editors: Translators and developers who work with translations
+   - Owners: Project managers who need full control
+
+2. **Regular access reviews**: Periodically review team member access
+3. **Use descriptive project names**: Help team members quickly identify relevant projects
+4. **Communicate changes**: Notify team members when their roles change
+
 ## Language Management
 
 ### Adding a Language
@@ -128,23 +178,61 @@ The translation interface displays the translation content in a table format, wi
 
 ## User Management
 
+### Understanding User Roles
+
+i18n Flow supports different user roles with varying levels of system access:
+
+**Admin Users:**
+- Full system access
+- Can manage all projects, languages, and users
+- Can access system settings and configuration
+
+**Regular Users:**
+- Can access projects they've been invited to
+- Can create and manage their own projects
+- Can be assigned specific roles within projects (viewer, editor, owner)
+
 ### Creating a User
 
 1. Click "Users" in the sidebar menu
 2. Click the "Create User" button
 3. Fill in the user information:
-   - Username
-   - Email
-   - Password
-   - Role (admin or translator)
+   - Username (required)
+   - Email (required)
+   - Password (required)
+   - Role (admin or regular user)
+   - Status (active/inactive)
 4. Click the "Save" button
 
 ### Editing a User
 
 1. Find the user you want to edit in the user list
 2. Click the "Edit" button
-3. Modify the user information
+3. Modify the user information:
+   - Update basic information (username, email)
+   - Change user role if needed
+   - Reset password if required
+   - Update user status
 4. Click the "Save" button
+
+### Managing User Access
+
+- **Reset Password**: Click "Reset Password" to generate a new temporary password
+- **Deactivate User**: Change user status to inactive to temporarily disable access
+- **View User Projects**: See all projects a user has access to and their roles
+- **Delete User**: Remove a user from the system (requires admin confirmation)
+
+### User Profile Management
+
+Users can manage their own profiles:
+
+1. Click on the user avatar in the top right corner
+2. Select "Profile" from the dropdown
+3. Update personal information:
+   - Change password
+   - Update email address
+   - Modify display preferences
+4. Click "Save" to apply changes
 
 ## Settings
 
