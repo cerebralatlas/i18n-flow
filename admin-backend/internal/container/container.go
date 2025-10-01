@@ -4,6 +4,7 @@ import (
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/repository"
+	"i18n-flow/internal/service"
 
 	"gorm.io/gorm"
 )
@@ -126,4 +127,117 @@ func (c *Container) DashboardService() domain.DashboardService {
 		c.dashboardService = c.createDashboardService()
 	}
 	return c.dashboardService
+}
+
+// RedisClient 获取Redis客户端
+func (c *Container) RedisClient() *repository.RedisClient {
+	if c.redisClient == nil {
+		c.redisClient = c.createRedisClient()
+	}
+	return c.redisClient
+}
+
+// CacheService 获取缓存服务
+func (c *Container) CacheService() domain.CacheService {
+	if c.cacheService == nil {
+		c.cacheService = c.createCacheService()
+	}
+	return c.cacheService
+}
+
+// 创建仓储实例的私有方法
+
+// createUserRepository 创建用户仓储
+func (c *Container) createUserRepository() domain.UserRepository {
+	return repository.NewUserRepository(c.db)
+}
+
+// createProjectRepository 创建项目仓储
+func (c *Container) createProjectRepository() domain.ProjectRepository {
+	return repository.NewProjectRepository(c.db)
+}
+
+// createLanguageRepository 创建语言仓储
+func (c *Container) createLanguageRepository() domain.LanguageRepository {
+	return repository.NewLanguageRepository(c.db)
+}
+
+// createTranslationRepository 创建翻译仓储
+func (c *Container) createTranslationRepository() domain.TranslationRepository {
+	return repository.NewTranslationRepository(c.db)
+}
+
+// createRedisClient 创建Redis客户端
+func (c *Container) createRedisClient() *repository.RedisClient {
+	return repository.NewRedisClient(&c.config.Redis)
+}
+
+// 创建服务实例的私有方法
+
+// createAuthService 创建认证服务
+func (c *Container) createAuthService() domain.AuthService {
+	return service.NewAuthService(c.config.JWT)
+}
+
+// createUserService 创建用户服务
+func (c *Container) createUserService() domain.UserService {
+	baseService := service.NewUserService(c.UserRepository(), c.AuthService())
+	// 如果有缓存服务，返回带缓存的版本
+	if c.CacheService() != nil {
+		return service.NewCachedUserService(baseService, c.CacheService())
+	}
+	return baseService
+}
+
+// createProjectService 创建项目服务
+func (c *Container) createProjectService() domain.ProjectService {
+	baseService := service.NewProjectService(c.ProjectRepository())
+	// 如果有缓存服务，返回带缓存的版本
+	if c.CacheService() != nil {
+		return service.NewCachedProjectService(baseService, c.CacheService())
+	}
+	return baseService
+}
+
+// createLanguageService 创建语言服务
+func (c *Container) createLanguageService() domain.LanguageService {
+	baseService := service.NewLanguageService(c.LanguageRepository())
+	// 如果有缓存服务，返回带缓存的版本
+	if c.CacheService() != nil {
+		return service.NewCachedLanguageService(baseService, c.CacheService())
+	}
+	return baseService
+}
+
+// createTranslationService 创建翻译服务
+func (c *Container) createTranslationService() domain.TranslationService {
+	baseService := service.NewTranslationService(
+		c.TranslationRepository(),
+		c.ProjectRepository(),
+		c.LanguageRepository(),
+	)
+	// 如果有缓存服务，返回带缓存的版本
+	if c.CacheService() != nil {
+		return service.NewCachedTranslationService(baseService, c.CacheService())
+	}
+	return baseService
+}
+
+// createDashboardService 创建仪表板服务
+func (c *Container) createDashboardService() domain.DashboardService {
+	baseService := service.NewDashboardService(
+		c.ProjectRepository(),
+		c.LanguageRepository(),
+		c.TranslationRepository(),
+	)
+	// 如果有缓存服务，返回带缓存的版本
+	if c.CacheService() != nil {
+		return service.NewCachedDashboardService(baseService, c.CacheService())
+	}
+	return baseService
+}
+
+// createCacheService 创建缓存服务
+func (c *Container) createCacheService() domain.CacheService {
+	return service.NewCacheService(c.RedisClient())
 }

@@ -41,6 +41,22 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 
 	translation, err := h.translationService.Create(ctx.Request.Context(), req)
 	if err != nil {
+		// 检查是否是AppError类型
+		if appErr, ok := domain.IsAppError(err); ok {
+			switch appErr.Type {
+			case domain.ErrorTypeNotFound:
+				response.NotFound(ctx, appErr.Message)
+			case domain.ErrorTypeConflict:
+				response.Conflict(ctx, appErr.Message)
+			case domain.ErrorTypeValidation, domain.ErrorTypeBadRequest:
+				response.BadRequest(ctx, appErr.Message)
+			default:
+				response.InternalServerError(ctx, "创建翻译失败")
+			}
+			return
+		}
+
+		// 处理传统错误
 		switch err {
 		case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
 			response.BadRequest(ctx, err.Error())
@@ -71,6 +87,22 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 		// 使用前端格式处理
 		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), batchReq)
 		if err != nil {
+			// 检查是否是AppError类型
+			if appErr, ok := domain.IsAppError(err); ok {
+				switch appErr.Type {
+				case domain.ErrorTypeNotFound:
+					response.NotFound(ctx, appErr.Message)
+				case domain.ErrorTypeConflict:
+					response.Conflict(ctx, appErr.Message)
+				case domain.ErrorTypeValidation, domain.ErrorTypeBadRequest:
+					response.BadRequest(ctx, appErr.Message)
+				default:
+					response.InternalServerError(ctx, "批量创建翻译失败")
+				}
+				return
+			}
+
+			// 处理传统错误
 			switch err {
 			case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
 				response.BadRequest(ctx, err.Error())
@@ -92,6 +124,22 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 
 	err := h.translationService.CreateBatch(ctx.Request.Context(), requests)
 	if err != nil {
+		// 检查是否是AppError类型
+		if appErr, ok := domain.IsAppError(err); ok {
+			switch appErr.Type {
+			case domain.ErrorTypeNotFound:
+				response.NotFound(ctx, appErr.Message)
+			case domain.ErrorTypeConflict:
+				response.Conflict(ctx, appErr.Message)
+			case domain.ErrorTypeValidation, domain.ErrorTypeBadRequest:
+				response.BadRequest(ctx, appErr.Message)
+			default:
+				response.InternalServerError(ctx, "批量创建翻译失败")
+			}
+			return
+		}
+
+		// 处理传统错误
 		switch err {
 		case domain.ErrProjectNotFound, domain.ErrLanguageNotFound:
 			response.BadRequest(ctx, err.Error())
@@ -281,6 +329,22 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 
 	translation, err := h.translationService.Update(ctx.Request.Context(), uint(id), req)
 	if err != nil {
+		// 检查是否是AppError类型
+		if appErr, ok := domain.IsAppError(err); ok {
+			switch appErr.Type {
+			case domain.ErrorTypeNotFound:
+				response.NotFound(ctx, appErr.Message)
+			case domain.ErrorTypeConflict:
+				response.Conflict(ctx, appErr.Message)
+			case domain.ErrorTypeValidation, domain.ErrorTypeBadRequest:
+				response.BadRequest(ctx, appErr.Message)
+			default:
+				response.InternalServerError(ctx, "更新翻译失败")
+			}
+			return
+		}
+
+		// 处理传统错误
 		switch err {
 		case domain.ErrTranslationNotFound:
 			response.NotFound(ctx, err.Error())

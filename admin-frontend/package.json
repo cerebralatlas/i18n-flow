@@ -5,7 +5,9 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "npx tsc -b && vite build",
+    "build": "vite build",
+    "build:typecheck": "npx tsc -b && vite build",
+    "typecheck": "npx tsc -b",
     "lint": "eslint .",
     "preview": "vite preview"
   },
@@ -17,8 +19,8 @@
     "axios": "^1.8.4",
     "i18next": "^25.0.2",
     "lodash": "^4.17.21",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
     "react-i18next": "^15.5.1",
     "react-router-dom": "^7.4.1",
     "tailwindcss": "^4.1.2",

@@ -90,6 +90,7 @@ type TranslationService interface {
 	Create(ctx context.Context, req CreateTranslationRequest) (*Translation, error)
 	CreateBatch(ctx context.Context, translations []CreateTranslationRequest) error
 	CreateBatchFromRequest(ctx context.Context, req BatchTranslationRequest) error
+	UpsertBatch(ctx context.Context, translations []CreateTranslationRequest) error
 	GetByID(ctx context.Context, id uint) (*Translation, error)
 	GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*Translation, int64, error)
 	GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error)

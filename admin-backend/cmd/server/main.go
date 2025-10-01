@@ -152,6 +152,9 @@ func setupMiddleware(router *gin.Engine) {
 	// 全局错误处理中间件
 	router.Use(middleware.ErrorHandlerMiddleware())
 
+	// 应用程序错误处理中间件
+	router.Use(middleware.AppErrorHandlerMiddleware())
+
 	// 请求大小限制中间件 (32MB)
 	router.Use(middleware.RequestSizeLimitMiddleware(32 << 20))
 

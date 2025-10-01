@@ -144,16 +144,16 @@ export const useTranslationData = (initialProjectId?: string) => {
     }
   };
 
-  // 批量创建翻译
+  // 批量创建或更新翻译
   const batchCreateTranslations = async (request: BatchTranslationRequest) => {
     try {
       await translationService.batchCreateTranslations(request);
-      message.success("Batch create translations successfully");
+      message.success("保存成功");
       fetchTranslations();
       return true;
     } catch (error) {
-      console.error("Failed to batch create translations:", error);
-      message.error("Batch create translations failed");
+      console.error("Failed to save translations:", error);
+      message.error("保存失败");
       return false;
     }
   };
@@ -161,6 +161,7 @@ export const useTranslationData = (initialProjectId?: string) => {
   // 更新翻译
   const updateTranslation = async (id: number, values: TranslationRequest) => {
     try {
+      console.log(123)
       await translationService.updateTranslation(id, values);
       message.success("Update translation successfully");
       fetchTranslations();

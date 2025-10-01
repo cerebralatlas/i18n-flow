@@ -20,7 +20,7 @@ type Project struct {
 	ID           uint           `gorm:"primaryKey" json:"id"`
 	Name         string         `gorm:"size:100;not null;unique;index:idx_project_search" json:"name"` // 项目名称
 	Description  string         `gorm:"size:500;index:idx_project_search" json:"description"`          // 项目描述
-	Slug         string         `gorm:"size:100;not null;unique;index" json:"slug"`                     // 项目标识，用于URL
+	Slug         string         `gorm:"size:100;not null;unique;index" json:"slug"`                    // 项目标识，用于URL
 	Status       string         `gorm:"size:20;default:active;index:idx_project_status" json:"status"` // 项目状态：active, archived
 	CreatedAt    time.Time      `json:"created_at"`
 	UpdatedAt    time.Time      `json:"updated_at"`
@@ -43,16 +43,16 @@ type Language struct {
 // Translation 翻译领域模型
 type Translation struct {
 	ID         uint           `gorm:"primaryKey" json:"id"`
-	ProjectID  uint           `gorm:"not null;index:idx_translation_project;index:idx_translation_matrix,priority:1" json:"project_id"`     // 关联的项目ID
-	KeyName    string         `gorm:"size:255;not null;index:idx_translation_key;index:idx_translation_matrix,priority:2" json:"key_name"`    // 翻译键名
-	Context    string         `gorm:"size:500" json:"context"`                                                                                  // 上下文说明
-	LanguageID uint           `gorm:"not null;index:idx_translation_language;index:idx_translation_matrix,priority:3" json:"language_id"`     // 语言ID
-	Value      string         `gorm:"type:text" json:"value"`                                                      // 翻译值
-	Status     string         `gorm:"size:20;default:active;index:idx_translation_status" json:"status"`                                      // 状态：active, deprecated
+	ProjectID  uint           `gorm:"not null;index:idx_translation_project;uniqueIndex:idx_translation_unique,priority:1" json:"project_id"`    // 关联的项目ID
+	KeyName    string         `gorm:"size:255;not null;index:idx_translation_key;uniqueIndex:idx_translation_unique,priority:2" json:"key_name"` // 翻译键名
+	Context    string         `gorm:"size:500" json:"context"`                                                                                   // 上下文说明
+	LanguageID uint           `gorm:"not null;index:idx_translation_language;uniqueIndex:idx_translation_unique,priority:3" json:"language_id"`  // 语言ID
+	Value      string         `gorm:"type:text" json:"value"`                                                                                    // 翻译值
+	Status     string         `gorm:"size:20;default:active;index:idx_translation_status" json:"status"`                                         // 状态：active, deprecated
 	CreatedAt  time.Time      `json:"created_at"`
 	UpdatedAt  time.Time      `json:"updated_at"`
 	DeletedAt  gorm.DeletedAt `gorm:"index" json:"-"`
 
-	Project  Project  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`  // 关联的项目
+	Project  Project  `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`   // 关联的项目
 	Language Language `gorm:"foreignKey:LanguageID;constraint:OnUpdate:CASCADE,OnDelete:RESTRICT" json:"-"` // 关联的语言
 }

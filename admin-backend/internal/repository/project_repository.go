@@ -47,14 +47,14 @@ func (r *ProjectRepository) GetAll(ctx context.Context, limit, offset int, keywo
 	var projects []*domain.Project
 	var total int64
 
-	// 构建基础查询条件，添加软删除过滤
-	baseQuery := r.db.WithContext(ctx).Model(&domain.Project{}).Where("deleted_at IS NULL")
-	
+	// 构建基础查询条件，GORM会自动处理软删除
+	baseQuery := r.db.WithContext(ctx).Model(&domain.Project{})
+
 	// 构建搜索条件
 	var query *gorm.DB
 	if keyword != "" {
 		// 优化搜索：优先匹配名称，然后是slug，最后是描述
-		query = baseQuery.Where("(name LIKE ? OR slug LIKE ? OR description LIKE ?)", 
+		query = baseQuery.Where("(name LIKE ? OR slug LIKE ? OR description LIKE ?)",
 			"%"+keyword+"%", "%"+keyword+"%", "%"+keyword+"%")
 	} else {
 		query = baseQuery

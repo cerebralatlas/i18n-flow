@@ -42,10 +42,22 @@ func (s *TranslationService) Create(ctx context.Context, req domain.CreateTransl
 		return nil, domain.ErrLanguageNotFound
 	}
 
+	// 检查翻译是否已存在
+	keyName := strings.TrimSpace(req.KeyName)
+	existing, err := s.translationRepo.GetByProjectKeyLanguage(ctx, req.ProjectID, keyName, req.LanguageID)
+	if err == nil && existing != nil {
+		return nil, domain.NewAppErrorWithDetails(
+			domain.ErrorTypeConflict,
+			"TRANSLATION_EXISTS",
+			"该项目中已存在相同键名和语言的翻译",
+			fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", req.ProjectID, keyName, req.LanguageID),
+		)
+	}
+
 	// 创建翻译
 	translation := &domain.Translation{
 		ProjectID:  req.ProjectID,
-		KeyName:    strings.TrimSpace(req.KeyName),
+		KeyName:    keyName,
 		Context:    strings.TrimSpace(req.Context),
 		LanguageID: req.LanguageID,
 		Value:      strings.TrimSpace(req.Value),
@@ -53,6 +65,15 @@ func (s *TranslationService) Create(ctx context.Context, req domain.CreateTransl
 	}
 
 	if err := s.translationRepo.Create(ctx, translation); err != nil {
+		// 检查是否是唯一约束冲突错误
+		if isDuplicateKeyError(err) {
+			return nil, domain.NewAppErrorWithDetails(
+				domain.ErrorTypeConflict,
+				"TRANSLATION_EXISTS",
+				"该项目中已存在相同键名和语言的翻译",
+				fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", req.ProjectID, keyName, req.LanguageID),
+			)
+		}
 		return nil, err
 	}
 
@@ -90,23 +111,104 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 		}
 	}
 
-	// 转换为domain对象
-	translations := make([]*domain.Translation, len(requests))
-	for i, req := range requests {
-		translations[i] = &domain.Translation{
+	// 检查重复翻译并转换为domain对象
+	translations := make([]*domain.Translation, 0, len(requests))
+	duplicates := make([]string, 0)
+
+	for _, req := range requests {
+		keyName := strings.TrimSpace(req.KeyName)
+
+		// 检查是否已存在
+		existing, err := s.translationRepo.GetByProjectKeyLanguage(ctx, req.ProjectID, keyName, req.LanguageID)
+		if err != nil {
+			return err
+		}
+
+		if existing != nil {
+			duplicates = append(duplicates, fmt.Sprintf("项目ID:%d, 键名:%s, 语言ID:%d", req.ProjectID, keyName, req.LanguageID))
+			continue
+		}
+
+		translations = append(translations, &domain.Translation{
+			ProjectID:  req.ProjectID,
+			KeyName:    keyName,
+			Context:    strings.TrimSpace(req.Context),
+			LanguageID: req.LanguageID,
+			Value:      strings.TrimSpace(req.Value),
+			Status:     "active",
+		})
+	}
+
+	// 如果有重复项，返回错误
+	if len(duplicates) > 0 {
+		return domain.NewAppErrorWithDetails(
+			domain.ErrorTypeConflict,
+			"TRANSLATION_EXISTS",
+			"批量创建中存在重复的翻译",
+			fmt.Sprintf("重复项: %s", strings.Join(duplicates, "; ")),
+		)
+	}
+
+	// 如果没有有效的翻译需要创建
+	if len(translations) == 0 {
+		return nil
+	}
+
+	return s.translationRepo.CreateBatch(ctx, translations)
+}
+
+// UpsertBatch 批量创建或更新翻译
+// 如果翻译已存在（基于 project_id + key_name + language_id），则更新
+// 如果不存在，则创建
+func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+	if len(requests) == 0 {
+		return nil
+	}
+
+	// 验证所有请求中的项目和语言
+	projectIDs := make(map[uint]bool)
+	languageIDs := make(map[uint]bool)
+
+	for _, req := range requests {
+		projectIDs[req.ProjectID] = true
+		languageIDs[req.LanguageID] = true
+	}
+
+	// 验证项目
+	for projectID := range projectIDs {
+		_, err := s.projectRepo.GetByID(ctx, projectID)
+		if err != nil {
+			return domain.ErrProjectNotFound
+		}
+	}
+
+	// 验证语言
+	for languageID := range languageIDs {
+		_, err := s.languageRepo.GetByID(ctx, languageID)
+		if err != nil {
+			return domain.ErrLanguageNotFound
+		}
+	}
+
+	// 转换为 domain 对象
+	translations := make([]*domain.Translation, 0, len(requests))
+	for _, req := range requests {
+		translations = append(translations, &domain.Translation{
 			ProjectID:  req.ProjectID,
 			KeyName:    strings.TrimSpace(req.KeyName),
 			Context:    strings.TrimSpace(req.Context),
 			LanguageID: req.LanguageID,
 			Value:      strings.TrimSpace(req.Value),
 			Status:     "active",
-		}
+		})
 	}
 
-	return s.translationRepo.CreateBatch(ctx, translations)
+	// 使用 UpsertBatch 而不是 CreateBatch
+	return s.translationRepo.UpsertBatch(ctx, translations)
 }
 
-// CreateBatchFromRequest 从批量翻译请求创建翻译
+// CreateBatchFromRequest 从批量翻译请求创建或更新翻译
+// 现在使用 UpsertBatch，支持创建和更新操作
 func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req domain.BatchTranslationRequest) error {
 	// 获取所有语言
 	languages, err := s.languageRepo.GetAll(ctx)
@@ -143,7 +245,8 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dom
 		return fmt.Errorf("no valid translations to create")
 	}
 
-	return s.CreateBatch(ctx, requests)
+	// 使用 UpsertBatch 而不是 CreateBatch，支持创建和更新
+	return s.UpsertBatch(ctx, requests)
 }
 
 // GetByID 根据ID获取翻译
@@ -413,4 +516,18 @@ func isLikelyLanguageCode(code string) bool {
 	}
 
 	return false
+}
+
+// isDuplicateKeyError 检查是否是重复键错误
+func isDuplicateKeyError(err error) bool {
+	if err == nil {
+		return false
+	}
+
+	errStr := strings.ToLower(err.Error())
+	// MySQL重复键错误模式
+	return strings.Contains(errStr, "duplicate entry") ||
+		strings.Contains(errStr, "duplicate key") ||
+		strings.Contains(errStr, "unique constraint") ||
+		strings.Contains(errStr, "idx_translation_unique")
 }

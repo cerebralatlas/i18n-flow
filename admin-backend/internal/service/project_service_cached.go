@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"i18n-flow/internal/domain"
 	"sync"
 )
@@ -31,11 +32,11 @@ func NewCachedProjectService(
 func (s *CachedProjectService) getMutex(key string) *sync.Mutex {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	if mutex, exists := s.cacheMutexes[key]; exists {
 		return mutex
 	}
-	
+
 	mutex := &sync.Mutex{}
 	s.cacheMutexes[key] = mutex
 	return mutex
@@ -45,7 +46,7 @@ func (s *CachedProjectService) getMutex(key string) *sync.Mutex {
 func (s *CachedProjectService) removeMutex(key string) {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	delete(s.cacheMutexes, key)
 }
 
@@ -68,7 +69,7 @@ func (s *CachedProjectService) Create(ctx context.Context, req domain.CreateProj
 // GetByID 根据ID获取项目（使用缓存）
 func (s *CachedProjectService) GetByID(ctx context.Context, id uint) (*domain.Project, error) {
 	cacheKey := s.cacheService.GetProjectKey(id)
-	
+
 	// 使用互斥锁防止缓存击穿
 	mutex := s.getMutex(cacheKey)
 	mutex.Lock()
@@ -112,8 +113,8 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 		// 如果有搜索关键词，添加到缓存键中
 		cacheKey += ":search:" + keyword
 	}
-	cacheKey += ":" + string(rune(limit)) + ":" + string(rune(offset))
-	
+	cacheKey += fmt.Sprintf(":%d:%d", limit, offset)
+
 	// 使用互斥锁防止缓存击穿
 	mutex := s.getMutex(cacheKey)
 	mutex.Lock()
@@ -125,9 +126,9 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 	// 尝试从缓存获取
 	type projectsCacheResult struct {
 		Projects []*domain.Project `json:"projects"`
-		Total    int64            `json:"total"`
+		Total    int64             `json:"total"`
 	}
-	
+
 	var cachedResult projectsCacheResult
 	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &cachedResult)
 	if err == nil {
@@ -145,7 +146,7 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 		Projects: projects,
 		Total:    total,
 	}
-	
+
 	expiration := s.cacheService.AddRandomExpiration(domain.DefaultExpiration)
 	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, cachedResult, expiration); err != nil {
 		// 缓存更新失败，但不影响返回结果
@@ -163,7 +164,7 @@ func (s *CachedProjectService) Update(ctx context.Context, id uint, req domain.U
 
 	// 清除该项目的缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectKey(id))
-	
+
 	// 清除项目列表缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectsKey())
 
@@ -182,7 +183,7 @@ func (s *CachedProjectService) Delete(ctx context.Context, id uint) error {
 
 	// 清除该项目的缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectKey(id))
-	
+
 	// 清除项目列表缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectsKey())
 

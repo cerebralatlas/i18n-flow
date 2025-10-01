@@ -6,6 +6,7 @@ import (
 	"i18n-flow/internal/domain"
 
 	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
 )
 
 // TranslationRepository 翻译仓储实现
@@ -59,16 +60,33 @@ func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, pro
 	return translations, nil
 }
 
+// GetByProjectKeyLanguage 根据项目ID、键名和语言ID获取翻译
+func (r *TranslationRepository) GetByProjectKeyLanguage(ctx context.Context, projectID uint, keyName string, languageID uint) (*domain.Translation, error) {
+	var translation domain.Translation
+	err := r.db.WithContext(ctx).
+		Where("project_id = ? AND key_name = ? AND language_id = ?", projectID, keyName, languageID).
+		First(&translation).Error
+
+	if err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			return nil, nil // 返回nil表示未找到，不是错误
+		}
+		return nil, err
+	}
+
+	return &translation, nil
+}
+
 // GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
 func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 优化：使用单个查询获取总数和键名
 	var totalCount int64
 	var keyNames []string
-	
+
 	// 构建基础查询条件，添加状态过滤提高性能
 	baseWhere := "project_id = ? AND status = ?"
 	baseArgs := []interface{}{projectID, "active"}
-	
+
 	// 优化关键词搜索查询
 	var countQuery *gorm.DB
 	if keyword != "" {
@@ -84,7 +102,7 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, l
 			Select("DISTINCT key_name").
 			Where(baseWhere, baseArgs...)
 	}
-	
+
 	// 使用子查询优化计数性能
 	var uniqueKeys []string
 	if err := countQuery.Pluck("key_name", &uniqueKeys).Error; err != nil {
@@ -121,14 +139,14 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, l
 		LanguageCode string `gorm:"column:language_code"`
 		Value        string `gorm:"column:value"`
 	}
-	
+
 	err := r.db.WithContext(ctx).
 		Table("translations t").
 		Select("t.key_name, l.code as language_code, t.value").
 		Joins("INNER JOIN languages l ON t.language_id = l.id AND l.status = ?", "active").
 		Where("t.project_id = ? AND t.key_name IN ? AND t.status = ?", projectID, keyNames, "active").
 		Find(&results).Error
-	
+
 	if err != nil {
 		return nil, 0, err
 	}
@@ -174,4 +192,32 @@ func (r *TranslationRepository) DeleteBatch(ctx context.Context, ids []uint) err
 		return nil
 	}
 	return r.db.WithContext(ctx).Delete(&domain.Translation{}, ids).Error
+}
+
+// UpsertBatch 批量创建或更新翻译
+// 如果翻译已存在（基于唯一索引：project_id + key_name + language_id），则更新
+// 如果不存在，则创建
+// 使用数据库原生的 UPSERT 能力（MySQL: ON DUPLICATE KEY UPDATE, PostgreSQL: ON CONFLICT DO UPDATE）
+func (r *TranslationRepository) UpsertBatch(ctx context.Context, translations []*domain.Translation) error {
+	if len(translations) == 0 {
+		return nil
+	}
+
+	// 使用 GORM 的 OnConflict 子句实现 Upsert
+	// 这会根据不同数据库自动生成对应的 SQL：
+	// - MySQL: INSERT ... ON DUPLICATE KEY UPDATE
+	// - PostgreSQL: INSERT ... ON CONFLICT ... DO UPDATE
+	// - SQLite: INSERT ... ON CONFLICT ... DO UPDATE
+	return r.db.WithContext(ctx).
+		Clauses(clause.OnConflict{
+			// 基于唯一索引 idx_translation_unique (project_id, key_name, language_id)
+			Columns: []clause.Column{
+				{Name: "project_id"},
+				{Name: "key_name"},
+				{Name: "language_id"},
+			},
+			// 冲突时更新这些字段
+			DoUpdates: clause.AssignmentColumns([]string{"value", "context", "updated_at"}),
+		}).
+		Create(&translations).Error
 }

@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"i18n-flow/internal/api/response"
+	"i18n-flow/internal/domain"
 	"i18n-flow/utils"
 	"runtime/debug"
 
@@ -56,6 +57,58 @@ func getRequestIDFromContext(c *gin.Context) string {
 		return requestID.(string)
 	}
 	return ""
+}
+
+// AppErrorHandlerMiddleware 应用程序错误处理中间件
+func AppErrorHandlerMiddleware() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		c.Next()
+
+		// 检查是否有错误
+		if len(c.Errors) > 0 {
+			err := c.Errors.Last().Err
+
+			// 获取请求信息
+			fields := []zap.Field{
+				zap.String("method", c.Request.Method),
+				zap.String("path", c.Request.URL.Path),
+				zap.String("client_ip", c.ClientIP()),
+				zap.String("request_id", getRequestIDFromContext(c)),
+			}
+
+			// 添加用户信息（如果存在）
+			if userID, exists := c.Get("userID"); exists {
+				fields = append(fields, zap.Any("user_id", userID))
+			}
+
+			// 检查是否为应用程序错误
+			if appErr, ok := domain.IsAppError(err); ok {
+				// 记录错误日志
+				utils.ErrorLog("Application error", append(fields,
+					zap.String("error_type", string(appErr.Type)),
+					zap.String("error_code", appErr.Code),
+					zap.String("error_message", appErr.Message),
+					zap.Any("error_context", appErr.Context),
+					zap.Error(appErr.Cause),
+				)...)
+
+				// 返回结构化错误响应
+				c.JSON(appErr.HTTPStatus(), response.APIResponse{
+					Success: false,
+					Error: &response.ErrorInfo{
+						Code:    appErr.Code,
+						Message: appErr.Message,
+						Details: appErr.Details,
+					},
+				})
+				return
+			}
+
+			// 处理其他类型的错误
+			utils.ErrorLog("Unhandled error", append(fields, zap.Error(err))...)
+			response.InternalServerError(c, "服务器内部错误")
+		}
+	}
 }
 
 // NotFoundHandler 404处理器

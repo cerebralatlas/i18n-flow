@@ -2,13 +2,14 @@ package service
 
 import (
 	"context"
+	"fmt"
 	"i18n-flow/internal/domain"
 	"sync"
 )
 
 // CachedUserService 带缓存的用户服务实现
 type CachedUserService struct {
-	userService *UserService
+	userService  *UserService
 	cacheService domain.CacheService
 	// 用于防止缓存击穿的互斥锁
 	cacheMutexes map[string]*sync.Mutex
@@ -31,11 +32,11 @@ func NewCachedUserService(
 func (s *CachedUserService) getMutex(key string) *sync.Mutex {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	if mutex, exists := s.cacheMutexes[key]; exists {
 		return mutex
 	}
-	
+
 	mutex := &sync.Mutex{}
 	s.cacheMutexes[key] = mutex
 	return mutex
@@ -45,7 +46,7 @@ func (s *CachedUserService) getMutex(key string) *sync.Mutex {
 func (s *CachedUserService) removeMutex(key string) {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	delete(s.cacheMutexes, key)
 }
 
@@ -63,8 +64,8 @@ func (s *CachedUserService) RefreshToken(ctx context.Context, req domain.Refresh
 
 // GetUserInfo 获取用户信息（使用缓存）
 func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint) (*domain.User, error) {
-	cacheKey := "user:" + string(rune(userID))
-	
+	cacheKey := fmt.Sprintf("user:%d", userID)
+
 	// 使用互斥锁防止缓存击穿
 	mutex := s.getMutex(cacheKey)
 	mutex.Lock()

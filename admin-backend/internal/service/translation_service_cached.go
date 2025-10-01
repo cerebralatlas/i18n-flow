@@ -35,11 +35,11 @@ func NewCachedTranslationService(
 func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	if mutex, exists := s.cacheMutexes[key]; exists {
 		return mutex
 	}
-	
+
 	mutex := &sync.Mutex{}
 	s.cacheMutexes[key] = mutex
 	return mutex
@@ -49,7 +49,7 @@ func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
 func (s *CachedTranslationService) removeMutex(key string) {
 	s.mutexLock.Lock()
 	defer s.mutexLock.Unlock()
-	
+
 	delete(s.cacheMutexes, key)
 }
 
@@ -99,6 +99,26 @@ func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, r
 	return nil
 }
 
+// UpsertBatch 批量创建或更新翻译（更新缓存）
+func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+	err := s.translationService.UpsertBatch(ctx, requests)
+	if err != nil {
+		return err
+	}
+
+	// 清除相关缓存
+	projectIDs := make(map[uint]bool)
+	for _, req := range requests {
+		projectIDs[req.ProjectID] = true
+	}
+
+	for projectID := range projectIDs {
+		s.invalidateProjectCache(ctx, projectID)
+	}
+
+	return nil
+}
+
 // GetByID 根据ID获取翻译
 func (s *CachedTranslationService) GetByID(ctx context.Context, id uint) (*domain.Translation, error) {
 	// 这个方法不缓存，因为单个翻译查询不频繁
@@ -115,7 +135,7 @@ type TranslationCacheResult struct {
 func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
 	// 生成缓存键
 	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationKey(projectID), limit, offset)
-	
+
 	// 使用互斥锁防止缓存击穿
 	mutex := s.getMutex(cacheKey)
 	mutex.Lock()
@@ -172,7 +192,7 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 		// 非搜索查询使用较长的缓存时间
 		cacheKey = fmt.Sprintf("%s:all:%d:%d", s.cacheService.GetTranslationMatrixKey(projectID, ""), limit, offset)
 	}
-	
+
 	// 使用互斥锁防止缓存击穿
 	mutex := s.getMutex(cacheKey)
 	mutex.Lock()
@@ -335,7 +355,7 @@ func (s *CachedTranslationService) invalidateProjectCache(ctx context.Context, p
 func (s *CachedTranslationService) invalidateLanguageCache(ctx context.Context) {
 	// 清除所有项目的翻译矩阵缓存，因为语言变更可能影响所有项目
 	s.cacheService.DeleteByPattern(ctx, domain.TranslationMatrixPrefix+"*")
-	
+
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
 }
@@ -345,7 +365,7 @@ func (s *CachedTranslationService) invalidateSpecificTranslationCache(ctx contex
 	// 清除包含特定键名的翻译矩阵缓存
 	pattern := fmt.Sprintf("%s%d:*%s*", domain.TranslationMatrixPrefix, projectID, keyName)
 	s.cacheService.DeleteByPattern(ctx, pattern)
-	
+
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
 }

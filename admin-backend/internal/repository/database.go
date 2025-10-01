@@ -52,9 +52,9 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	// 连接池优化配置
-	sqlDB.SetMaxIdleConns(10)                   // 最大空闲连接数
-	sqlDB.SetMaxOpenConns(100)                  // 最大打开连接数
-	sqlDB.SetConnMaxLifetime(time.Hour)         // 连接最大生存时间
+	sqlDB.SetMaxIdleConns(10)                  // 最大空闲连接数
+	sqlDB.SetMaxOpenConns(100)                 // 最大打开连接数
+	sqlDB.SetConnMaxLifetime(time.Hour)        // 连接最大生存时间
 	sqlDB.SetConnMaxIdleTime(10 * time.Minute) // 连接最大空闲时间
 
 	// 自动迁移表结构
@@ -180,49 +180,115 @@ func createDefaultLanguages(db *gorm.DB) error {
 	return nil
 }
 
+// IndexDefinition 索引定义
+type IndexDefinition struct {
+	Name      string
+	TableName string
+	Columns   []string
+	Unique    bool
+}
+
 // createOptimizationIndexes 创建额外的性能优化索引
 func createOptimizationIndexes(db *gorm.DB) error {
-	// 这些索引将在模型标签中自动创建，但我们可以添加一些复合索引
-	indexes := []struct {
-		name string
-		sql  string
-	}{
-		{"idx_translations_project_status", "CREATE INDEX idx_translations_project_status ON translations(project_id, status)"},
-		{"idx_translations_search_key", "CREATE INDEX idx_translations_search_key ON translations(project_id, key_name, status)"},
-		{"idx_translations_search_value", "CREATE INDEX idx_translations_search_value ON translations(project_id, value(191), status)"},
-		{"idx_projects_status_name", "CREATE INDEX idx_projects_status_name ON projects(status, name)"},
-		{"idx_translations_value_prefix", "CREATE INDEX idx_translations_value_prefix ON translations(value(191))"},
+	// 定义需要创建的索引
+	indexes := []IndexDefinition{
+		{
+			Name:      "idx_translations_project_status",
+			TableName: "translations",
+			Columns:   []string{"project_id", "status"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_translations_search_key",
+			TableName: "translations",
+			Columns:   []string{"project_id", "key_name", "status"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_translations_project_lang",
+			TableName: "translations",
+			Columns:   []string{"project_id", "language_id"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_projects_status_name",
+			TableName: "projects",
+			Columns:   []string{"status", "name"},
+			Unique:    false,
+		},
+		{
+			Name:      "idx_languages_code_status",
+			TableName: "languages",
+			Columns:   []string{"code", "status"},
+			Unique:    false,
+		},
+		// 添加翻译唯一约束索引（如果GORM没有自动创建）
+		{
+			Name:      "idx_translation_unique",
+			TableName: "translations",
+			Columns:   []string{"project_id", "key_name", "language_id"},
+			Unique:    true,
+		},
 	}
 
-	for _, index := range indexes {
-		// 先检查索引是否已存在
-		var count int64
-		checkSQL := "SELECT COUNT(*) FROM information_schema.statistics WHERE table_schema = DATABASE() AND table_name = ? AND index_name = ?"
-		tableName := ""
-		
-		// 根据索引名称确定表名
-		if strings.Contains(index.name, "translations") {
-			tableName = "translations"
-		} else if strings.Contains(index.name, "projects") {
-			tableName = "projects"
-		}
-		
-		if tableName != "" {
-			db.Raw(checkSQL, tableName, index.name).Scan(&count)
-			if count > 0 {
-				// 索引已存在，跳过创建
-				continue
-			}
-		}
-		
-		// 尝试创建索引
-		if err := db.Exec(index.sql).Error; err != nil {
-			// 只有在错误不是索引已存在的情况下才记录警告
-			if !strings.Contains(err.Error(), "Duplicate key name") && !strings.Contains(err.Error(), "already exists") && !strings.Contains(err.Error(), "Duplicate entry") {
-				log.Printf("创建索引警告: %v, SQL: %s", err, index.sql)
-			}
+	for _, idx := range indexes {
+		if err := createIndexIfNotExists(db, idx); err != nil {
+			log.Printf("创建索引 %s 时出现警告: %v", idx.Name, err)
 		}
 	}
 
 	return nil
+}
+
+// createIndexIfNotExists 如果索引不存在则创建
+func createIndexIfNotExists(db *gorm.DB, idx IndexDefinition) error {
+	// 检查索引是否已存在
+	exists, err := indexExists(db, idx.TableName, idx.Name)
+	if err != nil {
+		return fmt.Errorf("检查索引是否存在时出错: %w", err)
+	}
+
+	if exists {
+		return nil // 索引已存在，跳过创建
+	}
+
+	// 构建创建索引的SQL
+	indexType := "INDEX"
+	if idx.Unique {
+		indexType = "UNIQUE INDEX"
+	}
+
+	columnList := strings.Join(idx.Columns, ", ")
+	sql := fmt.Sprintf("CREATE %s %s ON %s (%s)", indexType, idx.Name, idx.TableName, columnList)
+
+	// 执行创建索引
+	if err := db.Exec(sql).Error; err != nil {
+		// 检查是否是索引已存在的错误
+		if strings.Contains(err.Error(), "Duplicate key name") ||
+			strings.Contains(err.Error(), "already exists") {
+			return nil // 索引已存在，不是错误
+		}
+		return fmt.Errorf("创建索引失败: %w", err)
+	}
+
+	log.Printf("成功创建索引: %s", idx.Name)
+	return nil
+}
+
+// indexExists 检查索引是否存在
+func indexExists(db *gorm.DB, tableName, indexName string) (bool, error) {
+	var count int64
+	err := db.Raw(`
+		SELECT COUNT(*) 
+		FROM information_schema.statistics 
+		WHERE table_schema = DATABASE() 
+		AND table_name = ? 
+		AND index_name = ?
+	`, tableName, indexName).Scan(&count).Error
+
+	if err != nil {
+		return false, err
+	}
+
+	return count > 0, nil
 }
