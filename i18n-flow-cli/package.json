@@ -1,6 +1,6 @@
 {
   "name": "i18n-flow-cli",
-  "version": "0.0.8",
+  "version": "0.0.9",
   "description": "CLI tool for i18n-flow translation management",
   "main": "dist/index.js",
   "author": "cerebralatlas <cerebralatlas@gmail.com>",
