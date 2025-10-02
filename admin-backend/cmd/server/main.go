@@ -8,6 +8,7 @@ import (
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/container"
 	"i18n-flow/internal/repository"
+	internal_utils "i18n-flow/internal/utils"
 	"i18n-flow/utils"
 	"log"
 	"os"
@@ -81,6 +82,10 @@ func main() {
 		utils.AppInfo("Redis connection established successfully")
 	}
 
+	// 初始化监控系统
+	utils.AppInfo("Initializing monitoring system")
+	monitor := internal_utils.NewSimpleMonitor(db, redisClient.GetClient())
+
 	// 初始化Swagger文档
 	docs.SwaggerInfo.BasePath = "/api"
 
@@ -91,11 +96,11 @@ func main() {
 	router.Use(gin.Recovery())
 
 	// 应用全局中间件
-	setupMiddleware(router)
+	setupMiddleware(router, monitor)
 
-	// 设置路由
+	// 设置路由（包含监控端点）
 	routeManager := routes.NewRouter(container)
-	routeManager.SetupRoutes(router)
+	routeManager.SetupRoutes(router, monitor)
 
 	// 启动服务器
 	utils.AppInfo("Server starting",
@@ -135,19 +140,21 @@ func initLogger(cfg *config.Config) error {
 }
 
 // setupMiddleware 设置全局中间件
-func setupMiddleware(router *gin.Engine) {
+func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor) {
 	// 安全HTTP头中间件（最先设置，确保所有响应都包含安全头）
 	router.Use(middleware.SecurityHeadersMiddleware())
 
-	// 全局限流中间件（每秒100个请求，突发200个）
-	router.Use(middleware.GlobalRateLimitMiddleware())
+	// 全局限流中间件（使用 tollbooth，每秒100个请求）
+	router.Use(middleware.TollboothGlobalRateLimitMiddleware())
 
 	// 请求ID中间件
 	router.Use(middleware.RequestIDMiddleware())
 
-	// 请求日志中间件（跳过健康检查）
-	router.Use(middleware.SkipLoggingMiddleware("/health"))
-	router.Use(middleware.LoggingMiddleware())
+	// 跳过监控端点的日志记录
+	router.Use(middleware.HealthCheckSkipMiddleware("/health", "/stats", "/metrics"))
+
+	// 增强的日志中间件（集成监控）
+	router.Use(middleware.EnhancedLoggingMiddleware(monitor))
 
 	// 全局错误处理中间件
 	router.Use(middleware.ErrorHandlerMiddleware())

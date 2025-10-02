@@ -40,6 +40,11 @@ func (r *RedisClient) Close() error {
 	return r.client.Close()
 }
 
+// GetClient 获取底层Redis客户端（用于监控等场景）
+func (r *RedisClient) GetClient() *redis.Client {
+	return r.client
+}
+
 // GetKey 获取带前缀的键名
 func (r *RedisClient) GetKey(key string) string {
 	return r.config.Prefix + key
@@ -95,7 +100,7 @@ func (r *RedisClient) SetJSON(ctx context.Context, key string, value interface{}
 	if err != nil {
 		return fmt.Errorf("JSON序列化失败: %w", err)
 	}
-	
+
 	// 存储JSON字符串
 	return r.client.Set(ctx, r.GetKey(key), jsonData, expiration).Err()
 }
@@ -107,7 +112,7 @@ func (r *RedisClient) GetJSON(ctx context.Context, key string, dest interface{})
 	if err != nil {
 		return err
 	}
-	
+
 	// 反序列化JSON
 	return json.Unmarshal([]byte(jsonStr), dest)
 }

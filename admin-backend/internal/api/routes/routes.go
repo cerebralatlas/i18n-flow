@@ -5,10 +5,13 @@ import (
 	"i18n-flow/internal/api/middleware"
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/container"
+	internal_utils "i18n-flow/internal/utils"
+	"i18n-flow/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/zap"
 )
 
 // Router 路由器
@@ -32,20 +35,14 @@ func NewRouter(container *container.Container) *Router {
 }
 
 // SetupRoutes 设置路由
-func (r *Router) SetupRoutes(engine *gin.Engine) {
+func (r *Router) SetupRoutes(engine *gin.Engine, monitor *internal_utils.SimpleMonitor) {
 	// 基本路由
 	engine.GET("/", func(c *gin.Context) {
 		response.Success(c, gin.H{"message": "Hello, World!"})
 	})
 
-	// 健康检查端点
-	engine.GET("/health", func(c *gin.Context) {
-		response.Success(c, gin.H{
-			"status":  "ok",
-			"service": "i18n-flow",
-			"version": "1.0.0",
-		})
-	})
+	// 监控端点
+	r.setupMonitoringRoutes(engine, monitor)
 
 	// Swagger 文档
 	engine.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
@@ -65,7 +62,7 @@ func (r *Router) setupPublicRoutes(rg *gin.RouterGroup) {
 
 	// 登录路由组（应用登录限流中间件）
 	loginRoutes := rg.Group("")
-	loginRoutes.Use(middleware.LoginRateLimitMiddleware())
+	loginRoutes.Use(middleware.TollboothLoginRateLimitMiddleware())
 	{
 		// 公开的认证路由（每秒5个请求，突发10个）
 		loginRoutes.POST("/login", userHandler.Login)
@@ -78,7 +75,7 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 	// 应用JWT认证中间件和API限流中间件
 	authRoutes := rg.Group("")
 	authRoutes.Use(r.middlewareFactory.JWTAuthMiddleware())
-	authRoutes.Use(middleware.APIRateLimitMiddleware())
+	authRoutes.Use(middleware.TollboothAPIRateLimitMiddleware())
 
 	// 获取处理器
 	userHandler := r.handlerFactory.UserHandler()
@@ -188,7 +185,7 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 
 	// 批量操作路由组（应用批量操作限流中间件和项目编辑权限）
 	batchRoutes := authRoutes.Group("/translations")
-	batchRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
+	batchRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	batchRoutes.Use(r.middlewareFactory.RequireProjectEditor())
 	{
 		batchRoutes.POST("/batch", translationHandler.CreateBatch)
@@ -197,14 +194,14 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 
 	// 导出导入路由（应用批量操作限流中间件和项目权限）
 	exportRoutes := authRoutes.Group("/exports")
-	exportRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
+	exportRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	exportRoutes.Use(r.middlewareFactory.RequireProjectViewer()) // 导出只需要查看权限
 	{
 		exportRoutes.GET("/project/:project_id", translationHandler.Export)
 	}
 
 	importRoutes := authRoutes.Group("/imports")
-	importRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
+	importRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	importRoutes.Use(r.middlewareFactory.RequireProjectEditor()) // 导入需要编辑权限
 	{
 		importRoutes.POST("/project/:project_id", translationHandler.Import)
@@ -242,4 +239,22 @@ func (r *Router) setupCLIRoutes(rg *gin.RouterGroup) {
 	{
 		batchCliRoutes.POST("/keys", cliHandler.PushKeys)
 	}
+}
+
+// setupMonitoringRoutes 设置监控路由
+func (r *Router) setupMonitoringRoutes(engine *gin.Engine, monitor *internal_utils.SimpleMonitor) {
+	// 健康检查端点（替换原有的简单健康检查）
+	engine.GET("/health", monitor.HealthCheck)
+
+	// 基础统计端点
+	engine.GET("/stats", monitor.SimpleStats)
+
+	// 详细统计端点
+	engine.GET("/stats/detailed", monitor.DetailedStats)
+
+	utils.AppInfo("Monitoring endpoints configured",
+		zap.String("health_check", "GET /health"),
+		zap.String("basic_stats", "GET /stats"),
+		zap.String("detailed_stats", "GET /stats/detailed"),
+	)
 }
