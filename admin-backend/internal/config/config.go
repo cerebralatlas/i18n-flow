@@ -2,9 +2,11 @@ package config
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"os"
 	"strconv"
+	"strings"
 
 	"github.com/joho/godotenv"
 )
@@ -118,19 +120,36 @@ func Load() (*Config, error) {
 
 // Validate 验证配置
 func (c *Config) Validate() error {
-	// JWT配置验证
-	if c.JWT.Secret == "" || c.JWT.Secret == "your-256-bit-secret" {
-		return errors.New("JWT secret must be set and not use default value")
+	// JWT配置验证 - 强化安全检查
+	if c.JWT.Secret == "" {
+		return errors.New("JWT secret must be set")
+	}
+	if c.JWT.Secret == "your-256-bit-secret" || c.JWT.Secret == "your-256-bit-secret-change-this-to-a-secure-random-string" {
+		return errors.New("JWT secret must not use default value - please generate a secure random key")
 	}
 	if len(c.JWT.Secret) < 32 {
 		return errors.New("JWT secret must be at least 32 characters long")
 	}
+	// 检查密钥复杂度，确保包含足够的熵
+	if !isStrongKey(c.JWT.Secret) {
+		return errors.New("JWT secret must contain a mix of uppercase, lowercase, numbers and special characters")
+	}
 
-	if c.JWT.RefreshSecret == "" || c.JWT.RefreshSecret == "your-refresh-secret" {
-		return errors.New("JWT refresh secret must be set and not use default value")
+	if c.JWT.RefreshSecret == "" {
+		return errors.New("JWT refresh secret must be set")
+	}
+	if c.JWT.RefreshSecret == "your-refresh-secret" || c.JWT.RefreshSecret == "your-refresh-secret-change-this-to-a-secure-random-string" {
+		return errors.New("JWT refresh secret must not use default value - please generate a secure random key")
 	}
 	if len(c.JWT.RefreshSecret) < 32 {
 		return errors.New("JWT refresh secret must be at least 32 characters long")
+	}
+	// 刷新密钥必须与主密钥不同
+	if c.JWT.RefreshSecret == c.JWT.Secret {
+		return errors.New("JWT refresh secret must be different from the main secret")
+	}
+	if !isStrongKey(c.JWT.RefreshSecret) {
+		return errors.New("JWT refresh secret must contain a mix of uppercase, lowercase, numbers and special characters")
 	}
 
 	if c.JWT.ExpirationHours <= 0 || c.JWT.ExpirationHours > 24*7 {
@@ -202,58 +221,13 @@ func (c *Config) Validate() error {
 	return nil
 }
 
-// GetConfig 获取配置 (保持向后兼容)
-func GetConfig() *Config {
+// GetConfig 获取配置
+func GetConfig() (*Config, error) {
 	config, err := Load()
 	if err != nil {
-		log.Printf("配置验证失败: %v，将继续使用默认配置", err)
-		// 返回未验证的配置以保持向后兼容
-		return loadWithoutValidation()
+		return nil, fmt.Errorf("配置验证失败: %w", err)
 	}
-	return config
-}
-
-// loadWithoutValidation 加载配置但不验证（向后兼容）
-func loadWithoutValidation() *Config {
-	_ = godotenv.Load()
-
-	return &Config{
-		DB: DBConfig{
-			Username: getEnv("DB_USERNAME", "root"),
-			Password: getEnv("DB_PASSWORD", ""),
-			Host:     getEnv("DB_HOST", "localhost"),
-			Port:     getEnvAsInt("DB_PORT", 3306),
-			DBName:   getEnv("DB_NAME", "i18n_flow"),
-		},
-		JWT: JWTConfig{
-			Secret:                 getEnv("JWT_SECRET", "your-256-bit-secret"),
-			ExpirationHours:        getEnvAsInt("JWT_EXPIRATION_HOURS", 24),
-			RefreshSecret:          getEnv("JWT_REFRESH_SECRET", "your-refresh-secret"),
-			RefreshExpirationHours: getEnvAsInt("JWT_REFRESH_EXPIRATION_HOURS", 168),
-		},
-		CLI: CLIConfig{
-			APIKey: getEnv("CLI_API_KEY", "testapikey"),
-		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnvAsInt("REDIS_PORT", 6379),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       getEnvAsInt("REDIS_DB", 0),
-			Prefix:   getEnv("REDIS_PREFIX", "i18n_flow:"),
-		},
-		Log: LogConfig{
-			Level:         getEnv("LOG_LEVEL", "info"),
-			Format:        getEnv("LOG_FORMAT", "console"),
-			Output:        getEnv("LOG_OUTPUT", "both"),
-			LogDir:        getEnv("LOG_DIR", "logs"),
-			DateFormat:    getEnv("LOG_DATE_FORMAT", "2006-01-02"),
-			MaxSize:       getEnvAsInt("LOG_MAX_SIZE", 100),
-			MaxAge:        getEnvAsInt("LOG_MAX_AGE", 7),
-			MaxBackups:    getEnvAsInt("LOG_MAX_BACKUPS", 5),
-			Compress:      getEnvAsBool("LOG_COMPRESS", true),
-			EnableConsole: getEnvAsBool("LOG_ENABLE_CONSOLE", true),
-		},
-	}
+	return config, nil
 }
 
 // 辅助函数
@@ -279,4 +253,43 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 		return defaultValue
 	}
 	return value == "true" || value == "1"
+}
+
+// isStrongKey 检查密钥强度
+func isStrongKey(key string) bool {
+	if len(key) < 32 {
+		return false
+	}
+
+	var hasUpper, hasLower, hasNumber, hasSpecial bool
+
+	for _, char := range key {
+		switch {
+		case 'A' <= char && char <= 'Z':
+			hasUpper = true
+		case 'a' <= char && char <= 'z':
+			hasLower = true
+		case '0' <= char && char <= '9':
+			hasNumber = true
+		case strings.ContainsRune("!@#$%^&*()_+-=[]{}|;:,.<>?~", char):
+			hasSpecial = true
+		}
+	}
+
+	// 至少包含3种字符类型
+	count := 0
+	if hasUpper {
+		count++
+	}
+	if hasLower {
+		count++
+	}
+	if hasNumber {
+		count++
+	}
+	if hasSpecial {
+		count++
+	}
+
+	return count >= 3
 }

@@ -37,7 +37,7 @@ import (
 // @description 输入格式: Bearer {token}
 func main() {
 	// 加载配置
-	cfg, err := config.Load()
+	cfg, err := config.GetConfig()
 	if err != nil {
 		log.Fatalf("加载配置失败: %v", err)
 	}
