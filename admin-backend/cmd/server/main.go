@@ -147,6 +147,21 @@ func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor) 
 	// 全局限流中间件（使用 tollbooth，每秒100个请求）
 	router.Use(middleware.TollboothGlobalRateLimitMiddleware())
 
+	// 安全验证中间件
+	router.Use(middleware.SecurityValidationMiddleware())
+
+	// SQL安全中间件
+	router.Use(middleware.SQLSecurityMiddleware())
+
+	// 增强输入验证中间件
+	router.Use(middleware.EnhancedInputValidationMiddleware())
+
+	// XSS防护中间件
+	router.Use(middleware.XSSProtectionMiddleware())
+
+	// CSP违规报告中间件
+	router.Use(middleware.CSPViolationReportMiddleware())
+
 	// 请求ID中间件
 	router.Use(middleware.RequestIDMiddleware())
 

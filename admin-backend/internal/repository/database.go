@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/domain"
+	internal_utils "i18n-flow/internal/utils"
 	"log"
 	"os"
 	"strings"
@@ -35,9 +36,11 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 		PrepareStmt: true,
 	}
 
-	// 在生产环境中禁用详细日志
+	// 配置安全日志记录器
 	if os.Getenv("GO_ENV") == "production" {
-		gormConfig.Logger = logger.Default.LogMode(logger.Silent)
+		gormConfig.Logger = internal_utils.GlobalDBSecurityMonitor.GetLogger().LogMode(logger.Warn)
+	} else {
+		gormConfig.Logger = internal_utils.GlobalDBSecurityMonitor.GetLogger().LogMode(logger.Info)
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), gormConfig)

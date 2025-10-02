@@ -26,16 +26,22 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		}
 
 		// 内容安全策略 - 防止XSS攻击
-		// 这里设置较为严格的策略，可根据实际需求调整
+		// 更严格的CSP策略，移除unsafe-inline和unsafe-eval，添加违规报告
 		csp := "default-src 'self'; " +
-			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
-			"style-src 'self' 'unsafe-inline'; " +
+			"script-src 'self'; " +
+			"style-src 'self'; " +
 			"img-src 'self' data: https:; " +
 			"font-src 'self' data:; " +
 			"connect-src 'self'; " +
 			"frame-ancestors 'none'; " +
 			"base-uri 'self'; " +
-			"form-action 'self'"
+			"form-action 'self'; " +
+			"object-src 'none'; " +
+			"media-src 'none'; " +
+			"worker-src 'none'; " +
+			"child-src 'none'; " +
+			"frame-src 'none'; " +
+			"report-uri /csp-report"
 		c.Header("Content-Security-Policy", csp)
 
 		// 引用者策略 - 控制Referer头的发送
