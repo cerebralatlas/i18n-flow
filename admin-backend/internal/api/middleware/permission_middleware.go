@@ -83,8 +83,8 @@ func RequireProjectPermission(requiredRole string, projectMemberService domain.P
 		// 检查项目权限
 		hasPermission, err := projectMemberService.CheckPermission(
 			ctx.Request.Context(),
-			userID.(uint),
-			uint(projectID),
+			userID.(uint64),
+			uint64(projectID),
 			requiredRole,
 		)
 		if err != nil {

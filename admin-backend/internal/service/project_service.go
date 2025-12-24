@@ -29,7 +29,7 @@ func NewProjectService(
 }
 
 // Create 创建项目
-func (s *ProjectService) Create(ctx context.Context, req domain.CreateProjectRequest) (*domain.Project, error) {
+func (s *ProjectService) Create(ctx context.Context, req domain.CreateProjectRequest, userID uint64) (*domain.Project, error) {
 	// 生成slug
 	projectSlug := slug.Make(req.Name)
 	if projectSlug == "" {
@@ -48,6 +48,8 @@ func (s *ProjectService) Create(ctx context.Context, req domain.CreateProjectReq
 		Description: strings.TrimSpace(req.Description),
 		Slug:        projectSlug,
 		Status:      "active",
+		CreatedBy:   userID,
+		UpdatedBy:   userID,
 	}
 
 	if err := s.projectRepo.Create(ctx, project); err != nil {
@@ -58,7 +60,7 @@ func (s *ProjectService) Create(ctx context.Context, req domain.CreateProjectReq
 }
 
 // GetByID 根据ID获取项目
-func (s *ProjectService) GetByID(ctx context.Context, id uint) (*domain.Project, error) {
+func (s *ProjectService) GetByID(ctx context.Context, id uint64) (*domain.Project, error) {
 	return s.projectRepo.GetByID(ctx, id)
 }
 
@@ -78,7 +80,7 @@ func (s *ProjectService) GetAll(ctx context.Context, limit, offset int, keyword 
 }
 
 // Update 更新项目
-func (s *ProjectService) Update(ctx context.Context, id uint, req domain.UpdateProjectRequest) (*domain.Project, error) {
+func (s *ProjectService) Update(ctx context.Context, id uint64, req domain.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
 	// 获取现有项目
 	project, err := s.projectRepo.GetByID(ctx, id)
 	if err != nil {
@@ -111,6 +113,9 @@ func (s *ProjectService) Update(ctx context.Context, id uint, req domain.UpdateP
 		project.Status = req.Status
 	}
 
+	// 更新UpdatedBy字段
+	project.UpdatedBy = userID
+
 	// 保存更新
 	if err := s.projectRepo.Update(ctx, project); err != nil {
 		return nil, err
@@ -120,7 +125,7 @@ func (s *ProjectService) Update(ctx context.Context, id uint, req domain.UpdateP
 }
 
 // Delete 删除项目
-func (s *ProjectService) Delete(ctx context.Context, id uint) error {
+func (s *ProjectService) Delete(ctx context.Context, id uint64) error {
 	// 检查项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, id)
 	if err != nil {
@@ -132,7 +137,7 @@ func (s *ProjectService) Delete(ctx context.Context, id uint) error {
 }
 
 // GetAccessibleProjects 获取用户可访问的项目列表
-func (s *ProjectService) GetAccessibleProjects(ctx context.Context, userID uint, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
+func (s *ProjectService) GetAccessibleProjects(ctx context.Context, userID uint64, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
 	// 获取用户信息
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -156,7 +161,7 @@ func (s *ProjectService) GetAccessibleProjects(ctx context.Context, userID uint,
 	}
 
 	// 提取项目ID列表
-	projectIDs := make([]uint, len(members))
+	projectIDs := make([]uint64, len(members))
 	for i, member := range members {
 		projectIDs[i] = member.ProjectID
 	}

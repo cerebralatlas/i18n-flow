@@ -124,11 +124,13 @@ func createAdminUser(db *gorm.DB) error {
 		}
 
 		admin := domain.User{
-			Username: adminUsername,
-			Email:    "admin@i18n-flow.com", // 默认管理员邮箱
-			Password: string(password),
-			Role:     "admin",
-			Status:   "active",
+			Username:  adminUsername,
+			Email:     "admin@i18n-flow.com", // 默认管理员邮箱
+			Password:  string(password),
+			Role:      "admin",
+			Status:    "active",
+			CreatedBy: 1, // 系统管理员创建
+			UpdatedBy: 1,
 		}
 
 		if err := db.Create(&admin).Error; err != nil {
@@ -155,6 +157,7 @@ func createAdminUser(db *gorm.DB) error {
 			}
 
 			if needUpdate {
+				admin.UpdatedBy = 1 // 系统管理员更新
 				if err := db.Save(&admin).Error; err != nil {
 					log.Printf("更新管理员用户信息失败: %v", err)
 				} else {
@@ -178,26 +181,26 @@ func createDefaultLanguages(db *gorm.DB) error {
 	if count == 0 {
 		// 定义常见语言列表
 		languages := []domain.Language{
-			{Code: "en", Name: "English", IsDefault: true},
-			{Code: "zh_CN", Name: "简体中文", IsDefault: false},
-			{Code: "zh_TW", Name: "繁體中文", IsDefault: false},
-			{Code: "ja", Name: "日本語", IsDefault: false},
-			{Code: "ko", Name: "한국어", IsDefault: false},
-			{Code: "fr", Name: "Français", IsDefault: false},
-			{Code: "de", Name: "Deutsch", IsDefault: false},
-			{Code: "es", Name: "Español", IsDefault: false},
-			{Code: "it", Name: "Italiano", IsDefault: false},
-			{Code: "ru", Name: "Русский", IsDefault: false},
-			{Code: "pt", Name: "Português", IsDefault: false},
-			{Code: "nl", Name: "Nederlands", IsDefault: false},
-			{Code: "ar", Name: "العربية", IsDefault: false},
-			{Code: "hi", Name: "हिन्दी", IsDefault: false},
-			{Code: "tr", Name: "Türkçe", IsDefault: false},
-			{Code: "pl", Name: "Polski", IsDefault: false},
-			{Code: "vi", Name: "Tiếng Việt", IsDefault: false},
-			{Code: "th", Name: "ไทย", IsDefault: false},
-			{Code: "id", Name: "Bahasa Indonesia", IsDefault: false},
-			{Code: "sv", Name: "Svenska", IsDefault: false},
+			{Code: "en", Name: "English", IsDefault: true, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "zh_CN", Name: "简体中文", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "zh_TW", Name: "繁體中文", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "ja", Name: "日本語", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "ko", Name: "한국어", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "fr", Name: "Français", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "de", Name: "Deutsch", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "es", Name: "Español", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "it", Name: "Italiano", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "ru", Name: "Русский", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "pt", Name: "Português", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "nl", Name: "Nederlands", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "ar", Name: "العربية", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "hi", Name: "हिन्दी", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "tr", Name: "Türkçe", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "pl", Name: "Polski", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "vi", Name: "Tiếng Việt", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "th", Name: "ไทย", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "id", Name: "Bahasa Indonesia", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
+			{Code: "sv", Name: "Svenska", IsDefault: false, CreatedBy: 1, UpdatedBy: 1},
 		}
 
 		if err := db.CreateInBatches(languages, len(languages)).Error; err != nil {

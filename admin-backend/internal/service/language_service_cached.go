@@ -27,8 +27,8 @@ func NewCachedLanguageService(
 }
 
 // Create 创建语言（更新缓存）
-func (s *CachedLanguageService) Create(ctx context.Context, req domain.CreateLanguageRequest) (*domain.Language, error) {
-	language, err := s.languageService.Create(ctx, req)
+func (s *CachedLanguageService) Create(ctx context.Context, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+	language, err := s.languageService.Create(ctx, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -46,7 +46,7 @@ func (s *CachedLanguageService) Create(ctx context.Context, req domain.CreateLan
 }
 
 // GetByID 根据ID获取语言
-func (s *CachedLanguageService) GetByID(ctx context.Context, id uint) (*domain.Language, error) {
+func (s *CachedLanguageService) GetByID(ctx context.Context, id uint64) (*domain.Language, error) {
 	// 单个语言查询不频繁，不进行缓存
 	return s.languageService.GetByID(ctx, id)
 }
@@ -82,8 +82,8 @@ func (s *CachedLanguageService) GetAll(ctx context.Context) ([]*domain.Language,
 }
 
 // Update 更新语言（更新缓存）
-func (s *CachedLanguageService) Update(ctx context.Context, id uint, req domain.CreateLanguageRequest) (*domain.Language, error) {
-	language, err := s.languageService.Update(ctx, id, req)
+func (s *CachedLanguageService) Update(ctx context.Context, id uint64, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+	language, err := s.languageService.Update(ctx, id, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *CachedLanguageService) Update(ctx context.Context, id uint, req domain.
 }
 
 // Delete 删除语言（更新缓存）
-func (s *CachedLanguageService) Delete(ctx context.Context, id uint) error {
+func (s *CachedLanguageService) Delete(ctx context.Context, id uint64) error {
 	err := s.languageService.Delete(ctx, id)
 	if err != nil {
 		return err

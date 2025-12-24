@@ -155,12 +155,12 @@ func (s *CacheService) AddRandomExpiration(baseExpiration time.Duration) time.Du
 }
 
 // GetTranslationKey 获取翻译缓存键
-func (s *CacheService) GetTranslationKey(projectID uint) string {
+func (s *CacheService) GetTranslationKey(projectID uint64) string {
 	return fmt.Sprintf("%s%d", domain.TranslationKeyPrefix, projectID)
 }
 
 // GetTranslationMatrixKey 获取翻译矩阵缓存键
-func (s *CacheService) GetTranslationMatrixKey(projectID uint, keyword string) string {
+func (s *CacheService) GetTranslationMatrixKey(projectID uint64, keyword string) string {
 	if keyword == "" {
 		return fmt.Sprintf("%s%d", domain.TranslationMatrixPrefix, projectID)
 	}
@@ -178,7 +178,7 @@ func (s *CacheService) GetLanguagesKey() string {
 }
 
 // GetProjectKey 获取项目缓存键
-func (s *CacheService) GetProjectKey(projectID uint) string {
+func (s *CacheService) GetProjectKey(projectID uint64) string {
 	return fmt.Sprintf("%s%d", domain.ProjectKeyPrefix, projectID)
 }
 

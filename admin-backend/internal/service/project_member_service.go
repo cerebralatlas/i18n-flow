@@ -26,7 +26,7 @@ func NewProjectMemberService(
 }
 
 // AddMember 添加项目成员
-func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint, req domain.AddProjectMemberRequest) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, req domain.AddProjectMemberRequest, userID uint64) (*domain.ProjectMember, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
@@ -46,6 +46,8 @@ func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint, re
 		ProjectID: projectID,
 		UserID:    req.UserID,
 		Role:      req.Role,
+		CreatedBy: userID,
+		UpdatedBy: userID,
 	}
 
 	if err := s.memberRepo.Create(ctx, member); err != nil {
@@ -56,7 +58,7 @@ func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint, re
 }
 
 // GetProjectMembers 获取项目成员列表
-func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint) ([]*domain.ProjectMemberInfo, error) {
+func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint64) ([]*domain.ProjectMemberInfo, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
@@ -72,7 +74,7 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	// 批量获取用户信息 (修复 N+1 查询)
-	userIDs := make([]uint, len(members))
+	userIDs := make([]uint64, len(members))
 	for i, member := range members {
 		userIDs[i] = member.UserID
 	}
@@ -82,7 +84,7 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	// 构建用户ID到用户的映射
-	userMap := make(map[uint]*domain.User)
+	userMap := make(map[uint64]*domain.User)
 	for _, user := range users {
 		userMap[user.ID] = user
 	}
@@ -109,7 +111,7 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 }
 
 // GetUserProjects 获取用户参与的项目列表
-func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint) ([]*domain.Project, error) {
+func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint64) ([]*domain.Project, error) {
 	// 检查用户是否存在
 	if _, err := s.userRepo.GetByID(ctx, userID); err != nil {
 		return nil, err
@@ -125,7 +127,7 @@ func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint)
 	}
 
 	// 批量获取项目信息 (修复 N+1 查询)
-	projectIDs := make([]uint, len(members))
+	projectIDs := make([]uint64, len(members))
 	for i, member := range members {
 		projectIDs[i] = member.ProjectID
 	}
@@ -138,7 +140,7 @@ func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint)
 }
 
 // UpdateMemberRole 更新成员角色
-func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint, req domain.UpdateProjectMemberRequest) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint64, req domain.UpdateProjectMemberRequest) (*domain.ProjectMember, error) {
 	member, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, userID)
 	if err != nil {
 		return nil, err
@@ -153,7 +155,7 @@ func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, 
 }
 
 // RemoveMember 移除项目成员
-func (s *ProjectMemberService) RemoveMember(ctx context.Context, projectID, userID uint) error {
+func (s *ProjectMemberService) RemoveMember(ctx context.Context, projectID, userID uint64) error {
 	// 检查成员是否存在
 	member, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, userID)
 	if err != nil {
@@ -169,7 +171,7 @@ func (s *ProjectMemberService) RemoveMember(ctx context.Context, projectID, user
 }
 
 // CheckPermission 检查用户权限
-func (s *ProjectMemberService) CheckPermission(ctx context.Context, userID, projectID uint, requiredRole string) (bool, error) {
+func (s *ProjectMemberService) CheckPermission(ctx context.Context, userID, projectID uint64, requiredRole string) (bool, error) {
 	// 获取用户信息
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
@@ -208,7 +210,7 @@ func (s *ProjectMemberService) CheckPermission(ctx context.Context, userID, proj
 }
 
 // GetMemberRole 获取用户在项目中的角色
-func (s *ProjectMemberService) GetMemberRole(ctx context.Context, userID, projectID uint) (string, error) {
+func (s *ProjectMemberService) GetMemberRole(ctx context.Context, userID, projectID uint64) (string, error) {
 	// 获取用户信息
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {

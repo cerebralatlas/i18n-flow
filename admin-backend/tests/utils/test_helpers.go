@@ -175,7 +175,7 @@ func CreateTestLanguage(t *testing.T, db *gorm.DB, code, name string, isDefault 
 }
 
 // CreateTestTranslation 创建测试翻译
-func CreateTestTranslation(t *testing.T, db *gorm.DB, projectID uint, keyName, context string, languageID uint, value string) *domain.Translation {
+func CreateTestTranslation(t *testing.T, db *gorm.DB, projectID uint64, keyName, context string, languageID uint64, value string) *domain.Translation {
 	translation := &domain.Translation{
 		ProjectID:  projectID,
 		KeyName:    keyName,

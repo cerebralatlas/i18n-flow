@@ -29,7 +29,7 @@ func NewTranslationService(
 }
 
 // Create 创建翻译
-func (s *TranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest) (*domain.Translation, error) {
+func (s *TranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, req.ProjectID)
 	if err != nil {
@@ -62,6 +62,8 @@ func (s *TranslationService) Create(ctx context.Context, req domain.CreateTransl
 		LanguageID: req.LanguageID,
 		Value:      strings.TrimSpace(req.Value),
 		Status:     "active",
+		CreatedBy:  userID,
+		UpdatedBy:  userID,
 	}
 
 	if err := s.translationRepo.Create(ctx, translation); err != nil {
@@ -87,8 +89,8 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 	}
 
 	// 收集所有请求中的项目和语言ID
-	projectIDSet := make(map[uint]bool)
-	languageIDSet := make(map[uint]bool)
+	projectIDSet := make(map[uint64]bool)
+	languageIDSet := make(map[uint64]bool)
 
 	for _, req := range requests {
 		projectIDSet[req.ProjectID] = true
@@ -96,11 +98,11 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 	}
 
 	// 转换为切片
-	projectIDs := make([]uint, 0, len(projectIDSet))
+	projectIDs := make([]uint64, 0, len(projectIDSet))
 	for id := range projectIDSet {
 		projectIDs = append(projectIDs, id)
 	}
-	languageIDs := make([]uint, 0, len(languageIDSet))
+	languageIDs := make([]uint64, 0, len(languageIDSet))
 	for id := range languageIDSet {
 		languageIDs = append(languageIDs, id)
 	}
@@ -123,21 +125,40 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 		return domain.ErrLanguageNotFound
 	}
 
+	// 构建所有要查询的键（修复 N+1 查询问题）
+	keys := make([]domain.TranslationKey, 0, len(requests))
+	for _, req := range requests {
+		keys = append(keys, domain.TranslationKey{
+			ProjectID:  req.ProjectID,
+			KeyName:    strings.TrimSpace(req.KeyName),
+			LanguageID: req.LanguageID,
+		})
+	}
+
+	// 批量查询已存在的翻译
+	existingTranslations, err := s.translationRepo.GetByProjectKeyLanguages(ctx, keys)
+	if err != nil {
+		return err
+	}
+
+	// 构建已存在翻译的 map 用于快速查找
+	existingMap := make(map[string]*domain.Translation)
+	for _, t := range existingTranslations {
+		key := fmt.Sprintf("%d:%s:%d", t.ProjectID, t.KeyName, t.LanguageID)
+		existingMap[key] = t
+	}
+
 	// 检查重复翻译并转换为domain对象
 	translations := make([]*domain.Translation, 0, len(requests))
 	duplicates := make([]string, 0)
 
 	for _, req := range requests {
 		keyName := strings.TrimSpace(req.KeyName)
+		mapKey := fmt.Sprintf("%d:%s:%d", req.ProjectID, keyName, req.LanguageID)
 
-		// 检查是否已存在
-		existing, err := s.translationRepo.GetByProjectKeyLanguage(ctx, req.ProjectID, keyName, req.LanguageID)
-		if err != nil {
-			return err
-		}
-
-		if existing != nil {
-			duplicates = append(duplicates, fmt.Sprintf("项目ID:%d, 键名:%s, 语言ID:%d", req.ProjectID, keyName, req.LanguageID))
+		// 使用 map 快速查找
+		if existing, exists := existingMap[mapKey]; exists {
+			duplicates = append(duplicates, fmt.Sprintf("项目ID:%d, 键名:%s, 语言ID:%d", existing.ProjectID, existing.KeyName, existing.LanguageID))
 			continue
 		}
 
@@ -178,8 +199,8 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.
 	}
 
 	// 收集所有请求中的项目和语言ID
-	projectIDSet := make(map[uint]bool)
-	languageIDSet := make(map[uint]bool)
+	projectIDSet := make(map[uint64]bool)
+	languageIDSet := make(map[uint64]bool)
 
 	for _, req := range requests {
 		projectIDSet[req.ProjectID] = true
@@ -187,11 +208,11 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.
 	}
 
 	// 转换为切片
-	projectIDs := make([]uint, 0, len(projectIDSet))
+	projectIDs := make([]uint64, 0, len(projectIDSet))
 	for id := range projectIDSet {
 		projectIDs = append(projectIDs, id)
 	}
-	languageIDs := make([]uint, 0, len(languageIDSet))
+	languageIDs := make([]uint64, 0, len(languageIDSet))
 	for id := range languageIDSet {
 		languageIDs = append(languageIDs, id)
 	}
@@ -241,7 +262,7 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dom
 	}
 
 	// 创建语言代码到ID的映射
-	languageCodeToID := make(map[string]uint)
+	languageCodeToID := make(map[string]uint64)
 	for _, lang := range languages {
 		languageCodeToID[lang.Code] = lang.ID
 	}
@@ -274,12 +295,12 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dom
 }
 
 // GetByID 根据ID获取翻译
-func (s *TranslationService) GetByID(ctx context.Context, id uint) (*domain.Translation, error) {
+func (s *TranslationService) GetByID(ctx context.Context, id uint64) (*domain.Translation, error) {
 	return s.translationRepo.GetByID(ctx, id)
 }
 
 // GetByProjectID 根据项目ID获取翻译
-func (s *TranslationService) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
+func (s *TranslationService) GetByProjectID(ctx context.Context, projectID uint64, limit, offset int) ([]*domain.Translation, int64, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
@@ -300,7 +321,7 @@ func (s *TranslationService) GetByProjectID(ctx context.Context, projectID uint,
 }
 
 // GetMatrix 获取翻译矩阵
-func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
@@ -311,7 +332,7 @@ func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint, limi
 }
 
 // Update 更新翻译
-func (s *TranslationService) Update(ctx context.Context, id uint, req domain.CreateTranslationRequest) (*domain.Translation, error) {
+func (s *TranslationService) Update(ctx context.Context, id uint64, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 获取现有翻译
 	translation, err := s.translationRepo.GetByID(ctx, id)
 	if err != nil {
@@ -349,6 +370,9 @@ func (s *TranslationService) Update(ctx context.Context, id uint, req domain.Cre
 		translation.Value = strings.TrimSpace(req.Value)
 	}
 
+	// 更新UpdatedBy字段
+	translation.UpdatedBy = userID
+
 	// 保存更新
 	if err := s.translationRepo.Update(ctx, translation); err != nil {
 		return nil, err
@@ -358,7 +382,7 @@ func (s *TranslationService) Update(ctx context.Context, id uint, req domain.Cre
 }
 
 // Delete 删除翻译
-func (s *TranslationService) Delete(ctx context.Context, id uint) error {
+func (s *TranslationService) Delete(ctx context.Context, id uint64) error {
 	// 检查翻译是否存在
 	_, err := s.translationRepo.GetByID(ctx, id)
 	if err != nil {
@@ -369,7 +393,7 @@ func (s *TranslationService) Delete(ctx context.Context, id uint) error {
 }
 
 // DeleteBatch 批量删除翻译
-func (s *TranslationService) DeleteBatch(ctx context.Context, ids []uint) error {
+func (s *TranslationService) DeleteBatch(ctx context.Context, ids []uint64) error {
 	if len(ids) == 0 {
 		return nil
 	}
@@ -378,7 +402,7 @@ func (s *TranslationService) DeleteBatch(ctx context.Context, ids []uint) error 
 }
 
 // Export 导出翻译
-func (s *TranslationService) Export(ctx context.Context, projectID uint, format string) ([]byte, error) {
+func (s *TranslationService) Export(ctx context.Context, projectID uint64, format string) ([]byte, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
@@ -400,7 +424,7 @@ func (s *TranslationService) Export(ctx context.Context, projectID uint, format 
 }
 
 // Import 导入翻译
-func (s *TranslationService) Import(ctx context.Context, projectID uint, data []byte, format string) error {
+func (s *TranslationService) Import(ctx context.Context, projectID uint64, data []byte, format string) error {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
@@ -416,7 +440,7 @@ func (s *TranslationService) Import(ctx context.Context, projectID uint, data []
 }
 
 // importFromJSON 从JSON导入翻译
-func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint, data []byte) error {
+func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint64, data []byte) error {
 	var rawData map[string]interface{}
 	if err := json.Unmarshal(data, &rawData); err != nil {
 		return fmt.Errorf("invalid JSON format: %w", err)
@@ -429,7 +453,7 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint,
 	}
 
 	// 创建语言代码到ID的映射
-	languageCodeToID := make(map[string]uint)
+	languageCodeToID := make(map[string]uint64)
 	for _, lang := range languages {
 		languageCodeToID[lang.Code] = lang.ID
 	}

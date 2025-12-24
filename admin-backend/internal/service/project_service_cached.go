@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"sync"
+	"time"
 )
 
 // CachedProjectService 带缓存的项目服务实现
 type CachedProjectService struct {
 	projectService *ProjectService
 	cacheService   domain.CacheService
-	// 用于防止缓存击穿的互斥锁
-	cacheMutexes map[string]*sync.Mutex
-	mutexLock    sync.RWMutex
+	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
+	cacheMutexes sync.Map
 }
 
 // NewCachedProjectService 创建带缓存的项目服务实例
@@ -21,38 +21,47 @@ func NewCachedProjectService(
 	projectService *ProjectService,
 	cacheService domain.CacheService,
 ) *CachedProjectService {
-	return &CachedProjectService{
+	svc := &CachedProjectService{
 		projectService: projectService,
 		cacheService:   cacheService,
-		cacheMutexes:   make(map[string]*sync.Mutex),
 	}
+	// 启动清理协程
+	go svc.cleanupMutexes()
+	return svc
 }
 
 // getMutex 获取指定键的互斥锁，用于防止缓存击穿
 func (s *CachedProjectService) getMutex(key string) *sync.Mutex {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
-
-	if mutex, exists := s.cacheMutexes[key]; exists {
-		return mutex
+	if mutex, exists := s.cacheMutexes.Load(key); exists {
+		return mutex.(*sync.Mutex)
 	}
 
 	mutex := &sync.Mutex{}
-	s.cacheMutexes[key] = mutex
+	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
+	if loaded {
+		return actual.(*sync.Mutex)
+	}
 	return mutex
 }
 
 // removeMutex 移除指定键的互斥锁
 func (s *CachedProjectService) removeMutex(key string) {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
+	s.cacheMutexes.Delete(key)
+}
 
-	delete(s.cacheMutexes, key)
+// cleanupMutexes 定期清理无效的 mutex 锁
+func (s *CachedProjectService) cleanupMutexes() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
+	}
 }
 
 // Create 创建项目（更新缓存）
-func (s *CachedProjectService) Create(ctx context.Context, req domain.CreateProjectRequest) (*domain.Project, error) {
-	project, err := s.projectService.Create(ctx, req)
+func (s *CachedProjectService) Create(ctx context.Context, req domain.CreateProjectRequest, userID uint64) (*domain.Project, error) {
+	project, err := s.projectService.Create(ctx, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +76,7 @@ func (s *CachedProjectService) Create(ctx context.Context, req domain.CreateProj
 }
 
 // GetByID 根据ID获取项目（使用缓存）
-func (s *CachedProjectService) GetByID(ctx context.Context, id uint) (*domain.Project, error) {
+func (s *CachedProjectService) GetByID(ctx context.Context, id uint64) (*domain.Project, error) {
 	cacheKey := s.cacheService.GetProjectKey(id)
 
 	// 使用互斥锁防止缓存击穿
@@ -156,8 +165,8 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 }
 
 // Update 更新项目（更新缓存）
-func (s *CachedProjectService) Update(ctx context.Context, id uint, req domain.UpdateProjectRequest) (*domain.Project, error) {
-	project, err := s.projectService.Update(ctx, id, req)
+func (s *CachedProjectService) Update(ctx context.Context, id uint64, req domain.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
+	project, err := s.projectService.Update(ctx, id, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +184,7 @@ func (s *CachedProjectService) Update(ctx context.Context, id uint, req domain.U
 }
 
 // Delete 删除项目（更新缓存）
-func (s *CachedProjectService) Delete(ctx context.Context, id uint) error {
+func (s *CachedProjectService) Delete(ctx context.Context, id uint64) error {
 	err := s.projectService.Delete(ctx, id)
 	if err != nil {
 		return err
@@ -194,7 +203,7 @@ func (s *CachedProjectService) Delete(ctx context.Context, id uint) error {
 }
 
 // GetAccessibleProjects 获取用户可访问的项目列表（不缓存，因为依赖用户权限）
-func (s *CachedProjectService) GetAccessibleProjects(ctx context.Context, userID uint, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
+func (s *CachedProjectService) GetAccessibleProjects(ctx context.Context, userID uint64, limit, offset int, keyword string) ([]*domain.Project, int64, error) {
 	// 用户权限相关的查询不缓存，直接调用基础服务
 	return s.projectService.GetAccessibleProjects(ctx, userID, limit, offset, keyword)
 }

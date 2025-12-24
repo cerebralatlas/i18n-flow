@@ -31,11 +31,11 @@ type CacheService interface {
 	HDel(ctx context.Context, key string, fields ...string) error
 
 	// 缓存键生成
-	GetTranslationKey(projectID uint) string
-	GetTranslationMatrixKey(projectID uint, keyword string) string
+	GetTranslationKey(projectID uint64) string
+	GetTranslationMatrixKey(projectID uint64, keyword string) string
 	GetDashboardStatsKey() string
 	GetLanguagesKey() string
-	GetProjectKey(projectID uint) string
+	GetProjectKey(projectID uint64) string
 	GetProjectsKey() string
 	
 	// 添加随机过期时间防止雪崩

@@ -19,7 +19,7 @@ func NewLanguageRepository(db *gorm.DB) *LanguageRepository {
 }
 
 // GetByID 根据ID获取语言
-func (r *LanguageRepository) GetByID(ctx context.Context, id uint) (*domain.Language, error) {
+func (r *LanguageRepository) GetByID(ctx context.Context, id uint64) (*domain.Language, error) {
 	var language domain.Language
 	if err := r.db.WithContext(ctx).First(&language, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -31,7 +31,7 @@ func (r *LanguageRepository) GetByID(ctx context.Context, id uint) (*domain.Lang
 }
 
 // GetByIDs 批量获取语言
-func (r *LanguageRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.Language, error) {
+func (r *LanguageRepository) GetByIDs(ctx context.Context, ids []uint64) ([]*domain.Language, error) {
 	if len(ids) == 0 {
 		return []*domain.Language{}, nil
 	}
@@ -75,7 +75,7 @@ func (r *LanguageRepository) Update(ctx context.Context, language *domain.Langua
 }
 
 // Delete 删除语言
-func (r *LanguageRepository) Delete(ctx context.Context, id uint) error {
+func (r *LanguageRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&domain.Language{}, id).Error
 }
 

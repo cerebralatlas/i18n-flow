@@ -110,7 +110,7 @@ func (h *UserHandler) GetUserInfo(ctx *gin.Context) {
 	}
 
 	// 获取用户信息
-	user, err := h.userService.GetUserInfo(ctx.Request.Context(), userID.(uint))
+	user, err := h.userService.GetUserInfo(ctx.Request.Context(), userID.(uint64))
 	if err != nil {
 		response.InternalServerError(ctx, "获取用户信息失败")
 		return
@@ -216,14 +216,14 @@ func (h *UserHandler) GetUsers(ctx *gin.Context) {
 func (h *UserHandler) GetUser(ctx *gin.Context) {
 	// 解析用户ID
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
 	}
 
 	// 获取用户信息
-	user, err := h.userService.GetUserByID(ctx.Request.Context(), uint(id))
+	user, err := h.userService.GetUserByID(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
@@ -254,7 +254,7 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	// 解析用户ID
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
@@ -269,7 +269,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 	}
 
 	// 调用更新用户服务
-	user, err := h.userService.UpdateUser(ctx.Request.Context(), uint(id), req)
+	user, err := h.userService.UpdateUser(ctx.Request.Context(), id, req)
 	if err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
@@ -316,7 +316,7 @@ func (h *UserHandler) ChangePassword(ctx *gin.Context) {
 	}
 
 	// 调用修改密码服务
-	if err := h.userService.ChangePassword(ctx.Request.Context(), userID.(uint), req); err != nil {
+	if err := h.userService.ChangePassword(ctx.Request.Context(), userID.(uint64), req); err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
 			response.NotFound(ctx, "用户不存在")
@@ -347,7 +347,7 @@ func (h *UserHandler) ChangePassword(ctx *gin.Context) {
 func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	// 解析用户ID
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
@@ -362,7 +362,7 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	}
 
 	// 调用重置密码服务
-	if err := h.userService.ResetPassword(ctx.Request.Context(), uint(id), req); err != nil {
+	if err := h.userService.ResetPassword(ctx.Request.Context(), id, req); err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
 			response.NotFound(ctx, "用户不存在")
@@ -391,14 +391,14 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 	// 解析用户ID
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
 	}
 
 	// 调用删除用户服务
-	if err := h.userService.DeleteUser(ctx.Request.Context(), uint(id)); err != nil {
+	if err := h.userService.DeleteUser(ctx.Request.Context(), id); err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
 			response.NotFound(ctx, "用户不存在")

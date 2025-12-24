@@ -39,7 +39,14 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	translation, err := h.translationService.Create(ctx.Request.Context(), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	translation, err := h.translationService.Create(ctx.Request.Context(), req, userID.(uint64))
 	if err != nil {
 		// 检查是否是AppError类型
 		if appErr, ok := domain.IsAppError(err); ok {
@@ -168,7 +175,7 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 // @Router       /translations/by-project/{project_id} [get]
 func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
@@ -187,7 +194,7 @@ func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	translations, total, err := h.translationService.GetByProjectID(ctx.Request.Context(), uint(projectID), pageSize, offset)
+	translations, total, err := h.translationService.GetByProjectID(ctx.Request.Context(), projectID, pageSize, offset)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -225,7 +232,7 @@ func (h *TranslationHandler) GetByProjectID(ctx *gin.Context) {
 // @Router       /translations/matrix/by-project/{project_id} [get]
 func (h *TranslationHandler) GetMatrix(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
@@ -245,7 +252,7 @@ func (h *TranslationHandler) GetMatrix(ctx *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	matrix, total, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), pageSize, offset, keyword)
+	matrix, total, err := h.translationService.GetMatrix(ctx.Request.Context(), projectID, pageSize, offset, keyword)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -280,13 +287,13 @@ func (h *TranslationHandler) GetMatrix(ctx *gin.Context) {
 // @Router       /translations/{id} [get]
 func (h *TranslationHandler) GetByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的翻译ID")
 		return
 	}
 
-	translation, err := h.translationService.GetByID(ctx.Request.Context(), uint(id))
+	translation, err := h.translationService.GetByID(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrTranslationNotFound:
@@ -315,7 +322,7 @@ func (h *TranslationHandler) GetByID(ctx *gin.Context) {
 // @Router       /translations/{id} [put]
 func (h *TranslationHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的翻译ID")
 		return
@@ -327,7 +334,14 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	translation, err := h.translationService.Update(ctx.Request.Context(), uint(id), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	translation, err := h.translationService.Update(ctx.Request.Context(), id, req, userID.(uint64))
 	if err != nil {
 		// 检查是否是AppError类型
 		if appErr, ok := domain.IsAppError(err); ok {
@@ -373,13 +387,13 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 // @Router       /translations/{id} [delete]
 func (h *TranslationHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的翻译ID")
 		return
 	}
 
-	err = h.translationService.Delete(ctx.Request.Context(), uint(id))
+	err = h.translationService.Delete(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrTranslationNotFound:
@@ -399,13 +413,13 @@ func (h *TranslationHandler) Delete(ctx *gin.Context) {
 // @Tags         翻译管理
 // @Accept       json
 // @Produce      json
-// @Param        ids  body      []uint  true  "翻译ID列表"
+// @Param        ids  body      []uint64  true  "翻译ID列表"
 // @Success      204  {object}  nil
 // @Failure      400  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /translations/batch-delete [post]
 func (h *TranslationHandler) DeleteBatch(ctx *gin.Context) {
-	var ids []uint
+	var ids []uint64
 
 	if err := ctx.ShouldBindJSON(&ids); err != nil {
 		response.ValidationError(ctx, err.Error())
@@ -435,14 +449,14 @@ func (h *TranslationHandler) DeleteBatch(ctx *gin.Context) {
 // @Router       /exports/project/{project_id} [get]
 func (h *TranslationHandler) Export(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
 	// 获取翻译矩阵数据
-	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), -1, 0, "")
+	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), projectID, -1, 0, "")
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -473,7 +487,7 @@ func (h *TranslationHandler) Export(ctx *gin.Context) {
 // @Router       /imports/project/{project_id} [post]
 func (h *TranslationHandler) Import(ctx *gin.Context) {
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
@@ -488,7 +502,7 @@ func (h *TranslationHandler) Import(ctx *gin.Context) {
 		return
 	}
 
-	err = h.translationService.Import(ctx.Request.Context(), uint(projectID), data, format)
+	err = h.translationService.Import(ctx.Request.Context(), projectID, data, format)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:

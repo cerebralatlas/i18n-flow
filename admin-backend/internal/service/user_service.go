@@ -97,7 +97,7 @@ func (s *UserService) RefreshToken(ctx context.Context, req domain.RefreshReques
 }
 
 // GetUserInfo 获取用户信息
-func (s *UserService) GetUserInfo(ctx context.Context, userID uint) (*domain.User, error) {
+func (s *UserService) GetUserInfo(ctx context.Context, userID uint64) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return nil, err
@@ -161,7 +161,7 @@ func (s *UserService) GetAllUsers(ctx context.Context, limit, offset int, keywor
 }
 
 // GetUserByID 根据ID获取用户
-func (s *UserService) GetUserByID(ctx context.Context, id uint) (*domain.User, error) {
+func (s *UserService) GetUserByID(ctx context.Context, id uint64) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uint) (*domain.User, e
 }
 
 // UpdateUser 更新用户
-func (s *UserService) UpdateUser(ctx context.Context, id uint, req domain.UpdateUserRequest) (*domain.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, id uint64, req domain.UpdateUserRequest) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -214,7 +214,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uint, req domain.Update
 }
 
 // ChangePassword 修改密码
-func (s *UserService) ChangePassword(ctx context.Context, userID uint, req domain.ChangePasswordRequest) error {
+func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req domain.ChangePasswordRequest) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -236,7 +236,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID uint, req domai
 }
 
 // ResetPassword 重置用户密码（管理员功能）
-func (s *UserService) ResetPassword(ctx context.Context, userID uint, req domain.ResetPasswordRequest) error {
+func (s *UserService) ResetPassword(ctx context.Context, userID uint64, req domain.ResetPasswordRequest) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -253,7 +253,7 @@ func (s *UserService) ResetPassword(ctx context.Context, userID uint, req domain
 }
 
 // DeleteUser 删除用户
-func (s *UserService) DeleteUser(ctx context.Context, id uint) error {
+func (s *UserService) DeleteUser(ctx context.Context, id uint64) error {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return err

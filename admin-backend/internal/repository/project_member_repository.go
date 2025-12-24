@@ -19,7 +19,7 @@ func NewProjectMemberRepository(db *gorm.DB) *ProjectMemberRepository {
 }
 
 // GetByProjectAndUser 根据项目ID和用户ID获取成员关系
-func (r *ProjectMemberRepository) GetByProjectAndUser(ctx context.Context, projectID, userID uint) (*domain.ProjectMember, error) {
+func (r *ProjectMemberRepository) GetByProjectAndUser(ctx context.Context, projectID, userID uint64) (*domain.ProjectMember, error) {
 	var member domain.ProjectMember
 	if err := r.db.WithContext(ctx).Where("project_id = ? AND user_id = ?", projectID, userID).First(&member).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -31,7 +31,7 @@ func (r *ProjectMemberRepository) GetByProjectAndUser(ctx context.Context, proje
 }
 
 // GetByProjectID 根据项目ID获取所有成员
-func (r *ProjectMemberRepository) GetByProjectID(ctx context.Context, projectID uint) ([]*domain.ProjectMember, error) {
+func (r *ProjectMemberRepository) GetByProjectID(ctx context.Context, projectID uint64) ([]*domain.ProjectMember, error) {
 	var members []*domain.ProjectMember
 	if err := r.db.WithContext(ctx).Where("project_id = ?", projectID).Preload("User").Find(&members).Error; err != nil {
 		return nil, err
@@ -40,7 +40,7 @@ func (r *ProjectMemberRepository) GetByProjectID(ctx context.Context, projectID 
 }
 
 // GetByUserID 根据用户ID获取所有项目成员关系
-func (r *ProjectMemberRepository) GetByUserID(ctx context.Context, userID uint) ([]*domain.ProjectMember, error) {
+func (r *ProjectMemberRepository) GetByUserID(ctx context.Context, userID uint64) ([]*domain.ProjectMember, error) {
 	var members []*domain.ProjectMember
 	if err := r.db.WithContext(ctx).Where("user_id = ?", userID).Preload("Project").Find(&members).Error; err != nil {
 		return nil, err
@@ -59,6 +59,6 @@ func (r *ProjectMemberRepository) Update(ctx context.Context, member *domain.Pro
 }
 
 // Delete 删除项目成员关系
-func (r *ProjectMemberRepository) Delete(ctx context.Context, projectID, userID uint) error {
+func (r *ProjectMemberRepository) Delete(ctx context.Context, projectID, userID uint64) error {
 	return r.db.WithContext(ctx).Where("project_id = ? AND user_id = ?", projectID, userID).Delete(&domain.ProjectMember{}).Error
 }

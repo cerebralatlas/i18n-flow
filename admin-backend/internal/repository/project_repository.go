@@ -19,7 +19,7 @@ func NewProjectRepository(db *gorm.DB) *ProjectRepository {
 }
 
 // GetByID 根据ID获取项目
-func (r *ProjectRepository) GetByID(ctx context.Context, id uint) (*domain.Project, error) {
+func (r *ProjectRepository) GetByID(ctx context.Context, id uint64) (*domain.Project, error) {
 	var project domain.Project
 	if err := r.db.WithContext(ctx).First(&project, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -31,7 +31,7 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id uint) (*domain.Proje
 }
 
 // GetByIDs 批量获取项目
-func (r *ProjectRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.Project, error) {
+func (r *ProjectRepository) GetByIDs(ctx context.Context, ids []uint64) ([]*domain.Project, error) {
 	if len(ids) == 0 {
 		return []*domain.Project{}, nil
 	}
@@ -103,6 +103,6 @@ func (r *ProjectRepository) Update(ctx context.Context, project *domain.Project)
 }
 
 // Delete 删除项目
-func (r *ProjectRepository) Delete(ctx context.Context, id uint) error {
+func (r *ProjectRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&domain.Project{}, id).Error
 }

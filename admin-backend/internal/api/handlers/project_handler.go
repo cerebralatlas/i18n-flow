@@ -40,7 +40,14 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.Create(ctx.Request.Context(), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	project, err := h.projectService.Create(ctx.Request.Context(), req, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectExists:
@@ -70,13 +77,13 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 // @Router       /projects/detail/{id} [get]
 func (h *ProjectHandler) GetByID(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
-	project, err := h.projectService.GetByID(ctx.Request.Context(), uint(id))
+	project, err := h.projectService.GetByID(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -169,7 +176,7 @@ func (h *ProjectHandler) GetAccessibleProjects(ctx *gin.Context) {
 
 	offset := (page - 1) * pageSize
 
-	projects, total, err := h.projectService.GetAccessibleProjects(ctx.Request.Context(), userID.(uint), pageSize, offset, keyword)
+	projects, total, err := h.projectService.GetAccessibleProjects(ctx.Request.Context(), userID.(uint64), pageSize, offset, keyword)
 	if err != nil {
 		response.InternalServerError(ctx, "获取可访问项目列表失败")
 		return
@@ -200,7 +207,7 @@ func (h *ProjectHandler) GetAccessibleProjects(ctx *gin.Context) {
 // @Router       /projects/update/{id} [put]
 func (h *ProjectHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
@@ -212,7 +219,14 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.Update(ctx.Request.Context(), uint(id), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	project, err := h.projectService.Update(ctx.Request.Context(), id, req, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -242,13 +256,13 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 // @Router       /projects/delete/{id} [delete]
 func (h *ProjectHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的项目ID")
 		return
 	}
 
-	err = h.projectService.Delete(ctx.Request.Context(), uint(id))
+	err = h.projectService.Delete(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:

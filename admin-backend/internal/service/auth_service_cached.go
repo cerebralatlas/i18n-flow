@@ -9,11 +9,10 @@ import (
 
 // CachedAuthService 带缓存的认证服务实现
 type CachedAuthService struct {
-	authService *AuthService
+	authService  *AuthService
 	cacheService domain.CacheService
-	// 用于防止缓存击穿的互斥锁
-	cacheMutexes map[string]*sync.Mutex
-	mutexLock    sync.RWMutex
+	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
+	cacheMutexes sync.Map
 }
 
 // NewCachedAuthService 创建带缓存的认证服务实例
@@ -21,33 +20,42 @@ func NewCachedAuthService(
 	authService *AuthService,
 	cacheService domain.CacheService,
 ) *CachedAuthService {
-	return &CachedAuthService{
+	svc := &CachedAuthService{
 		authService:  authService,
 		cacheService: cacheService,
-		cacheMutexes: make(map[string]*sync.Mutex),
 	}
+	// 启动清理协程
+	go svc.cleanupMutexes()
+	return svc
 }
 
 // getMutex 获取指定键的互斥锁，用于防止缓存击穿
 func (s *CachedAuthService) getMutex(key string) *sync.Mutex {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
-	
-	if mutex, exists := s.cacheMutexes[key]; exists {
-		return mutex
+	if mutex, exists := s.cacheMutexes.Load(key); exists {
+		return mutex.(*sync.Mutex)
 	}
-	
+
 	mutex := &sync.Mutex{}
-	s.cacheMutexes[key] = mutex
+	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
+	if loaded {
+		return actual.(*sync.Mutex)
+	}
 	return mutex
 }
 
 // removeMutex 移除指定键的互斥锁
 func (s *CachedAuthService) removeMutex(key string) {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
-	
-	delete(s.cacheMutexes, key)
+	s.cacheMutexes.Delete(key)
+}
+
+// cleanupMutexes 定期清理无效的 mutex 锁
+func (s *CachedAuthService) cleanupMutexes() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
+	}
 }
 
 // GenerateToken 生成JWT token

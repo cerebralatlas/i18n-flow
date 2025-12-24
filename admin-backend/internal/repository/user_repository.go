@@ -19,7 +19,7 @@ func NewUserRepository(db *gorm.DB) *UserRepository {
 }
 
 // GetByID 根据ID获取用户
-func (r *UserRepository) GetByID(ctx context.Context, id uint) (*domain.User, error) {
+func (r *UserRepository) GetByID(ctx context.Context, id uint64) (*domain.User, error) {
 	var user domain.User
 	if err := r.db.WithContext(ctx).First(&user, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -31,7 +31,7 @@ func (r *UserRepository) GetByID(ctx context.Context, id uint) (*domain.User, er
 }
 
 // GetByIDs 批量获取用户
-func (r *UserRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.User, error) {
+func (r *UserRepository) GetByIDs(ctx context.Context, ids []uint64) ([]*domain.User, error) {
 	if len(ids) == 0 {
 		return []*domain.User{}, nil
 	}
@@ -103,6 +103,6 @@ func (r *UserRepository) GetAll(ctx context.Context, limit, offset int, keyword 
 }
 
 // Delete 删除用户
-func (r *UserRepository) Delete(ctx context.Context, id uint) error {
+func (r *UserRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&domain.User{}, id).Error
 }

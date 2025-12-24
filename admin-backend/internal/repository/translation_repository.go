@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"i18n-flow/internal/domain"
+	"strings"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -20,7 +21,7 @@ func NewTranslationRepository(db *gorm.DB) *TranslationRepository {
 }
 
 // GetByID 根据ID获取翻译
-func (r *TranslationRepository) GetByID(ctx context.Context, id uint) (*domain.Translation, error) {
+func (r *TranslationRepository) GetByID(ctx context.Context, id uint64) (*domain.Translation, error) {
 	var translation domain.Translation
 	if err := r.db.WithContext(ctx).Preload("Project").Preload("Language").First(&translation, id).Error; err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
@@ -32,7 +33,7 @@ func (r *TranslationRepository) GetByID(ctx context.Context, id uint) (*domain.T
 }
 
 // GetByProjectID 根据项目ID获取翻译（分页）
-func (r *TranslationRepository) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
+func (r *TranslationRepository) GetByProjectID(ctx context.Context, projectID uint64, limit, offset int) ([]*domain.Translation, int64, error) {
 	var translations []*domain.Translation
 	var total int64
 
@@ -52,7 +53,7 @@ func (r *TranslationRepository) GetByProjectID(ctx context.Context, projectID ui
 }
 
 // GetByProjectAndLanguage 根据项目和语言获取翻译
-func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, projectID, languageID uint) ([]*domain.Translation, error) {
+func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, projectID, languageID uint64) ([]*domain.Translation, error) {
 	var translations []*domain.Translation
 	if err := r.db.WithContext(ctx).Where("project_id = ? AND language_id = ?", projectID, languageID).Find(&translations).Error; err != nil {
 		return nil, err
@@ -61,7 +62,7 @@ func (r *TranslationRepository) GetByProjectAndLanguage(ctx context.Context, pro
 }
 
 // GetByProjectKeyLanguage 根据项目ID、键名和语言ID获取翻译
-func (r *TranslationRepository) GetByProjectKeyLanguage(ctx context.Context, projectID uint, keyName string, languageID uint) (*domain.Translation, error) {
+func (r *TranslationRepository) GetByProjectKeyLanguage(ctx context.Context, projectID uint64, keyName string, languageID uint64) (*domain.Translation, error) {
 	var translation domain.Translation
 	err := r.db.WithContext(ctx).
 		Where("project_id = ? AND key_name = ? AND language_id = ?", projectID, keyName, languageID).
@@ -75,6 +76,33 @@ func (r *TranslationRepository) GetByProjectKeyLanguage(ctx context.Context, pro
 	}
 
 	return &translation, nil
+}
+
+// GetByProjectKeyLanguages 批量获取翻译（修复 N+1 查询问题）
+func (r *TranslationRepository) GetByProjectKeyLanguages(ctx context.Context, keys []domain.TranslationKey) ([]*domain.Translation, error) {
+	if len(keys) == 0 {
+		return nil, nil
+	}
+
+	// 构建 OR 条件查询所有匹配的翻译
+	var conditions []string
+	var args []interface{}
+
+	for _, key := range keys {
+		conditions = append(conditions, "(project_id = ? AND key_name = ? AND language_id = ?)")
+		args = append(args, key.ProjectID, key.KeyName, key.LanguageID)
+	}
+
+	var translations []*domain.Translation
+	err := r.db.WithContext(ctx).
+		Where(strings.Join(conditions, " OR "), args...).
+		Find(&translations).Error
+
+	if err != nil {
+		return nil, err
+	}
+
+	return translations, nil
 }
 
 // GetStats 获取全局翻译统计信息（总翻译数和唯一键数）
@@ -97,7 +125,7 @@ func (r *TranslationRepository) GetStats(ctx context.Context) (totalTranslations
 }
 
 // GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
-func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 优化：使用单个查询获取总数和键名
 	var totalCount int64
 	var keyNames []string
@@ -201,12 +229,12 @@ func (r *TranslationRepository) Update(ctx context.Context, translation *domain.
 }
 
 // Delete 删除翻译
-func (r *TranslationRepository) Delete(ctx context.Context, id uint) error {
+func (r *TranslationRepository) Delete(ctx context.Context, id uint64) error {
 	return r.db.WithContext(ctx).Delete(&domain.Translation{}, id).Error
 }
 
 // DeleteBatch 批量删除翻译
-func (r *TranslationRepository) DeleteBatch(ctx context.Context, ids []uint) error {
+func (r *TranslationRepository) DeleteBatch(ctx context.Context, ids []uint64) error {
 	if len(ids) == 0 {
 		return nil
 	}

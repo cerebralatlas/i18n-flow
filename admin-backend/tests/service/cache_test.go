@@ -92,12 +92,12 @@ func (m *MockCacheService) HDel(ctx context.Context, key string, fields ...strin
 	return args.Error(0)
 }
 
-func (m *MockCacheService) GetTranslationKey(projectID uint) string {
+func (m *MockCacheService) GetTranslationKey(projectID uint64) string {
 	args := m.Called(projectID)
 	return args.String(0)
 }
 
-func (m *MockCacheService) GetTranslationMatrixKey(projectID uint, keyword string) string {
+func (m *MockCacheService) GetTranslationMatrixKey(projectID uint64, keyword string) string {
 	args := m.Called(projectID, keyword)
 	return args.String(0)
 }
@@ -112,7 +112,7 @@ func (m *MockCacheService) GetLanguagesKey() string {
 	return args.String(0)
 }
 
-func (m *MockCacheService) GetProjectKey(projectID uint) string {
+func (m *MockCacheService) GetProjectKey(projectID uint64) string {
 	args := m.Called(projectID)
 	return args.String(0)
 }
@@ -132,7 +132,7 @@ func TestCachedTranslationService_GetMatrix(t *testing.T) {
 	mockCache := new(MockCacheService)
 	
 	// 创建测试数据
-	projectID := uint(1)
+	projectID := uint64(1)
 	
 	// 设置模拟期望
 	mockCache.On("GetTranslationMatrixKey", projectID, "").Return("translation_matrix:1")

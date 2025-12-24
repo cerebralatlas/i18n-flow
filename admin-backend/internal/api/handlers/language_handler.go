@@ -41,7 +41,14 @@ func (h *LanguageHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	language, err := h.languageService.Create(ctx.Request.Context(), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	language, err := h.languageService.Create(ctx.Request.Context(), req, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrLanguageExists:
@@ -92,7 +99,7 @@ func (h *LanguageHandler) GetAll(ctx *gin.Context) {
 // @Router       /languages/{id} [put]
 func (h *LanguageHandler) Update(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的语言ID")
 		return
@@ -104,7 +111,14 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	language, err := h.languageService.Update(ctx.Request.Context(), uint(id), req)
+	// 获取当前用户ID
+	userID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
+	language, err := h.languageService.Update(ctx.Request.Context(), id, req, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrLanguageNotFound:
@@ -134,13 +148,13 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 // @Router       /languages/{id} [delete]
 func (h *LanguageHandler) Delete(ctx *gin.Context) {
 	idStr := ctx.Param("id")
-	id, err := strconv.ParseUint(idStr, 10, 32)
+	id, err := strconv.ParseUint(idStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "无效的语言ID")
 		return
 	}
 
-	err = h.languageService.Delete(ctx.Request.Context(), uint(id))
+	err = h.languageService.Delete(ctx.Request.Context(), id)
 	if err != nil {
 		switch err {
 		case domain.ErrLanguageNotFound:

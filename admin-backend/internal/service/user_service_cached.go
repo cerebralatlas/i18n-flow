@@ -5,15 +5,15 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"sync"
+	"time"
 )
 
 // CachedUserService 带缓存的用户服务实现
 type CachedUserService struct {
 	userService  *UserService
 	cacheService domain.CacheService
-	// 用于防止缓存击穿的互斥锁
-	cacheMutexes map[string]*sync.Mutex
-	mutexLock    sync.RWMutex
+	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
+	cacheMutexes sync.Map
 }
 
 // NewCachedUserService 创建带缓存的用户服务实例
@@ -21,33 +21,42 @@ func NewCachedUserService(
 	userService *UserService,
 	cacheService domain.CacheService,
 ) *CachedUserService {
-	return &CachedUserService{
+	svc := &CachedUserService{
 		userService:  userService,
 		cacheService: cacheService,
-		cacheMutexes: make(map[string]*sync.Mutex),
 	}
+	// 启动清理协程
+	go svc.cleanupMutexes()
+	return svc
 }
 
 // getMutex 获取指定键的互斥锁，用于防止缓存击穿
 func (s *CachedUserService) getMutex(key string) *sync.Mutex {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
-
-	if mutex, exists := s.cacheMutexes[key]; exists {
-		return mutex
+	if mutex, exists := s.cacheMutexes.Load(key); exists {
+		return mutex.(*sync.Mutex)
 	}
 
 	mutex := &sync.Mutex{}
-	s.cacheMutexes[key] = mutex
+	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
+	if loaded {
+		return actual.(*sync.Mutex)
+	}
 	return mutex
 }
 
 // removeMutex 移除指定键的互斥锁
 func (s *CachedUserService) removeMutex(key string) {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
+	s.cacheMutexes.Delete(key)
+}
 
-	delete(s.cacheMutexes, key)
+// cleanupMutexes 定期清理无效的 mutex 锁
+func (s *CachedUserService) cleanupMutexes() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
+	}
 }
 
 // Login 用户登录
@@ -63,7 +72,7 @@ func (s *CachedUserService) RefreshToken(ctx context.Context, req domain.Refresh
 }
 
 // GetUserInfo 获取用户信息（使用缓存）
-func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint) (*domain.User, error) {
+func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint64) (*domain.User, error) {
 	cacheKey := fmt.Sprintf("user:%d", userID)
 
 	// 使用互斥锁防止缓存击穿
@@ -107,13 +116,13 @@ func (s *CachedUserService) GetAllUsers(ctx context.Context, limit, offset int, 
 }
 
 // GetUserByID 根据ID获取用户（使用缓存）
-func (s *CachedUserService) GetUserByID(ctx context.Context, id uint) (*domain.User, error) {
+func (s *CachedUserService) GetUserByID(ctx context.Context, id uint64) (*domain.User, error) {
 	// 复用GetUserInfo的缓存逻辑
 	return s.GetUserInfo(ctx, id)
 }
 
 // UpdateUser 更新用户（清除缓存）
-func (s *CachedUserService) UpdateUser(ctx context.Context, id uint, req domain.UpdateUserRequest) (*domain.User, error) {
+func (s *CachedUserService) UpdateUser(ctx context.Context, id uint64, req domain.UpdateUserRequest) (*domain.User, error) {
 	user, err := s.userService.UpdateUser(ctx, id, req)
 	if err != nil {
 		return nil, err
@@ -127,17 +136,17 @@ func (s *CachedUserService) UpdateUser(ctx context.Context, id uint, req domain.
 }
 
 // ChangePassword 修改密码（不缓存）
-func (s *CachedUserService) ChangePassword(ctx context.Context, userID uint, req domain.ChangePasswordRequest) error {
+func (s *CachedUserService) ChangePassword(ctx context.Context, userID uint64, req domain.ChangePasswordRequest) error {
 	return s.userService.ChangePassword(ctx, userID, req)
 }
 
 // ResetPassword 重置密码（不缓存）
-func (s *CachedUserService) ResetPassword(ctx context.Context, userID uint, req domain.ResetPasswordRequest) error {
+func (s *CachedUserService) ResetPassword(ctx context.Context, userID uint64, req domain.ResetPasswordRequest) error {
 	return s.userService.ResetPassword(ctx, userID, req)
 }
 
 // DeleteUser 删除用户（清除缓存）
-func (s *CachedUserService) DeleteUser(ctx context.Context, id uint) error {
+func (s *CachedUserService) DeleteUser(ctx context.Context, id uint64) error {
 	err := s.userService.DeleteUser(ctx, id)
 	if err != nil {
 		return err

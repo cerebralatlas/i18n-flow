@@ -37,7 +37,7 @@ func NewProjectMemberHandler(projectMemberService domain.ProjectMemberService) *
 func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 	// 解析项目ID
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的项目ID")
 		return
@@ -51,8 +51,15 @@ func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 		return
 	}
 
+	// 获取当前用户ID
+	currentUserID, exists := ctx.Get("userID")
+	if !exists {
+		response.Unauthorized(ctx, "未找到用户信息")
+		return
+	}
+
 	// 调用添加成员服务
-	member, err := h.projectMemberService.AddMember(ctx.Request.Context(), uint(projectID), req)
+	member, err := h.projectMemberService.AddMember(ctx.Request.Context(), projectID, req, currentUserID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -85,14 +92,14 @@ func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 func (h *ProjectMemberHandler) GetProjectMembers(ctx *gin.Context) {
 	// 解析项目ID
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的项目ID")
 		return
 	}
 
 	// 获取项目成员列表
-	members, err := h.projectMemberService.GetProjectMembers(ctx.Request.Context(), uint(projectID))
+	members, err := h.projectMemberService.GetProjectMembers(ctx.Request.Context(), projectID)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -121,14 +128,14 @@ func (h *ProjectMemberHandler) GetProjectMembers(ctx *gin.Context) {
 func (h *ProjectMemberHandler) GetUserProjects(ctx *gin.Context) {
 	// 解析用户ID
 	userIDStr := ctx.Param("user_id")
-	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
 	}
 
 	// 获取用户项目列表
-	projects, err := h.projectMemberService.GetUserProjects(ctx.Request.Context(), uint(userID))
+	projects, err := h.projectMemberService.GetUserProjects(ctx.Request.Context(), userID)
 	if err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
@@ -159,7 +166,7 @@ func (h *ProjectMemberHandler) GetUserProjects(ctx *gin.Context) {
 func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 	// 解析项目ID
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的项目ID")
 		return
@@ -167,7 +174,7 @@ func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 
 	// 解析用户ID
 	userIDStr := ctx.Param("user_id")
-	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
@@ -182,7 +189,7 @@ func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 	}
 
 	// 调用更新成员角色服务
-	member, err := h.projectMemberService.UpdateMemberRole(ctx.Request.Context(), uint(projectID), uint(userID), req)
+	member, err := h.projectMemberService.UpdateMemberRole(ctx.Request.Context(), projectID, userID, req)
 	if err != nil {
 		switch err {
 		case domain.ErrMemberNotFound:
@@ -213,7 +220,7 @@ func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 func (h *ProjectMemberHandler) RemoveMember(ctx *gin.Context) {
 	// 解析项目ID
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的项目ID")
 		return
@@ -221,14 +228,14 @@ func (h *ProjectMemberHandler) RemoveMember(ctx *gin.Context) {
 
 	// 解析用户ID
 	userIDStr := ctx.Param("user_id")
-	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
 	}
 
 	// 调用移除成员服务
-	if err := h.projectMemberService.RemoveMember(ctx.Request.Context(), uint(projectID), uint(userID)); err != nil {
+	if err := h.projectMemberService.RemoveMember(ctx.Request.Context(), projectID, userID); err != nil {
 		switch err {
 		case domain.ErrMemberNotFound:
 			response.NotFound(ctx, "项目成员不存在")
@@ -260,7 +267,7 @@ func (h *ProjectMemberHandler) RemoveMember(ctx *gin.Context) {
 func (h *ProjectMemberHandler) CheckPermission(ctx *gin.Context) {
 	// 解析项目ID
 	projectIDStr := ctx.Param("project_id")
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的项目ID")
 		return
@@ -268,7 +275,7 @@ func (h *ProjectMemberHandler) CheckPermission(ctx *gin.Context) {
 
 	// 解析用户ID
 	userIDStr := ctx.Param("user_id")
-	userID, err := strconv.ParseUint(userIDStr, 10, 32)
+	userID, err := strconv.ParseUint(userIDStr, 10, 64)
 	if err != nil {
 		response.ValidationError(ctx, "无效的用户ID")
 		return
@@ -282,7 +289,7 @@ func (h *ProjectMemberHandler) CheckPermission(ctx *gin.Context) {
 	}
 
 	// 检查权限
-	hasPermission, err := h.projectMemberService.CheckPermission(ctx.Request.Context(), uint(userID), uint(projectID), requiredRole)
+	hasPermission, err := h.projectMemberService.CheckPermission(ctx.Request.Context(), userID, projectID, requiredRole)
 	if err != nil {
 		switch err {
 		case domain.ErrUserNotFound:

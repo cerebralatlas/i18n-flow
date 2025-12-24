@@ -11,7 +11,7 @@ import (
 
 // JWTClaim 定义JWT的claim
 type JWTClaim struct {
-	UserID   uint   `json:"user_id"`
+	UserID   uint64 `json:"user_id"`
 	Username string `json:"username"`
 	jwt.RegisteredClaims
 }

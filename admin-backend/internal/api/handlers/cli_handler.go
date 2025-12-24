@@ -69,14 +69,14 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 		return
 	}
 
-	projectID, err := strconv.ParseUint(projectIDStr, 10, 32)
+	projectID, err := strconv.ParseUint(projectIDStr, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "invalid project_id")
 		return
 	}
 
 	// 验证项目是否存在
-	_, err = h.projectService.GetByID(ctx.Request.Context(), uint(projectID))
+	_, err = h.projectService.GetByID(ctx.Request.Context(), projectID)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -88,7 +88,7 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 	}
 
 	// 获取翻译矩阵数据（不分页，获取所有数据）
-	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), -1, 0, "")
+	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), projectID, -1, 0, "")
 	if err != nil {
 		response.InternalServerError(ctx, "获取翻译数据失败")
 		return
@@ -144,14 +144,14 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 		return
 	}
 
-	projectID, err := strconv.ParseUint(req.ProjectID, 10, 32)
+	projectID, err := strconv.ParseUint(req.ProjectID, 10, 64)
 	if err != nil {
 		response.BadRequest(ctx, "invalid project_id")
 		return
 	}
 
 	// 验证项目是否存在
-	_, err = h.projectService.GetByID(ctx.Request.Context(), uint(projectID))
+	_, err = h.projectService.GetByID(ctx.Request.Context(), projectID)
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -187,7 +187,7 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 	}
 
 	// 获取现有的翻译键
-	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), uint(projectID), -1, 0, "")
+	matrix, _, err := h.translationService.GetMatrix(ctx.Request.Context(), projectID, -1, 0, "")
 	if err != nil {
 		response.InternalServerError(ctx, "获取现有翻译失败")
 		return
@@ -225,13 +225,13 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 			}
 
 			translationReq := domain.CreateTranslationRequest{
-				ProjectID:  uint(projectID),
+				ProjectID:  projectID,
 				KeyName:    key,
 				LanguageID: language.ID,
 				Value:      value,
 			}
 
-			_, err := h.translationService.Create(ctx.Request.Context(), translationReq)
+			_, err := h.translationService.Create(ctx.Request.Context(), translationReq, 1) // 使用系统管理员ID
 			if err != nil {
 				keyFailed = true
 			} else if !keyAdded {

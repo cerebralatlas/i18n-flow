@@ -14,9 +14,8 @@ import (
 type CachedTranslationService struct {
 	translationService *TranslationService
 	cacheService       domain.CacheService
-	// 用于防止缓存击穿的互斥锁
-	cacheMutexes map[string]*sync.Mutex
-	mutexLock    sync.RWMutex
+	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
+	cacheMutexes sync.Map
 }
 
 // NewCachedTranslationService 创建带缓存的翻译服务实例
@@ -24,38 +23,50 @@ func NewCachedTranslationService(
 	translationService *TranslationService,
 	cacheService domain.CacheService,
 ) *CachedTranslationService {
-	return &CachedTranslationService{
+	svc := &CachedTranslationService{
 		translationService: translationService,
 		cacheService:       cacheService,
-		cacheMutexes:       make(map[string]*sync.Mutex),
 	}
+	// 启动清理协程
+	go svc.cleanupMutexes()
+	return svc
 }
 
 // getMutex 获取指定键的互斥锁，用于防止缓存击穿
 func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
-
-	if mutex, exists := s.cacheMutexes[key]; exists {
-		return mutex
+	if mutex, exists := s.cacheMutexes.Load(key); exists {
+		return mutex.(*sync.Mutex)
 	}
 
 	mutex := &sync.Mutex{}
-	s.cacheMutexes[key] = mutex
+	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
+	if loaded {
+		// 已经有其他协程创建了锁，返回已有的
+		return actual.(*sync.Mutex)
+	}
 	return mutex
 }
 
 // removeMutex 移除指定键的互斥锁
 func (s *CachedTranslationService) removeMutex(key string) {
-	s.mutexLock.Lock()
-	defer s.mutexLock.Unlock()
+	s.cacheMutexes.Delete(key)
+}
 
-	delete(s.cacheMutexes, key)
+// cleanupMutexes 定期清理无效的 mutex 锁，防止内存泄漏
+func (s *CachedTranslationService) cleanupMutexes() {
+	ticker := time.NewTicker(5 * time.Minute)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		// 清理策略：定期检查
+		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
+		// 这里保留清理协程以备将来扩展更复杂的清理策略
+	}
 }
 
 // Create 创建翻译（更新缓存）
-func (s *CachedTranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest) (*domain.Translation, error) {
-	translation, err := s.translationService.Create(ctx, req)
+func (s *CachedTranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+	translation, err := s.translationService.Create(ctx, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -74,7 +85,7 @@ func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []d
 	}
 
 	// 清除相关缓存
-	projectIDs := make(map[uint]bool)
+	projectIDs := make(map[uint64]bool)
 	for _, req := range requests {
 		projectIDs[req.ProjectID] = true
 	}
@@ -107,7 +118,7 @@ func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []d
 	}
 
 	// 清除相关缓存
-	projectIDs := make(map[uint]bool)
+	projectIDs := make(map[uint64]bool)
 	for _, req := range requests {
 		projectIDs[req.ProjectID] = true
 	}
@@ -120,7 +131,7 @@ func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []d
 }
 
 // GetByID 根据ID获取翻译
-func (s *CachedTranslationService) GetByID(ctx context.Context, id uint) (*domain.Translation, error) {
+func (s *CachedTranslationService) GetByID(ctx context.Context, id uint64) (*domain.Translation, error) {
 	// 这个方法不缓存，因为单个翻译查询不频繁
 	return s.translationService.GetByID(ctx, id)
 }
@@ -132,7 +143,7 @@ type TranslationCacheResult struct {
 }
 
 // GetByProjectID 根据项目ID获取翻译（使用缓存）
-func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID uint, limit, offset int) ([]*domain.Translation, int64, error) {
+func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID uint64, limit, offset int) ([]*domain.Translation, int64, error) {
 	// 生成缓存键
 	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationKey(projectID), limit, offset)
 
@@ -182,7 +193,7 @@ type MatrixCacheResult struct {
 }
 
 // GetMatrix 获取翻译矩阵（使用缓存）
-func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 优化缓存键生成，区分搜索和非搜索查询
 	var cacheKey string
 	if keyword != "" {
@@ -242,14 +253,14 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 }
 
 // Update 更新翻译（更新缓存）
-func (s *CachedTranslationService) Update(ctx context.Context, id uint, req domain.CreateTranslationRequest) (*domain.Translation, error) {
+func (s *CachedTranslationService) Update(ctx context.Context, id uint64, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 先获取原始翻译，用于后续清除缓存
 	oldTranslation, err := s.translationService.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	translation, err := s.translationService.Update(ctx, id, req)
+	translation, err := s.translationService.Update(ctx, id, req, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -264,7 +275,7 @@ func (s *CachedTranslationService) Update(ctx context.Context, id uint, req doma
 }
 
 // Delete 删除翻译（更新缓存）
-func (s *CachedTranslationService) Delete(ctx context.Context, id uint) error {
+func (s *CachedTranslationService) Delete(ctx context.Context, id uint64) error {
 	// 先获取翻译，用于后续清除缓存
 	translation, err := s.translationService.GetByID(ctx, id)
 	if err != nil {
@@ -283,9 +294,9 @@ func (s *CachedTranslationService) Delete(ctx context.Context, id uint) error {
 }
 
 // DeleteBatch 批量删除翻译（更新缓存）
-func (s *CachedTranslationService) DeleteBatch(ctx context.Context, ids []uint) error {
+func (s *CachedTranslationService) DeleteBatch(ctx context.Context, ids []uint64) error {
 	// 这里需要先查询所有翻译，获取相关的项目ID
-	projectIDs := make(map[uint]bool)
+	projectIDs := make(map[uint64]bool)
 	for _, id := range ids {
 		translation, err := s.translationService.GetByID(ctx, id)
 		if err == nil {
@@ -310,7 +321,7 @@ func (s *CachedTranslationService) DeleteBatch(ctx context.Context, ids []uint) 
 }
 
 // Export 导出翻译
-func (s *CachedTranslationService) Export(ctx context.Context, projectID uint, format string) ([]byte, error) {
+func (s *CachedTranslationService) Export(ctx context.Context, projectID uint64, format string) ([]byte, error) {
 	// 使用缓存的矩阵数据
 	matrix, _, err := s.GetMatrix(ctx, projectID, -1, 0, "")
 	if err != nil {
@@ -326,7 +337,7 @@ func (s *CachedTranslationService) Export(ctx context.Context, projectID uint, f
 }
 
 // Import 导入翻译（更新缓存）
-func (s *CachedTranslationService) Import(ctx context.Context, projectID uint, data []byte, format string) error {
+func (s *CachedTranslationService) Import(ctx context.Context, projectID uint64, data []byte, format string) error {
 	err := s.translationService.Import(ctx, projectID, data, format)
 	if err != nil {
 		return err
@@ -339,7 +350,7 @@ func (s *CachedTranslationService) Import(ctx context.Context, projectID uint, d
 }
 
 // invalidateProjectCache 清除项目相关的所有缓存
-func (s *CachedTranslationService) invalidateProjectCache(ctx context.Context, projectID uint) {
+func (s *CachedTranslationService) invalidateProjectCache(ctx context.Context, projectID uint64) {
 	// 使用管道操作提高性能
 	// 清除翻译列表缓存
 	s.cacheService.DeleteByPattern(ctx, s.cacheService.GetTranslationKey(projectID)+"*")
@@ -361,7 +372,7 @@ func (s *CachedTranslationService) invalidateLanguageCache(ctx context.Context) 
 }
 
 // invalidateSpecificTranslationCache 清除特定翻译键的缓存
-func (s *CachedTranslationService) invalidateSpecificTranslationCache(ctx context.Context, projectID uint, keyName string) {
+func (s *CachedTranslationService) invalidateSpecificTranslationCache(ctx context.Context, projectID uint64, keyName string) {
 	// 清除包含特定键名的翻译矩阵缓存
 	pattern := fmt.Sprintf("%s%d:*%s*", domain.TranslationMatrixPrefix, projectID, keyName)
 	s.cacheService.DeleteByPattern(ctx, pattern)

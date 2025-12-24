@@ -19,7 +19,7 @@ func NewLanguageService(languageRepo domain.LanguageRepository) *LanguageService
 }
 
 // Create 创建语言
-func (s *LanguageService) Create(ctx context.Context, req domain.CreateLanguageRequest) (*domain.Language, error) {
+func (s *LanguageService) Create(ctx context.Context, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
 	// 验证语言代码格式
 	code := strings.TrimSpace(req.Code)
 	if code == "" {
@@ -45,6 +45,8 @@ func (s *LanguageService) Create(ctx context.Context, req domain.CreateLanguageR
 		Name:      strings.TrimSpace(req.Name),
 		IsDefault: req.IsDefault,
 		Status:    "active",
+		CreatedBy: userID,
+		UpdatedBy: userID,
 	}
 
 	if err := s.languageRepo.Create(ctx, language); err != nil {
@@ -55,7 +57,7 @@ func (s *LanguageService) Create(ctx context.Context, req domain.CreateLanguageR
 }
 
 // GetByID 根据ID获取语言
-func (s *LanguageService) GetByID(ctx context.Context, id uint) (*domain.Language, error) {
+func (s *LanguageService) GetByID(ctx context.Context, id uint64) (*domain.Language, error) {
 	return s.languageRepo.GetByID(ctx, id)
 }
 
@@ -65,7 +67,7 @@ func (s *LanguageService) GetAll(ctx context.Context) ([]*domain.Language, error
 }
 
 // Update 更新语言
-func (s *LanguageService) Update(ctx context.Context, id uint, req domain.CreateLanguageRequest) (*domain.Language, error) {
+func (s *LanguageService) Update(ctx context.Context, id uint64, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
 	// 获取现有语言
 	language, err := s.languageRepo.GetByID(ctx, id)
 	if err != nil {
@@ -101,6 +103,9 @@ func (s *LanguageService) Update(ctx context.Context, id uint, req domain.Create
 		language.IsDefault = false
 	}
 
+	// 更新UpdatedBy字段
+	language.UpdatedBy = userID
+
 	// 保存更新
 	if err := s.languageRepo.Update(ctx, language); err != nil {
 		return nil, err
@@ -110,7 +115,7 @@ func (s *LanguageService) Update(ctx context.Context, id uint, req domain.Create
 }
 
 // Delete 删除语言
-func (s *LanguageService) Delete(ctx context.Context, id uint) error {
+func (s *LanguageService) Delete(ctx context.Context, id uint64) error {
 	// 检查语言是否存在
 	language, err := s.languageRepo.GetByID(ctx, id)
 	if err != nil {
