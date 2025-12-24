@@ -161,17 +161,13 @@ func (s *ProjectService) GetAccessibleProjects(ctx context.Context, userID uint,
 		projectIDs[i] = member.ProjectID
 	}
 
-	// 获取用户参与的项目详情
-	var projects []*domain.Project
-	var filteredProjects []*domain.Project
-
-	for _, projectID := range projectIDs {
-		project, err := s.projectRepo.GetByID(ctx, projectID)
-		if err != nil {
-			continue // 跳过不存在的项目
-		}
-		projects = append(projects, project)
+	// 批量获取项目详情 (修复 N+1 查询)
+	projects, err := s.projectRepo.GetByIDs(ctx, projectIDs)
+	if err != nil {
+		return nil, 0, err
 	}
+
+	var filteredProjects []*domain.Project
 
 	// 应用关键词过滤
 	if keyword != "" {

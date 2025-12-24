@@ -67,10 +67,31 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 		return nil, err
 	}
 
+	if len(members) == 0 {
+		return []*domain.ProjectMemberInfo{}, nil
+	}
+
+	// 批量获取用户信息 (修复 N+1 查询)
+	userIDs := make([]uint, len(members))
+	for i, member := range members {
+		userIDs[i] = member.UserID
+	}
+	users, err := s.userRepo.GetByIDs(ctx, userIDs)
+	if err != nil {
+		return nil, err
+	}
+
+	// 构建用户ID到用户的映射
+	userMap := make(map[uint]*domain.User)
+	for _, user := range users {
+		userMap[user.ID] = user
+	}
+
+	// 构建成员信息
 	var memberInfos []*domain.ProjectMemberInfo
 	for _, member := range members {
-		user, err := s.userRepo.GetByID(ctx, member.UserID)
-		if err != nil {
+		user, exists := userMap[member.UserID]
+		if !exists {
 			continue // 跳过不存在的用户
 		}
 
@@ -99,13 +120,18 @@ func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint)
 		return nil, err
 	}
 
-	var projects []*domain.Project
-	for _, member := range members {
-		project, err := s.projectRepo.GetByID(ctx, member.ProjectID)
-		if err != nil {
-			continue // 跳过不存在的项目
-		}
-		projects = append(projects, project)
+	if len(members) == 0 {
+		return []*domain.Project{}, nil
+	}
+
+	// 批量获取项目信息 (修复 N+1 查询)
+	projectIDs := make([]uint, len(members))
+	for i, member := range members {
+		projectIDs[i] = member.ProjectID
+	}
+	projects, err := s.projectRepo.GetByIDs(ctx, projectIDs)
+	if err != nil {
+		return nil, err
 	}
 
 	return projects, nil

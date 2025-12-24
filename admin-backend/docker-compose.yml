@@ -1,0 +1,18 @@
+services:
+  db:
+    image: mysql:8.0 # 你也可以选择 5.7
+    container_name: i18n_flow_db
+    restart: always
+    environment:
+      # MySQL 镜像要求的环境变量
+      MYSQL_ROOT_PASSWORD: password # root 用户的密码
+      MYSQL_DATABASE: i18n_flow # 自动创建的数据库名
+      MYSQL_USER: i18nflow # 自动创建的普通用户名
+      MYSQL_PASSWORD: password # 普通用户的密码
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data:

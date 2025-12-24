@@ -30,6 +30,19 @@ func (r *UserRepository) GetByID(ctx context.Context, id uint) (*domain.User, er
 	return &user, nil
 }
 
+// GetByIDs 批量获取用户
+func (r *UserRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.User, error) {
+	if len(ids) == 0 {
+		return []*domain.User{}, nil
+	}
+
+	var users []*domain.User
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&users).Error; err != nil {
+		return nil, err
+	}
+	return users, nil
+}
+
 // GetByUsername 根据用户名获取用户
 func (r *UserRepository) GetByUsername(ctx context.Context, username string) (*domain.User, error) {
 	var user domain.User

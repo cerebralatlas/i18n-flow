@@ -30,6 +30,19 @@ func (r *ProjectRepository) GetByID(ctx context.Context, id uint) (*domain.Proje
 	return &project, nil
 }
 
+// GetByIDs 批量获取项目
+func (r *ProjectRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.Project, error) {
+	if len(ids) == 0 {
+		return []*domain.Project{}, nil
+	}
+
+	var projects []*domain.Project
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&projects).Error; err != nil {
+		return nil, err
+	}
+	return projects, nil
+}
+
 // GetBySlug 根据Slug获取项目
 func (r *ProjectRepository) GetBySlug(ctx context.Context, slug string) (*domain.Project, error) {
 	var project domain.Project

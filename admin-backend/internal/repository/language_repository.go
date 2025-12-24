@@ -30,6 +30,19 @@ func (r *LanguageRepository) GetByID(ctx context.Context, id uint) (*domain.Lang
 	return &language, nil
 }
 
+// GetByIDs 批量获取语言
+func (r *LanguageRepository) GetByIDs(ctx context.Context, ids []uint) ([]*domain.Language, error) {
+	if len(ids) == 0 {
+		return []*domain.Language{}, nil
+	}
+
+	var languages []*domain.Language
+	if err := r.db.WithContext(ctx).Where("id IN ?", ids).Find(&languages).Error; err != nil {
+		return nil, err
+	}
+	return languages, nil
+}
+
 // GetByCode 根据代码获取语言
 func (r *LanguageRepository) GetByCode(ctx context.Context, code string) (*domain.Language, error) {
 	var language domain.Language

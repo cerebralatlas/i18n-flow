@@ -86,29 +86,41 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 		return nil
 	}
 
-	// 验证所有请求中的项目和语言
-	projectIDs := make(map[uint]bool)
-	languageIDs := make(map[uint]bool)
+	// 收集所有请求中的项目和语言ID
+	projectIDSet := make(map[uint]bool)
+	languageIDSet := make(map[uint]bool)
 
 	for _, req := range requests {
-		projectIDs[req.ProjectID] = true
-		languageIDs[req.LanguageID] = true
+		projectIDSet[req.ProjectID] = true
+		languageIDSet[req.LanguageID] = true
 	}
 
-	// 验证项目
-	for projectID := range projectIDs {
-		_, err := s.projectRepo.GetByID(ctx, projectID)
-		if err != nil {
-			return domain.ErrProjectNotFound
-		}
+	// 转换为切片
+	projectIDs := make([]uint, 0, len(projectIDSet))
+	for id := range projectIDSet {
+		projectIDs = append(projectIDs, id)
+	}
+	languageIDs := make([]uint, 0, len(languageIDSet))
+	for id := range languageIDSet {
+		languageIDs = append(languageIDs, id)
 	}
 
-	// 验证语言
-	for languageID := range languageIDs {
-		_, err := s.languageRepo.GetByID(ctx, languageID)
-		if err != nil {
-			return domain.ErrLanguageNotFound
-		}
+	// 批量验证项目 (修复 N+1 查询)
+	projects, err := s.projectRepo.GetByIDs(ctx, projectIDs)
+	if err != nil {
+		return err
+	}
+	if len(projects) != len(projectIDs) {
+		return domain.ErrProjectNotFound
+	}
+
+	// 批量验证语言 (修复 N+1 查询)
+	languages, err := s.languageRepo.GetByIDs(ctx, languageIDs)
+	if err != nil {
+		return err
+	}
+	if len(languages) != len(languageIDs) {
+		return domain.ErrLanguageNotFound
 	}
 
 	// 检查重复翻译并转换为domain对象
@@ -165,29 +177,41 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.
 		return nil
 	}
 
-	// 验证所有请求中的项目和语言
-	projectIDs := make(map[uint]bool)
-	languageIDs := make(map[uint]bool)
+	// 收集所有请求中的项目和语言ID
+	projectIDSet := make(map[uint]bool)
+	languageIDSet := make(map[uint]bool)
 
 	for _, req := range requests {
-		projectIDs[req.ProjectID] = true
-		languageIDs[req.LanguageID] = true
+		projectIDSet[req.ProjectID] = true
+		languageIDSet[req.LanguageID] = true
 	}
 
-	// 验证项目
-	for projectID := range projectIDs {
-		_, err := s.projectRepo.GetByID(ctx, projectID)
-		if err != nil {
-			return domain.ErrProjectNotFound
-		}
+	// 转换为切片
+	projectIDs := make([]uint, 0, len(projectIDSet))
+	for id := range projectIDSet {
+		projectIDs = append(projectIDs, id)
+	}
+	languageIDs := make([]uint, 0, len(languageIDSet))
+	for id := range languageIDSet {
+		languageIDs = append(languageIDs, id)
 	}
 
-	// 验证语言
-	for languageID := range languageIDs {
-		_, err := s.languageRepo.GetByID(ctx, languageID)
-		if err != nil {
-			return domain.ErrLanguageNotFound
-		}
+	// 批量验证项目 (修复 N+1 查询)
+	projects, err := s.projectRepo.GetByIDs(ctx, projectIDs)
+	if err != nil {
+		return err
+	}
+	if len(projects) != len(projectIDs) {
+		return domain.ErrProjectNotFound
+	}
+
+	// 批量验证语言 (修复 N+1 查询)
+	languages, err := s.languageRepo.GetByIDs(ctx, languageIDs)
+	if err != nil {
+		return err
+	}
+	if len(languages) != len(languageIDs) {
+		return domain.ErrLanguageNotFound
 	}
 
 	// 转换为 domain 对象

@@ -77,6 +77,25 @@ func (r *TranslationRepository) GetByProjectKeyLanguage(ctx context.Context, pro
 	return &translation, nil
 }
 
+// GetStats 获取全局翻译统计信息（总翻译数和唯一键数）
+// 使用聚合查询避免 N+1 问题
+func (r *TranslationRepository) GetStats(ctx context.Context) (totalTranslations int, totalKeys int, err error) {
+	// 获取总翻译数
+	var count int64
+	if err := r.db.WithContext(ctx).Model(&domain.Translation{}).Count(&count).Error; err != nil {
+		return 0, 0, err
+	}
+	totalTranslations = int(count)
+
+	// 获取唯一键数
+	if err := r.db.WithContext(ctx).Model(&domain.Translation{}).Distinct("key_name").Count(&count).Error; err != nil {
+		return 0, 0, err
+	}
+	totalKeys = int(count)
+
+	return totalTranslations, totalKeys, nil
+}
+
 // GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
 func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
 	// 优化：使用单个查询获取总数和键名

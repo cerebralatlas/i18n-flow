@@ -30,7 +30,7 @@ func (s *DashboardService) GetStats(ctx context.Context) (*domain.DashboardStats
 	stats := &domain.DashboardStats{}
 
 	// 获取项目总数
-	projects, totalProjects, err := s.projectRepo.GetAll(ctx, 1000000, 0, "") // 大数获取全部，无关键词过滤
+	_, totalProjects, err := s.projectRepo.GetAll(ctx, 1000000, 0, "") // 大数获取全部，无关键词过滤
 	if err != nil {
 		return nil, err
 	}
@@ -43,26 +43,14 @@ func (s *DashboardService) GetStats(ctx context.Context) (*domain.DashboardStats
 	}
 	stats.TotalLanguages = len(languages)
 
-	// 计算翻译总数和唯一键总数
-	totalTranslations := 0
-	uniqueKeys := make(map[string]bool)
-
-	for _, project := range projects {
-		// 获取每个项目的翻译矩阵（统计所有数据，不分页）
-		matrix, _, err := s.translationRepo.GetMatrix(ctx, project.ID, -1, 0, "")
-		if err != nil {
-			continue // 跳过出错的项目
-		}
-
-		// 统计翻译数和唯一键
-		for key, translations := range matrix {
-			uniqueKeys[key] = true
-			totalTranslations += len(translations)
-		}
+	// 使用聚合查询获取翻译统计 (修复 N+1 查询)
+	totalTranslations, totalKeys, err := s.translationRepo.GetStats(ctx)
+	if err != nil {
+		return nil, err
 	}
 
 	stats.TotalTranslations = totalTranslations
-	stats.TotalKeys = len(uniqueKeys)
+	stats.TotalKeys = totalKeys
 
 	return stats, nil
 }

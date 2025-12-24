@@ -5,6 +5,7 @@ import "context"
 // UserRepository 用户数据访问接口
 type UserRepository interface {
 	GetByID(ctx context.Context, id uint) (*User, error)
+	GetByIDs(ctx context.Context, ids []uint) ([]*User, error)
 	GetByUsername(ctx context.Context, username string) (*User, error)
 	GetByEmail(ctx context.Context, email string) (*User, error)
 	GetAll(ctx context.Context, limit, offset int, keyword string) ([]*User, int64, error)
@@ -16,6 +17,7 @@ type UserRepository interface {
 // ProjectRepository 项目数据访问接口
 type ProjectRepository interface {
 	GetByID(ctx context.Context, id uint) (*Project, error)
+	GetByIDs(ctx context.Context, ids []uint) ([]*Project, error)
 	GetBySlug(ctx context.Context, slug string) (*Project, error)
 	GetAll(ctx context.Context, limit, offset int, keyword string) ([]*Project, int64, error)
 	Create(ctx context.Context, project *Project) error
@@ -26,6 +28,7 @@ type ProjectRepository interface {
 // LanguageRepository 语言数据访问接口
 type LanguageRepository interface {
 	GetByID(ctx context.Context, id uint) (*Language, error)
+	GetByIDs(ctx context.Context, ids []uint) ([]*Language, error)
 	GetByCode(ctx context.Context, code string) (*Language, error)
 	GetAll(ctx context.Context) ([]*Language, error)
 	Create(ctx context.Context, language *Language) error
@@ -41,6 +44,7 @@ type TranslationRepository interface {
 	GetByProjectAndLanguage(ctx context.Context, projectID, languageID uint) ([]*Translation, error)
 	GetByProjectKeyLanguage(ctx context.Context, projectID uint, keyName string, languageID uint) (*Translation, error)
 	GetMatrix(ctx context.Context, projectID uint, limit, offset int, keyword string) (map[string]map[string]string, int64, error)
+	GetStats(ctx context.Context) (totalTranslations int, totalKeys int, err error)
 	Create(ctx context.Context, translation *Translation) error
 	CreateBatch(ctx context.Context, translations []*Translation) error
 	UpsertBatch(ctx context.Context, translations []*Translation) error
