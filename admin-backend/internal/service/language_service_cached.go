@@ -11,8 +11,8 @@ import (
 type CachedLanguageService struct {
 	languageService *LanguageService
 	cacheService    domain.CacheService
-	// 用于防止缓存击穿的互斥锁
-	cacheMutex *sync.Mutex
+	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
+	cacheMutexes sync.Map
 }
 
 // NewCachedLanguageService 创建带缓存的语言服务实例
@@ -23,8 +23,26 @@ func NewCachedLanguageService(
 	return &CachedLanguageService{
 		languageService: languageService,
 		cacheService:    cacheService,
-		cacheMutex:      &sync.Mutex{},
 	}
+}
+
+// getMutex 获取指定键的互斥锁，用于防止缓存击穿
+func (s *CachedLanguageService) getMutex(key string) *sync.Mutex {
+	if mutex, exists := s.cacheMutexes.Load(key); exists {
+		return mutex.(*sync.Mutex)
+	}
+
+	mutex := &sync.Mutex{}
+	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
+	if loaded {
+		return actual.(*sync.Mutex)
+	}
+	return mutex
+}
+
+// removeMutex 移除指定键的互斥锁
+func (s *CachedLanguageService) removeMutex(key string) {
+	s.cacheMutexes.Delete(key)
 }
 
 // Create 创建语言（更新缓存）
@@ -55,10 +73,14 @@ func (s *CachedLanguageService) GetByID(ctx context.Context, id uint64) (*domain
 // GetAll 获取所有语言（使用缓存）
 func (s *CachedLanguageService) GetAll(ctx context.Context) ([]*domain.Language, error) {
 	cacheKey := s.cacheService.GetLanguagesKey()
-	
+
 	// 使用互斥锁防止缓存击穿
-	s.cacheMutex.Lock()
-	defer s.cacheMutex.Unlock()
+	mutex := s.getMutex(cacheKey)
+	mutex.Lock()
+	defer func() {
+		mutex.Unlock()
+		s.removeMutex(cacheKey) // 请求完成后移除锁
+	}()
 
 	// 尝试从缓存获取
 	var languages []*domain.Language

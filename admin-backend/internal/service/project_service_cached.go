@@ -6,7 +6,6 @@ import (
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/dto"
 	"sync"
-	"time"
 )
 
 // CachedProjectService 带缓存的项目服务实现
@@ -26,8 +25,6 @@ func NewCachedProjectService(
 		projectService: projectService,
 		cacheService:   cacheService,
 	}
-	// 启动清理协程
-	go svc.cleanupMutexes()
 	return svc
 }
 
@@ -48,16 +45,6 @@ func (s *CachedProjectService) getMutex(key string) *sync.Mutex {
 // removeMutex 移除指定键的互斥锁
 func (s *CachedProjectService) removeMutex(key string) {
 	s.cacheMutexes.Delete(key)
-}
-
-// cleanupMutexes 定期清理无效的 mutex 锁
-func (s *CachedProjectService) cleanupMutexes() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
-	}
 }
 
 // Create 创建项目（更新缓存）

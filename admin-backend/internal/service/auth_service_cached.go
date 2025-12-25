@@ -24,8 +24,6 @@ func NewCachedAuthService(
 		authService:  authService,
 		cacheService: cacheService,
 	}
-	// 启动清理协程
-	go svc.cleanupMutexes()
 	return svc
 }
 
@@ -46,16 +44,6 @@ func (s *CachedAuthService) getMutex(key string) *sync.Mutex {
 // removeMutex 移除指定键的互斥锁
 func (s *CachedAuthService) removeMutex(key string) {
 	s.cacheMutexes.Delete(key)
-}
-
-// cleanupMutexes 定期清理无效的 mutex 锁
-func (s *CachedAuthService) cleanupMutexes() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
-	}
 }
 
 // GenerateToken 生成JWT token

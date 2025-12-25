@@ -28,8 +28,6 @@ func NewCachedTranslationService(
 		translationService: translationService,
 		cacheService:       cacheService,
 	}
-	// 启动清理协程
-	go svc.cleanupMutexes()
 	return svc
 }
 
@@ -51,18 +49,6 @@ func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
 // removeMutex 移除指定键的互斥锁
 func (s *CachedTranslationService) removeMutex(key string) {
 	s.cacheMutexes.Delete(key)
-}
-
-// cleanupMutexes 定期清理无效的 mutex 锁，防止内存泄漏
-func (s *CachedTranslationService) cleanupMutexes() {
-	ticker := time.NewTicker(5 * time.Minute)
-	defer ticker.Stop()
-
-	for range ticker.C {
-		// 清理策略：定期检查
-		// 由于每次请求后都会调用 removeMutex，map 不会无限增长
-		// 这里保留清理协程以备将来扩展更复杂的清理策略
-	}
 }
 
 // Create 创建翻译（更新缓存）

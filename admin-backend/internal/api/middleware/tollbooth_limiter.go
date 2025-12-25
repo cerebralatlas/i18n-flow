@@ -3,6 +3,7 @@ package middleware
 import (
 	"fmt"
 	"i18n-flow/internal/api/response"
+	"net"
 	"time"
 
 	"github.com/didip/tollbooth/v7"
@@ -82,4 +83,25 @@ func TollboothUserBasedRateLimitMiddleware(max float64, ttl time.Duration) gin.H
 		}
 		return fmt.Sprintf("ip:%s", getClientIP(c))
 	})
+}
+
+// getClientIP 获取客户端真实IP地址
+func getClientIP(c *gin.Context) string {
+	// 优先检查X-Real-IP头
+	if ip := c.GetHeader("X-Real-IP"); ip != "" {
+		if net.ParseIP(ip) != nil {
+			return ip
+		}
+	}
+
+	// 检查X-Forwarded-For头（可能包含多个IP）
+	if ip := c.GetHeader("X-Forwarded-For"); ip != "" {
+		// 取第一个IP
+		if firstIP := net.ParseIP(ip); firstIP != nil {
+			return ip
+		}
+	}
+
+	// 使用Gin的ClientIP方法作为后备
+	return c.ClientIP()
 }
