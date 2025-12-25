@@ -64,10 +64,10 @@ type DashboardService interface {
 
 // AuthService 认证服务接口
 type AuthService interface {
-	GenerateToken(user *User) (string, error)
-	GenerateRefreshToken(user *User) (string, error)
-	ValidateToken(token string) (*User, error)
-	ValidateRefreshToken(token string) (*User, error)
+	GenerateToken(ctx context.Context, user *User) (string, error)
+	GenerateRefreshToken(ctx context.Context, user *User) (string, error)
+	ValidateToken(ctx context.Context, token string) (*User, error)
+	ValidateRefreshToken(ctx context.Context, token string) (*User, error)
 }
 
 // ProjectMemberService 项目成员服务接口

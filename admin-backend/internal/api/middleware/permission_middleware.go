@@ -162,7 +162,7 @@ func RequireSelfOrAdmin() gin.HandlerFunc {
 		}
 
 		// 检查是否是本人
-		if currentUserID.(uint) != uint(targetUserID) {
+		if currentUserID.(uint64) != targetUserID {
 			response.Forbidden(ctx, "只能操作自己的账户")
 			ctx.Abort()
 			return

@@ -28,7 +28,7 @@ func JWTAuthMiddleware(authService domain.AuthService, userService domain.UserSe
 
 		// 验证token
 		tokenString := parts[1]
-		user, err := authService.ValidateToken(tokenString)
+		user, err := authService.ValidateToken(c.Request.Context(), tokenString)
 		if err != nil {
 			if strings.Contains(err.Error(), "expired") {
 				response.TokenExpired(c, "token已过期")

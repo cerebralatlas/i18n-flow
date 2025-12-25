@@ -38,13 +38,13 @@ func (s *UserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	}
 
 	// 生成JWT token
-	token, err := s.authService.GenerateToken(user)
+	token, err := s.authService.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
 	// 生成刷新token
-	refreshToken, err := s.authService.GenerateRefreshToken(user)
+	refreshToken, err := s.authService.GenerateRefreshToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -63,7 +63,7 @@ func (s *UserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 // RefreshToken 刷新token
 func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) (*dto.LoginResponse, error) {
 	// 验证刷新token
-	userFromToken, err := s.authService.ValidateRefreshToken(req.RefreshToken)
+	userFromToken, err := s.authService.ValidateRefreshToken(ctx, req.RefreshToken)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -75,13 +75,13 @@ func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) 
 	}
 
 	// 生成新token
-	token, err := s.authService.GenerateToken(user)
+	token, err := s.authService.GenerateToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
 
 	// 生成新刷新token
-	refreshToken, err := s.authService.GenerateRefreshToken(user)
+	refreshToken, err := s.authService.GenerateRefreshToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}

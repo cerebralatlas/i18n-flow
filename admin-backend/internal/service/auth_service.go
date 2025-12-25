@@ -1,6 +1,7 @@
 package service
 
 import (
+	"context"
 	"errors"
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/domain"
@@ -29,7 +30,7 @@ func NewAuthService(jwtConfig config.JWTConfig) *AuthService {
 }
 
 // GenerateToken 生成JWT token
-func (s *AuthService) GenerateToken(user *domain.User) (string, error) {
+func (s *AuthService) GenerateToken(ctx context.Context, user *domain.User) (string, error) {
 	// 设置token有效期
 	expirationTime := time.Now().Add(time.Hour * time.Duration(s.jwtConfig.ExpirationHours))
 
@@ -59,7 +60,7 @@ func (s *AuthService) GenerateToken(user *domain.User) (string, error) {
 }
 
 // GenerateRefreshToken 生成刷新token
-func (s *AuthService) GenerateRefreshToken(user *domain.User) (string, error) {
+func (s *AuthService) GenerateRefreshToken(ctx context.Context, user *domain.User) (string, error) {
 	// 设置refresh token有效期(更长)
 	expirationTime := time.Now().Add(time.Hour * time.Duration(s.jwtConfig.RefreshExpirationHours))
 
@@ -89,7 +90,7 @@ func (s *AuthService) GenerateRefreshToken(user *domain.User) (string, error) {
 }
 
 // ValidateToken 验证JWT token
-func (s *AuthService) ValidateToken(tokenString string) (*domain.User, error) {
+func (s *AuthService) ValidateToken(ctx context.Context, tokenString string) (*domain.User, error) {
 	claims, err := s.parseToken(tokenString, s.jwtConfig.Secret)
 	if err != nil {
 		return nil, err
@@ -103,7 +104,7 @@ func (s *AuthService) ValidateToken(tokenString string) (*domain.User, error) {
 }
 
 // ValidateRefreshToken 验证刷新token
-func (s *AuthService) ValidateRefreshToken(tokenString string) (*domain.User, error) {
+func (s *AuthService) ValidateRefreshToken(ctx context.Context, tokenString string) (*domain.User, error) {
 	claims, err := s.parseToken(tokenString, s.jwtConfig.RefreshSecret)
 	if err != nil {
 		return nil, err
