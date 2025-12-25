@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 )
 
 // ProjectMemberService 项目成员服务实现
@@ -26,7 +27,7 @@ func NewProjectMemberService(
 }
 
 // AddMember 添加项目成员
-func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, req domain.AddProjectMemberRequest, userID uint64) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, req dto.AddProjectMemberRequest, userID uint64) (*domain.ProjectMember, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
@@ -58,7 +59,7 @@ func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, 
 }
 
 // GetProjectMembers 获取项目成员列表
-func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint64) ([]*domain.ProjectMemberInfo, error) {
+func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint64) ([]*dto.ProjectMemberInfo, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
@@ -70,7 +71,7 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	if len(members) == 0 {
-		return []*domain.ProjectMemberInfo{}, nil
+		return []*dto.ProjectMemberInfo{}, nil
 	}
 
 	// 批量获取用户信息 (修复 N+1 查询)
@@ -90,14 +91,14 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	// 构建成员信息
-	var memberInfos []*domain.ProjectMemberInfo
+	var memberInfos []*dto.ProjectMemberInfo
 	for _, member := range members {
 		user, exists := userMap[member.UserID]
 		if !exists {
 			continue // 跳过不存在的用户
 		}
 
-		memberInfo := &domain.ProjectMemberInfo{
+		memberInfo := &dto.ProjectMemberInfo{
 			ID:       member.ID,
 			UserID:   member.UserID,
 			Username: user.Username,
@@ -140,7 +141,7 @@ func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint6
 }
 
 // UpdateMemberRole 更新成员角色
-func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint64, req domain.UpdateProjectMemberRequest) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint64, req dto.UpdateProjectMemberRequest) (*domain.ProjectMember, error) {
 	member, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, userID)
 	if err != nil {
 		return nil, err

@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strings"
 )
 
@@ -19,7 +20,7 @@ func NewLanguageService(languageRepo domain.LanguageRepository) *LanguageService
 }
 
 // Create 创建语言
-func (s *LanguageService) Create(ctx context.Context, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+func (s *LanguageService) Create(ctx context.Context, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
 	// 验证语言代码格式
 	code := strings.TrimSpace(req.Code)
 	if code == "" {
@@ -67,7 +68,7 @@ func (s *LanguageService) GetAll(ctx context.Context) ([]*domain.Language, error
 }
 
 // Update 更新语言
-func (s *LanguageService) Update(ctx context.Context, id uint64, req domain.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+func (s *LanguageService) Update(ctx context.Context, id uint64, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
 	// 获取现有语言
 	language, err := s.languageRepo.GetByID(ctx, id)
 	if err != nil {

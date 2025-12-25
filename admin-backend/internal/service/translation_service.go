@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strings"
 )
 
@@ -29,7 +30,7 @@ func NewTranslationService(
 }
 
 // Create 创建翻译
-func (s *TranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *TranslationService) Create(ctx context.Context, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, req.ProjectID)
 	if err != nil {
@@ -83,7 +84,7 @@ func (s *TranslationService) Create(ctx context.Context, req domain.CreateTransl
 }
 
 // CreateBatch 批量创建翻译
-func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
 	if len(requests) == 0 {
 		return nil
 	}
@@ -193,7 +194,7 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []domain.
 // UpsertBatch 批量创建或更新翻译
 // 如果翻译已存在（基于 project_id + key_name + language_id），则更新
 // 如果不存在，则创建
-func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+func (s *TranslationService) UpsertBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
 	if len(requests) == 0 {
 		return nil
 	}
@@ -254,7 +255,7 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []domain.
 
 // CreateBatchFromRequest 从批量翻译请求创建或更新翻译
 // 现在使用 UpsertBatch，支持创建和更新操作
-func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req domain.BatchTranslationRequest) error {
+func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dto.BatchTranslationRequest) error {
 	// 获取所有语言
 	languages, err := s.languageRepo.GetAll(ctx)
 	if err != nil {
@@ -268,7 +269,7 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dom
 	}
 
 	// 转换为标准翻译请求
-	var requests []domain.CreateTranslationRequest
+	var requests []dto.CreateTranslationRequest
 	for langCode, value := range req.Translations {
 		// 跳过空值
 		if value == "" {
@@ -276,7 +277,7 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dom
 		}
 
 		if langID, exists := languageCodeToID[langCode]; exists {
-			requests = append(requests, domain.CreateTranslationRequest{
+			requests = append(requests, dto.CreateTranslationRequest{
 				ProjectID:  req.ProjectID,
 				KeyName:    req.KeyName,
 				Context:    req.Context,
@@ -332,7 +333,7 @@ func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint64, li
 }
 
 // Update 更新翻译
-func (s *TranslationService) Update(ctx context.Context, id uint64, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *TranslationService) Update(ctx context.Context, id uint64, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 获取现有翻译
 	translation, err := s.translationRepo.GetByID(ctx, id)
 	if err != nil {
@@ -459,7 +460,7 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint6
 	}
 
 	// 转换为翻译请求
-	var requests []domain.CreateTranslationRequest
+	var requests []dto.CreateTranslationRequest
 
 	// 检测数据格式并转换
 	matrix := s.normalizeImportData(rawData)
@@ -467,7 +468,7 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint6
 	for key, translations := range matrix {
 		for langCode, value := range translations {
 			if langID, exists := languageCodeToID[langCode]; exists {
-				requests = append(requests, domain.CreateTranslationRequest{
+				requests = append(requests, dto.CreateTranslationRequest{
 					ProjectID:  projectID,
 					KeyName:    key,
 					LanguageID: langID,

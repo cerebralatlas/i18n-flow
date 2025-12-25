@@ -2,12 +2,10 @@ package main
 
 import (
 	"context"
-	"i18n-flow/docs" // 导入自动生成的 docs 包
 	"i18n-flow/internal/api/middleware"
 	"i18n-flow/internal/api/routes"
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/container"
-	"i18n-flow/internal/repository"
 	internal_utils "i18n-flow/internal/utils"
 	"i18n-flow/utils"
 	"log"
@@ -62,32 +60,24 @@ func main() {
 		zap.String("log_dir", cfg.Log.LogDir),
 	)
 
-	// 初始化数据库连接
-	utils.AppInfo("Initializing database connection")
-	db, err := repository.InitDB(cfg)
-	if err != nil {
-		utils.AppError("Failed to initialize database", zap.Error(err))
+	// 创建容器并初始化依赖
+	var routeManager *routes.Router
+	c := container.NewContainer(cfg, func(router *routes.Router) {
+		routeManager = router
+	})
+
+	// 启动容器（初始化数据库、Redis 等）
+	utils.AppInfo("Initializing dependencies via fx")
+	if err := c.Start(context.Background()); err != nil {
+		utils.AppError("Failed to initialize dependencies", zap.Error(err))
 		os.Exit(1)
 	}
+	defer c.Stop(context.Background())
 
-	// 创建依赖注入容器
-	container := container.NewContainer(db, cfg)
-
-	// 初始化Redis连接
-	utils.AppInfo("Initializing Redis connection")
-	redisClient := container.RedisClient()
-	if err := redisClient.Ping(context.Background()); err != nil {
-		utils.AppWarn("Failed to connect to Redis, cache will be disabled", zap.Error(err))
-	} else {
-		utils.AppInfo("Redis connection established successfully")
+	if routeManager == nil {
+		utils.AppError("Failed to get router from fx container")
+		os.Exit(1)
 	}
-
-	// 初始化监控系统
-	utils.AppInfo("Initializing monitoring system")
-	monitor := internal_utils.NewSimpleMonitor(db, redisClient.GetClient())
-
-	// 初始化Swagger文档
-	docs.SwaggerInfo.BasePath = "/api"
 
 	// 创建Gin引擎
 	router := gin.Default()
@@ -96,11 +86,10 @@ func main() {
 	router.Use(gin.Recovery())
 
 	// 应用全局中间件
-	setupMiddleware(router, monitor)
+	setupMiddleware(router, nil)
 
-	// 设置路由（包含监控端点）
-	routeManager := routes.NewRouter(container)
-	routeManager.SetupRoutes(router, monitor)
+	// 设置路由
+	routeManager.SetupRoutes(router, nil)
 
 	// 启动服务器
 	utils.AppInfo("Server starting",
@@ -169,7 +158,9 @@ func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor) 
 	router.Use(middleware.HealthCheckSkipMiddleware("/health", "/stats", "/metrics"))
 
 	// 增强的日志中间件（集成监控）
-	router.Use(middleware.EnhancedLoggingMiddleware(monitor))
+	if monitor != nil {
+		router.Use(middleware.EnhancedLoggingMiddleware(monitor))
+	}
 
 	// 全局错误处理中间件
 	router.Use(middleware.ErrorHandlerMiddleware())

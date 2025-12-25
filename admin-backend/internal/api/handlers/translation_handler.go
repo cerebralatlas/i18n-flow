@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,13 +27,13 @@ func NewTranslationHandler(translationService domain.TranslationService) *Transl
 // @Tags         翻译管理
 // @Accept       json
 // @Produce      json
-// @Param        translation  body      domain.CreateTranslationRequest  true  "翻译信息"
+// @Param        translation  body      dto.CreateTranslationRequest  true  "翻译信息"
 // @Success      201          {object}  domain.Translation
 // @Failure      400          {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /translations [post]
 func (h *TranslationHandler) Create(ctx *gin.Context) {
-	var req domain.CreateTranslationRequest
+	var req dto.CreateTranslationRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
@@ -82,14 +83,14 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 // @Tags         翻译管理
 // @Accept       json
 // @Produce      json
-// @Param        translations  body      domain.BatchTranslationRequest  true  "批量翻译请求"
+// @Param        translations  body      dto.BatchTranslationRequest  true  "批量翻译请求"
 // @Success      201           {object}  response.APIResponse
 // @Failure      400           {object}  response.APIResponse
 // @Security     BearerAuth
 // @Router       /translations/batch [post]
 func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 	// 先尝试解析为前端格式（带有translations字段的对象格式）
-	var batchReq domain.BatchTranslationRequest
+	var batchReq dto.BatchTranslationRequest
 	if err := ctx.ShouldBindJSON(&batchReq); err == nil && batchReq.Translations != nil {
 		// 使用前端格式处理
 		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), batchReq)
@@ -123,7 +124,7 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 	}
 
 	// 如果前端格式解析失败，尝试数组格式
-	var requests []domain.CreateTranslationRequest
+	var requests []dto.CreateTranslationRequest
 	if err := ctx.ShouldBindJSON(&requests); err != nil {
 		response.ValidationError(ctx, err.Error())
 		return
@@ -328,7 +329,7 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.CreateTranslationRequest
+	var req dto.CreateTranslationRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
 		return

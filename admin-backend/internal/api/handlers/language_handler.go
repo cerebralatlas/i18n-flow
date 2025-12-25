@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"net/http"
 	"strconv"
 
@@ -27,14 +28,14 @@ func NewLanguageHandler(languageService domain.LanguageService) *LanguageHandler
 // @Tags         语言管理
 // @Accept       json
 // @Produce      json
-// @Param        language  body      domain.CreateLanguageRequest  true  "语言信息"
+// @Param        language  body      dto.CreateLanguageRequest  true  "语言信息"
 // @Success      201       {object}  domain.Language
 // @Failure      400       {object}  map[string]string
 // @Failure      409       {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /languages [post]
 func (h *LanguageHandler) Create(ctx *gin.Context) {
-	var req domain.CreateLanguageRequest
+	var req dto.CreateLanguageRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
@@ -105,7 +106,7 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.CreateLanguageRequest
+	var req dto.CreateLanguageRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
 		return

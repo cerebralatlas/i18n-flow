@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 	"sync"
 	"time"
@@ -65,7 +66,7 @@ func (s *CachedTranslationService) cleanupMutexes() {
 }
 
 // Create 创建翻译（更新缓存）
-func (s *CachedTranslationService) Create(ctx context.Context, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *CachedTranslationService) Create(ctx context.Context, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	translation, err := s.translationService.Create(ctx, req, userID)
 	if err != nil {
 		return nil, err
@@ -78,7 +79,7 @@ func (s *CachedTranslationService) Create(ctx context.Context, req domain.Create
 }
 
 // CreateBatch 批量创建翻译（更新缓存）
-func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
 	err := s.translationService.CreateBatch(ctx, requests)
 	if err != nil {
 		return err
@@ -98,7 +99,7 @@ func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []d
 }
 
 // CreateBatchFromRequest 从批量翻译请求创建翻译（更新缓存）
-func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, req domain.BatchTranslationRequest) error {
+func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, req dto.BatchTranslationRequest) error {
 	err := s.translationService.CreateBatchFromRequest(ctx, req)
 	if err != nil {
 		return err
@@ -111,7 +112,7 @@ func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, r
 }
 
 // UpsertBatch 批量创建或更新翻译（更新缓存）
-func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []domain.CreateTranslationRequest) error {
+func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
 	err := s.translationService.UpsertBatch(ctx, requests)
 	if err != nil {
 		return err
@@ -253,7 +254,7 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 }
 
 // Update 更新翻译（更新缓存）
-func (s *CachedTranslationService) Update(ctx context.Context, id uint64, req domain.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *CachedTranslationService) Update(ctx context.Context, id uint64, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
 	// 先获取原始翻译，用于后续清除缓存
 	oldTranslation, err := s.translationService.GetByID(ctx, id)
 	if err != nil {

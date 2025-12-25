@@ -6,11 +6,12 @@ import (
 	"github.com/stretchr/testify/assert"
 
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 )
 
 func TestLoginRequest(t *testing.T) {
 	// 创建登录请求
-	req := domain.LoginRequest{
+	req := dto.LoginRequest{
 		Username: "admin",
 		Password: "password",
 	}
@@ -28,7 +29,7 @@ func TestLoginResponse(t *testing.T) {
 	}
 
 	// 创建登录响应
-	resp := domain.LoginResponse{
+	resp := dto.LoginResponse{
 		Token:        "jwt-token",
 		RefreshToken: "refresh-token",
 		User:         user,
@@ -42,7 +43,7 @@ func TestLoginResponse(t *testing.T) {
 
 func TestRefreshRequest(t *testing.T) {
 	// 创建刷新令牌请求
-	req := domain.RefreshRequest{
+	req := dto.RefreshRequest{
 		RefreshToken: "refresh-token",
 	}
 
@@ -52,7 +53,7 @@ func TestRefreshRequest(t *testing.T) {
 
 func TestCreateProjectRequest(t *testing.T) {
 	// 创建项目请求
-	req := domain.CreateProjectRequest{
+	req := dto.CreateProjectRequest{
 		Name:        "Test Project",
 		Description: "Test project description",
 	}
@@ -64,7 +65,7 @@ func TestCreateProjectRequest(t *testing.T) {
 
 func TestUpdateProjectRequest(t *testing.T) {
 	// 创建更新项目请求
-	req := domain.UpdateProjectRequest{
+	req := dto.UpdateProjectRequest{
 		Name:        "Updated Project",
 		Description: "Updated description",
 		Status:      "archived",
@@ -78,7 +79,7 @@ func TestUpdateProjectRequest(t *testing.T) {
 
 func TestCreateLanguageRequest(t *testing.T) {
 	// 创建语言请求
-	req := domain.CreateLanguageRequest{
+	req := dto.CreateLanguageRequest{
 		Code:      "en",
 		Name:      "English",
 		IsDefault: true,
@@ -92,7 +93,7 @@ func TestCreateLanguageRequest(t *testing.T) {
 
 func TestCreateTranslationRequest(t *testing.T) {
 	// 创建翻译请求
-	req := domain.CreateTranslationRequest{
+	req := dto.CreateTranslationRequest{
 		ProjectID:  1,
 		KeyName:    "welcome.message",
 		Context:    "Welcome message on home page",
@@ -116,7 +117,7 @@ func TestBatchTranslationRequest(t *testing.T) {
 		"es": "Bienvenido",
 	}
 
-	req := domain.BatchTranslationRequest{
+	req := dto.BatchTranslationRequest{
 		ProjectID:    1,
 		KeyName:      "welcome.message",
 		Context:      "Welcome message on home page",
@@ -135,7 +136,7 @@ func TestBatchTranslationRequest(t *testing.T) {
 
 func TestDashboardStats(t *testing.T) {
 	// 创建仪表板统计数据
-	stats := domain.DashboardStats{
+	stats := dto.DashboardStats{
 		TotalProjects:     5,
 		TotalLanguages:    3,
 		TotalTranslations: 150,

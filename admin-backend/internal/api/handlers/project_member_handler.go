@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -27,7 +28,7 @@ func NewProjectMemberHandler(projectMemberService domain.ProjectMemberService) *
 // @Accept       json
 // @Produce      json
 // @Param        project_id  path      int                             true  "项目ID"
-// @Param        member      body      domain.AddProjectMemberRequest  true  "成员信息"
+// @Param        member      body      dto.AddProjectMemberRequest  true  "成员信息"
 // @Success      201         {object}  domain.ProjectMember
 // @Failure      400         {object}  map[string]string
 // @Failure      404         {object}  map[string]string
@@ -43,7 +44,7 @@ func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.AddProjectMemberRequest
+	var req dto.AddProjectMemberRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -84,7 +85,7 @@ func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        project_id  path      int  true  "项目ID"
-// @Success      200         {object}  []domain.ProjectMemberInfo
+// @Success      200         {object}  []dto.ProjectMemberInfo
 // @Failure      400         {object}  map[string]string
 // @Failure      404         {object}  map[string]string
 // @Security     BearerAuth
@@ -157,7 +158,7 @@ func (h *ProjectMemberHandler) GetUserProjects(ctx *gin.Context) {
 // @Produce      json
 // @Param        project_id  path      int                                true  "项目ID"
 // @Param        user_id     path      int                                true  "用户ID"
-// @Param        role        body      domain.UpdateProjectMemberRequest  true  "角色信息"
+// @Param        role        body      dto.UpdateProjectMemberRequest  true  "角色信息"
 // @Success      200         {object}  domain.ProjectMember
 // @Failure      400         {object}  map[string]string
 // @Failure      404         {object}  map[string]string
@@ -180,7 +181,7 @@ func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.UpdateProjectMemberRequest
+	var req dto.UpdateProjectMemberRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {

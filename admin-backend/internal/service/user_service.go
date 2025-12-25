@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -23,7 +24,7 @@ func NewUserService(userRepo domain.UserRepository, authService domain.AuthServi
 }
 
 // Login 用户登录
-func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*domain.LoginResponse, error) {
+func (s *UserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	// 查询用户
 	user, err := s.userRepo.GetByUsername(ctx, req.Username)
 	if err != nil {
@@ -52,7 +53,7 @@ func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*doma
 	userResponse := *user
 	userResponse.Password = ""
 
-	return &domain.LoginResponse{
+	return &dto.LoginResponse{
 		Token:        token,
 		RefreshToken: refreshToken,
 		User:         userResponse,
@@ -60,7 +61,7 @@ func (s *UserService) Login(ctx context.Context, req domain.LoginRequest) (*doma
 }
 
 // RefreshToken 刷新token
-func (s *UserService) RefreshToken(ctx context.Context, req domain.RefreshRequest) (*domain.LoginResponse, error) {
+func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) (*dto.LoginResponse, error) {
 	// 验证刷新token
 	userFromToken, err := s.authService.ValidateRefreshToken(req.RefreshToken)
 	if err != nil {
@@ -89,7 +90,7 @@ func (s *UserService) RefreshToken(ctx context.Context, req domain.RefreshReques
 	userResponse := *user
 	userResponse.Password = ""
 
-	return &domain.LoginResponse{
+	return &dto.LoginResponse{
 		Token:        token,
 		RefreshToken: refreshToken,
 		User:         userResponse,
@@ -109,7 +110,7 @@ func (s *UserService) GetUserInfo(ctx context.Context, userID uint64) (*domain.U
 }
 
 // CreateUser 创建用户
-func (s *UserService) CreateUser(ctx context.Context, req domain.CreateUserRequest) (*domain.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, req dto.CreateUserRequest) (*domain.User, error) {
 	// 检查用户名是否已存在
 	if _, err := s.userRepo.GetByUsername(ctx, req.Username); err == nil {
 		return nil, domain.ErrUserExists
@@ -173,7 +174,7 @@ func (s *UserService) GetUserByID(ctx context.Context, id uint64) (*domain.User,
 }
 
 // UpdateUser 更新用户
-func (s *UserService) UpdateUser(ctx context.Context, id uint64, req domain.UpdateUserRequest) (*domain.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, id uint64, req dto.UpdateUserRequest) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
@@ -214,7 +215,7 @@ func (s *UserService) UpdateUser(ctx context.Context, id uint64, req domain.Upda
 }
 
 // ChangePassword 修改密码
-func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req domain.ChangePasswordRequest) error {
+func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req dto.ChangePasswordRequest) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
@@ -236,7 +237,7 @@ func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req dom
 }
 
 // ResetPassword 重置用户密码（管理员功能）
-func (s *UserService) ResetPassword(ctx context.Context, userID uint64, req domain.ResetPasswordRequest) error {
+func (s *UserService) ResetPassword(ctx context.Context, userID uint64, req dto.ResetPasswordRequest) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err

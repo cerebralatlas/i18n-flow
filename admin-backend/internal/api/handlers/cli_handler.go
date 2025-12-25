@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -224,7 +225,7 @@ func (h *CLIHandler) PushKeys(ctx *gin.Context) {
 				}
 			}
 
-			translationReq := domain.CreateTranslationRequest{
+			translationReq := dto.CreateTranslationRequest{
 				ProjectID:  projectID,
 				KeyName:    key,
 				LanguageID: language.ID,

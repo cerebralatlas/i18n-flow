@@ -9,6 +9,7 @@ import (
 	"github.com/stretchr/testify/mock"
 
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"i18n-flow/internal/service"
 )
 
@@ -154,28 +155,28 @@ func TestCachedTranslationService_GetMatrix(t *testing.T) {
 func TestCachedDashboardService_GetStats(t *testing.T) {
 	// 创建模拟对象
 	mockCache := new(MockCacheService)
-	
+
 	// 创建测试数据
-	stats := &domain.DashboardStats{
+	stats := &dto.DashboardStats{
 		TotalProjects:     5,
 		TotalLanguages:    3,
 		TotalTranslations: 150,
 		TotalKeys:         50,
 	}
-	
+
 	// 设置模拟期望
 	mockCache.On("GetDashboardStatsKey").Return("dashboard:stats")
 	mockCache.On("GetJSONWithEmptyCheck", mock.Anything, "dashboard:stats", mock.Anything).Return(domain.ErrCacheMiss)
 	mockCache.On("AddRandomExpiration", domain.LongExpiration).Return(domain.LongExpiration)
 	mockCache.On("SetJSONWithEmptyCache", mock.Anything, "dashboard:stats", stats, domain.LongExpiration).Return(nil)
-	
+
 	// 创建带缓存的服务
 	cachedService := service.NewCachedDashboardService(nil, mockCache)
-	
+
 	// 验证缓存服务接口实现
 	assert.Implements(t, (*domain.CacheService)(nil), mockCache)
-	
+
 	// 验证方法调用（这需要一个完整的模拟仪表板服务，这里只是验证缓存逻辑）
-	t.Logf("CachedDashboardService implements DashboardService interface: %t", 
+	t.Logf("CachedDashboardService implements DashboardService interface: %t",
 		assert.Implements(t, (*domain.DashboardService)(nil), cachedService))
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"sync"
 	"time"
 )
@@ -60,13 +61,13 @@ func (s *CachedUserService) cleanupMutexes() {
 }
 
 // Login 用户登录
-func (s *CachedUserService) Login(ctx context.Context, req domain.LoginRequest) (*domain.LoginResponse, error) {
+func (s *CachedUserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
 	// 登录操作不缓存，直接调用基础服务
 	return s.userService.Login(ctx, req)
 }
 
 // RefreshToken 刷新token
-func (s *CachedUserService) RefreshToken(ctx context.Context, req domain.RefreshRequest) (*domain.LoginResponse, error) {
+func (s *CachedUserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) (*dto.LoginResponse, error) {
 	// 刷新token操作不缓存，直接调用基础服务
 	return s.userService.RefreshToken(ctx, req)
 }
@@ -106,7 +107,7 @@ func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint64) (*do
 }
 
 // CreateUser 创建用户（不缓存）
-func (s *CachedUserService) CreateUser(ctx context.Context, req domain.CreateUserRequest) (*domain.User, error) {
+func (s *CachedUserService) CreateUser(ctx context.Context, req dto.CreateUserRequest) (*domain.User, error) {
 	return s.userService.CreateUser(ctx, req)
 }
 
@@ -122,7 +123,7 @@ func (s *CachedUserService) GetUserByID(ctx context.Context, id uint64) (*domain
 }
 
 // UpdateUser 更新用户（清除缓存）
-func (s *CachedUserService) UpdateUser(ctx context.Context, id uint64, req domain.UpdateUserRequest) (*domain.User, error) {
+func (s *CachedUserService) UpdateUser(ctx context.Context, id uint64, req dto.UpdateUserRequest) (*domain.User, error) {
 	user, err := s.userService.UpdateUser(ctx, id, req)
 	if err != nil {
 		return nil, err
@@ -136,12 +137,12 @@ func (s *CachedUserService) UpdateUser(ctx context.Context, id uint64, req domai
 }
 
 // ChangePassword 修改密码（不缓存）
-func (s *CachedUserService) ChangePassword(ctx context.Context, userID uint64, req domain.ChangePasswordRequest) error {
+func (s *CachedUserService) ChangePassword(ctx context.Context, userID uint64, req dto.ChangePasswordRequest) error {
 	return s.userService.ChangePassword(ctx, userID, req)
 }
 
 // ResetPassword 重置密码（不缓存）
-func (s *CachedUserService) ResetPassword(ctx context.Context, userID uint64, req domain.ResetPasswordRequest) error {
+func (s *CachedUserService) ResetPassword(ctx context.Context, userID uint64, req dto.ResetPasswordRequest) error {
 	return s.userService.ResetPassword(ctx, userID, req)
 }
 

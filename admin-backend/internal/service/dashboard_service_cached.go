@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"sync"
 )
 
@@ -27,15 +28,15 @@ func NewCachedDashboardService(
 }
 
 // GetStats 获取仪表板统计信息（使用缓存）
-func (s *CachedDashboardService) GetStats(ctx context.Context) (*domain.DashboardStats, error) {
+func (s *CachedDashboardService) GetStats(ctx context.Context) (*dto.DashboardStats, error) {
 	cacheKey := s.cacheService.GetDashboardStatsKey()
-	
+
 	// 使用互斥锁防止缓存击穿
 	s.cacheMutex.Lock()
 	defer s.cacheMutex.Unlock()
 
 	// 尝试从缓存获取
-	var stats *domain.DashboardStats
+	var stats *dto.DashboardStats
 	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &stats)
 	if err == nil {
 		return stats, nil

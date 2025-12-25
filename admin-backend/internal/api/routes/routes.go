@@ -4,32 +4,58 @@ import (
 	"i18n-flow/internal/api/handlers"
 	"i18n-flow/internal/api/middleware"
 	"i18n-flow/internal/api/response"
-	"i18n-flow/internal/container"
+	"i18n-flow/internal/domain"
 	internal_utils "i18n-flow/internal/utils"
 	"i18n-flow/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
+	"go.uber.org/fx"
 	"go.uber.org/zap"
 )
 
 // Router 路由器
 type Router struct {
-	container         *container.Container
-	handlerFactory    *handlers.HandlerFactory
-	middlewareFactory *middleware.MiddlewareFactory
+	UserHandler          *handlers.UserHandler
+	ProjectHandler       *handlers.ProjectHandler
+	LanguageHandler      *handlers.LanguageHandler
+	TranslationHandler   *handlers.TranslationHandler
+	DashboardHandler     *handlers.DashboardHandler
+	ProjectMemberHandler *handlers.ProjectMemberHandler
+	CLIHandler           *handlers.CLIHandler
+	middlewareFactory    *middleware.MiddlewareFactory
+}
+
+// RouterDeps 定义 Router 的依赖（用于 fx.In）
+type RouterDeps struct {
+	fx.In
+	UserHandler          *handlers.UserHandler
+	ProjectHandler       *handlers.ProjectHandler
+	LanguageHandler      *handlers.LanguageHandler
+	TranslationHandler   *handlers.TranslationHandler
+	DashboardHandler     *handlers.DashboardHandler
+	ProjectMemberHandler *handlers.ProjectMemberHandler
+	CLIHandler           *handlers.CLIHandler
+	AuthService          domain.AuthService
+	UserService          domain.UserService
+	ProjectMemberService domain.ProjectMemberService
 }
 
 // NewRouter 创建路由器
-func NewRouter(container *container.Container) *Router {
+func NewRouter(deps RouterDeps) *Router {
 	return &Router{
-		container:      container,
-		handlerFactory: handlers.NewHandlerFactory(container),
+		UserHandler:          deps.UserHandler,
+		ProjectHandler:       deps.ProjectHandler,
+		LanguageHandler:      deps.LanguageHandler,
+		TranslationHandler:   deps.TranslationHandler,
+		DashboardHandler:     deps.DashboardHandler,
+		ProjectMemberHandler: deps.ProjectMemberHandler,
+		CLIHandler:           deps.CLIHandler,
 		middlewareFactory: middleware.NewMiddlewareFactory(
-			container.AuthService(),
-			container.UserService(),
-			container.ProjectMemberService(),
+			deps.AuthService,
+			deps.UserService,
+			deps.ProjectMemberService,
 		),
 	}
 }
@@ -58,15 +84,13 @@ func (r *Router) SetupRoutes(engine *gin.Engine, monitor *internal_utils.SimpleM
 
 // setupPublicRoutes 设置公开路由
 func (r *Router) setupPublicRoutes(rg *gin.RouterGroup) {
-	userHandler := r.handlerFactory.UserHandler()
-
 	// 登录路由组（应用登录限流中间件）
 	loginRoutes := rg.Group("")
 	loginRoutes.Use(middleware.TollboothLoginRateLimitMiddleware())
 	{
 		// 公开的认证路由（每秒5个请求，突发10个）
-		loginRoutes.POST("/login", userHandler.Login)
-		loginRoutes.POST("/refresh", userHandler.RefreshToken)
+		loginRoutes.POST("/login", r.UserHandler.Login)
+		loginRoutes.POST("/refresh", r.UserHandler.RefreshToken)
 	}
 }
 
@@ -77,87 +101,79 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 	authRoutes.Use(r.middlewareFactory.JWTAuthMiddleware())
 	authRoutes.Use(middleware.TollboothAPIRateLimitMiddleware())
 
-	// 获取处理器
-	userHandler := r.handlerFactory.UserHandler()
-	projectHandler := r.handlerFactory.ProjectHandler()
-	languageHandler := r.handlerFactory.LanguageHandler()
-	translationHandler := r.handlerFactory.TranslationHandler()
-	dashboardHandler := r.handlerFactory.DashboardHandler()
-	projectMemberHandler := r.handlerFactory.ProjectMemberHandler()
-
 	// 用户相关路由
 	userRoutes := authRoutes.Group("/user")
 	{
-		userRoutes.GET("/info", userHandler.GetUserInfo)
-		userRoutes.POST("/change-password", userHandler.ChangePassword)
+		userRoutes.GET("/info", r.UserHandler.GetUserInfo)
+		userRoutes.POST("/change-password", r.UserHandler.ChangePassword)
 	}
 
 	// 用户管理路由（管理员功能）
 	usersRoutes := authRoutes.Group("/users")
 	usersRoutes.Use(r.middlewareFactory.RequireAdminRole()) // 用户管理需要管理员权限
 	{
-		usersRoutes.POST("", userHandler.CreateUser)
-		usersRoutes.GET("", userHandler.GetUsers)
-		usersRoutes.GET("/:id", userHandler.GetUser)
-		usersRoutes.PUT("/:id", userHandler.UpdateUser)
-		usersRoutes.POST("/:id/reset-password", userHandler.ResetPassword)
-		usersRoutes.DELETE("/:id", userHandler.DeleteUser)
+		usersRoutes.POST("", r.UserHandler.CreateUser)
+		usersRoutes.GET("", r.UserHandler.GetUsers)
+		usersRoutes.GET("/:id", r.UserHandler.GetUser)
+		usersRoutes.PUT("/:id", r.UserHandler.UpdateUser)
+		usersRoutes.POST("/:id/reset-password", r.UserHandler.ResetPassword)
+		usersRoutes.DELETE("/:id", r.UserHandler.DeleteUser)
 	}
 
 	// 用户项目关联路由（单独的路由组避免冲突）
 	userProjectRoutes := authRoutes.Group("/user-projects")
 	userProjectRoutes.Use(r.middlewareFactory.RequireAdminRole())
 	{
-		userProjectRoutes.GET("/:user_id", projectMemberHandler.GetUserProjects)
+		userProjectRoutes.GET("/:user_id", r.ProjectMemberHandler.GetUserProjects)
 	}
 
 	// 项目相关路由
 	projectRoutes := authRoutes.Group("/projects")
 	{
 		// 项目基本操作
-		projectRoutes.POST("", projectHandler.Create)
-		projectRoutes.GET("", projectHandler.GetAll)
-		projectRoutes.GET("/accessible", projectHandler.GetAccessibleProjects)
+		projectRoutes.POST("", r.ProjectHandler.Create)
+		projectRoutes.GET("", r.ProjectHandler.GetAll)
+		projectRoutes.GET("/accessible", r.ProjectHandler.GetAccessibleProjects)
 
 		// 需要项目查看权限的操作
 		projectViewRoutes := projectRoutes.Group("")
 		projectViewRoutes.Use(r.middlewareFactory.RequireProjectViewer())
 		{
-			projectViewRoutes.GET("/detail/:id", projectHandler.GetByID)
-			projectViewRoutes.GET("/:project_id/members", projectMemberHandler.GetProjectMembers)
-			projectViewRoutes.GET("/:project_id/members/:user_id/permission", projectMemberHandler.CheckPermission)
+			projectViewRoutes.GET("/detail/:id", r.ProjectHandler.GetByID)
+			projectViewRoutes.GET("/:project_id/members", r.ProjectMemberHandler.GetProjectMembers)
+			projectViewRoutes.GET("/:project_id/members/:user_id/permission", r.ProjectMemberHandler.CheckPermission)
 		}
 
 		// 需要项目编辑权限的操作
 		projectEditRoutes := projectRoutes.Group("")
 		projectEditRoutes.Use(r.middlewareFactory.RequireProjectEditor())
 		{
-			projectEditRoutes.PUT("/update/:id", projectHandler.Update)
+			projectEditRoutes.PUT("/update/:id", r.ProjectHandler.Update)
 		}
 
 		// 需要项目所有者权限的操作
 		projectOwnerRoutes := projectRoutes.Group("")
 		projectOwnerRoutes.Use(r.middlewareFactory.RequireProjectOwner())
 		{
-			projectOwnerRoutes.DELETE("/delete/:id", projectHandler.Delete)
-			projectOwnerRoutes.POST("/:project_id/members", projectMemberHandler.AddMember)
-			projectOwnerRoutes.PUT("/:project_id/members/:user_id", projectMemberHandler.UpdateMemberRole)
-			projectOwnerRoutes.DELETE("/:project_id/members/:user_id", projectMemberHandler.RemoveMember)
+			projectOwnerRoutes.DELETE("/delete/:id", r.ProjectHandler.Delete)
+			projectOwnerRoutes.POST("/:project_id/members", r.ProjectMemberHandler.AddMember)
+			projectOwnerRoutes.PUT("/:project_id/members/:user_id", r.ProjectMemberHandler.UpdateMemberRole)
+			projectOwnerRoutes.DELETE("/:project_id/members/:user_id", r.ProjectMemberHandler.RemoveMember)
 		}
 	}
 
 	// 语言相关路由
 	languageRoutes := authRoutes.Group("/languages")
 	{
-		languageRoutes.GET("", languageHandler.GetAll) // 所有用户都可以查看语言列表
+		languageRoutes.GET("", r.LanguageHandler.GetAll) // 所有用户都可以查看语言列表
 
 		// 语言管理需要管理员权限
 		languageAdminRoutes := languageRoutes.Group("")
 		languageAdminRoutes.Use(r.middlewareFactory.RequireAdminRole())
 		{
-			languageAdminRoutes.POST("", languageHandler.Create)
-			languageAdminRoutes.PUT("/:id", languageHandler.Update)
-			languageAdminRoutes.DELETE("/:id", languageHandler.Delete)
+			languageAdminRoutes.POST("", r.LanguageHandler.Create)
+			languageAdminRoutes.PUT("/:id", r.LanguageHandler.Update)
+			languageAdminRoutes.DELETE("/:id", r.LanguageHandler.Delete)
 		}
 	}
 
@@ -168,18 +184,18 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 		translationViewRoutes := translationRoutes.Group("")
 		translationViewRoutes.Use(r.middlewareFactory.RequireProjectViewer())
 		{
-			translationViewRoutes.GET("/by-project/:project_id", translationHandler.GetByProjectID)
-			translationViewRoutes.GET("/matrix/by-project/:project_id", translationHandler.GetMatrix)
-			translationViewRoutes.GET("/:id", translationHandler.GetByID)
+			translationViewRoutes.GET("/by-project/:project_id", r.TranslationHandler.GetByProjectID)
+			translationViewRoutes.GET("/matrix/by-project/:project_id", r.TranslationHandler.GetMatrix)
+			translationViewRoutes.GET("/:id", r.TranslationHandler.GetByID)
 		}
 
 		// 需要项目编辑权限的操作
 		translationEditRoutes := translationRoutes.Group("")
 		translationEditRoutes.Use(r.middlewareFactory.RequireProjectEditor())
 		{
-			translationEditRoutes.POST("", translationHandler.Create)
-			translationEditRoutes.PUT("/:id", translationHandler.Update)
-			translationEditRoutes.DELETE("/:id", translationHandler.Delete)
+			translationEditRoutes.POST("", r.TranslationHandler.Create)
+			translationEditRoutes.PUT("/:id", r.TranslationHandler.Update)
+			translationEditRoutes.DELETE("/:id", r.TranslationHandler.Delete)
 		}
 	}
 
@@ -188,8 +204,8 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 	batchRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	batchRoutes.Use(r.middlewareFactory.RequireProjectEditor())
 	{
-		batchRoutes.POST("/batch", translationHandler.CreateBatch)
-		batchRoutes.POST("/batch-delete", translationHandler.DeleteBatch)
+		batchRoutes.POST("/batch", r.TranslationHandler.CreateBatch)
+		batchRoutes.POST("/batch-delete", r.TranslationHandler.DeleteBatch)
 	}
 
 	// 导出导入路由（应用批量操作限流中间件和项目权限）
@@ -197,20 +213,20 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 	exportRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	exportRoutes.Use(r.middlewareFactory.RequireProjectViewer()) // 导出只需要查看权限
 	{
-		exportRoutes.GET("/project/:project_id", translationHandler.Export)
+		exportRoutes.GET("/project/:project_id", r.TranslationHandler.Export)
 	}
 
 	importRoutes := authRoutes.Group("/imports")
 	importRoutes.Use(middleware.TollboothBatchOperationRateLimitMiddleware())
 	importRoutes.Use(r.middlewareFactory.RequireProjectEditor()) // 导入需要编辑权限
 	{
-		importRoutes.POST("/project/:project_id", translationHandler.Import)
+		importRoutes.POST("/project/:project_id", r.TranslationHandler.Import)
 	}
 
 	// 仪表板相关路由
 	dashboardRoutes := authRoutes.Group("/dashboard")
 	{
-		dashboardRoutes.GET("/stats", dashboardHandler.GetStats)
+		dashboardRoutes.GET("/stats", r.DashboardHandler.GetStats)
 	}
 }
 
@@ -220,16 +236,12 @@ func (r *Router) setupCLIRoutes(rg *gin.RouterGroup) {
 	cliRoutes := rg.Group("/cli")
 	cliRoutes.Use(r.middlewareFactory.APIKeyAuthMiddleware())
 	cliRoutes.Use(middleware.APIRateLimitMiddleware())
-
-	// 获取CLI处理器
-	cliHandler := r.handlerFactory.CLIHandler()
-
 	{
 		// CLI身份验证
-		cliRoutes.GET("/auth", cliHandler.Auth)
+		cliRoutes.GET("/auth", r.CLIHandler.Auth)
 
 		// 获取翻译数据
-		cliRoutes.GET("/translations", cliHandler.GetTranslations)
+		cliRoutes.GET("/translations", r.CLIHandler.GetTranslations)
 	}
 
 	// 推送翻译键（批量操作，应用批量操作限流）
@@ -237,7 +249,7 @@ func (r *Router) setupCLIRoutes(rg *gin.RouterGroup) {
 	batchCliRoutes.Use(r.middlewareFactory.APIKeyAuthMiddleware())
 	batchCliRoutes.Use(middleware.BatchOperationRateLimitMiddleware())
 	{
-		batchCliRoutes.POST("/keys", cliHandler.PushKeys)
+		batchCliRoutes.POST("/keys", r.CLIHandler.PushKeys)
 	}
 }
 
@@ -258,3 +270,8 @@ func (r *Router) setupMonitoringRoutes(engine *gin.Engine, monitor *internal_uti
 		zap.String("detailed_stats", "GET /stats/detailed"),
 	)
 }
+
+// RouterModule 定义路由模块
+var RouterModule = fx.Module("router",
+	fx.Provide(NewRouter),
+)

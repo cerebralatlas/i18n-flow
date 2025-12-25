@@ -25,7 +25,7 @@ func NewDashboardHandler(dashboardService domain.DashboardService) *DashboardHan
 // @Tags         仪表板
 // @Accept       json
 // @Produce      json
-// @Success      200  {object}  domain.DashboardStats
+// @Success      200  {object}  dto.DashboardStats
 // @Failure      500  {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /dashboard/stats [get]

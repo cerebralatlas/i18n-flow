@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,13 +27,13 @@ func NewUserHandler(userService domain.UserService) *UserHandler {
 // @Tags         用户认证
 // @Accept       json
 // @Produce      json
-// @Param        credentials  body      domain.LoginRequest  true  "登录凭证"
-// @Success      200          {object}  domain.LoginResponse
+// @Param        credentials  body      dto.LoginRequest  true  "登录凭证"
+// @Success      200          {object}  dto.LoginResponse
 // @Failure      400          {object}  map[string]string
 // @Failure      401          {object}  map[string]string
 // @Router       /login [post]
 func (h *UserHandler) Login(ctx *gin.Context) {
-	var req domain.LoginRequest
+	var req dto.LoginRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -62,13 +63,13 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 // @Tags         用户认证
 // @Accept       json
 // @Produce      json
-// @Param        refresh_token  body      domain.RefreshRequest  true  "刷新令牌"
-// @Success      200            {object}  domain.LoginResponse
+// @Param        refresh_token  body      dto.RefreshRequest  true  "刷新令牌"
+// @Success      200            {object}  dto.LoginResponse
 // @Failure      400            {object}  map[string]string
 // @Failure      401            {object}  map[string]string
 // @Router       /refresh [post]
 func (h *UserHandler) RefreshToken(ctx *gin.Context) {
-	var req domain.RefreshRequest
+	var req dto.RefreshRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -125,14 +126,14 @@ func (h *UserHandler) GetUserInfo(ctx *gin.Context) {
 // @Tags         用户管理
 // @Accept       json
 // @Produce      json
-// @Param        user  body      domain.CreateUserRequest  true  "用户信息"
+// @Param        user  body      dto.CreateUserRequest  true  "用户信息"
 // @Success      201   {object}  domain.User
 // @Failure      400   {object}  map[string]string
 // @Failure      409   {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /users [post]
 func (h *UserHandler) CreateUser(ctx *gin.Context) {
-	var req domain.CreateUserRequest
+	var req dto.CreateUserRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -244,7 +245,7 @@ func (h *UserHandler) GetUser(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id    path      int                       true  "用户ID"
-// @Param        user  body      domain.UpdateUserRequest  true  "用户信息"
+// @Param        user  body      dto.UpdateUserRequest  true  "用户信息"
 // @Success      200   {object}  domain.User
 // @Failure      400   {object}  map[string]string
 // @Failure      404   {object}  map[string]string
@@ -260,7 +261,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.UpdateUserRequest
+	var req dto.UpdateUserRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -293,7 +294,7 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 // @Tags         用户管理
 // @Accept       json
 // @Produce      json
-// @Param        password  body      domain.ChangePasswordRequest  true  "密码信息"
+// @Param        password  body      dto.ChangePasswordRequest  true  "密码信息"
 // @Success      200       {object}  map[string]string
 // @Failure      400       {object}  map[string]string
 // @Failure      401       {object}  map[string]string
@@ -307,7 +308,7 @@ func (h *UserHandler) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.ChangePasswordRequest
+	var req dto.ChangePasswordRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {
@@ -338,7 +339,7 @@ func (h *UserHandler) ChangePassword(ctx *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        id        path      int                       true  "用户ID"
-// @Param        password  body      domain.ResetPasswordRequest  true  "新密码信息"
+// @Param        password  body      dto.ResetPasswordRequest  true  "新密码信息"
 // @Success      200       {object}  map[string]string
 // @Failure      400       {object}  map[string]string
 // @Failure      404       {object}  map[string]string
@@ -353,7 +354,7 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.ResetPasswordRequest
+	var req dto.ResetPasswordRequest
 
 	// 绑定请求参数
 	if err := ctx.ShouldBindJSON(&req); err != nil {

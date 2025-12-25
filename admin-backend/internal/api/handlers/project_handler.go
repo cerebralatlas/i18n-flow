@@ -3,6 +3,7 @@ package handlers
 import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strconv"
 
 	"github.com/gin-gonic/gin"
@@ -26,14 +27,14 @@ func NewProjectHandler(projectService domain.ProjectService) *ProjectHandler {
 // @Tags         项目管理
 // @Accept       json
 // @Produce      json
-// @Param        project  body      domain.CreateProjectRequest  true  "项目信息"
+// @Param        project  body      dto.CreateProjectRequest  true  "项目信息"
 // @Success      201      {object}  domain.Project
 // @Failure      400      {object}  map[string]string
 // @Failure      409      {object}  map[string]string
 // @Security     BearerAuth
 // @Router       /projects [post]
 func (h *ProjectHandler) Create(ctx *gin.Context) {
-	var req domain.CreateProjectRequest
+	var req dto.CreateProjectRequest
 
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
@@ -213,7 +214,7 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	var req domain.UpdateProjectRequest
+	var req dto.UpdateProjectRequest
 	if err := ctx.ShouldBindJSON(&req); err != nil {
 		response.ValidationError(ctx, err.Error())
 		return

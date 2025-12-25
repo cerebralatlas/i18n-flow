@@ -3,6 +3,7 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"strings"
 
 	"github.com/gosimple/slug"
@@ -29,7 +30,7 @@ func NewProjectService(
 }
 
 // Create 创建项目
-func (s *ProjectService) Create(ctx context.Context, req domain.CreateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *ProjectService) Create(ctx context.Context, req dto.CreateProjectRequest, userID uint64) (*domain.Project, error) {
 	// 生成slug
 	projectSlug := slug.Make(req.Name)
 	if projectSlug == "" {
@@ -80,7 +81,7 @@ func (s *ProjectService) GetAll(ctx context.Context, limit, offset int, keyword 
 }
 
 // Update 更新项目
-func (s *ProjectService) Update(ctx context.Context, id uint64, req domain.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *ProjectService) Update(ctx context.Context, id uint64, req dto.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
 	// 获取现有项目
 	project, err := s.projectRepo.GetByID(ctx, id)
 	if err != nil {

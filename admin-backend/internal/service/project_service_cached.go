@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"i18n-flow/internal/domain"
+	"i18n-flow/internal/dto"
 	"sync"
 	"time"
 )
@@ -60,7 +61,7 @@ func (s *CachedProjectService) cleanupMutexes() {
 }
 
 // Create 创建项目（更新缓存）
-func (s *CachedProjectService) Create(ctx context.Context, req domain.CreateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *CachedProjectService) Create(ctx context.Context, req dto.CreateProjectRequest, userID uint64) (*domain.Project, error) {
 	project, err := s.projectService.Create(ctx, req, userID)
 	if err != nil {
 		return nil, err
@@ -165,7 +166,7 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 }
 
 // Update 更新项目（更新缓存）
-func (s *CachedProjectService) Update(ctx context.Context, id uint64, req domain.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *CachedProjectService) Update(ctx context.Context, id uint64, req dto.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
 	project, err := s.projectService.Update(ctx, id, req, userID)
 	if err != nil {
 		return nil, err

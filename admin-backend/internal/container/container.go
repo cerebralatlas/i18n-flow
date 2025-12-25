@@ -1,279 +1,74 @@
 package container
 
 import (
-	"i18n-flow/internal/config"
-	"i18n-flow/internal/domain"
-	"i18n-flow/internal/repository"
-	"i18n-flow/internal/service"
+	"context"
 
-	"gorm.io/gorm"
+	"go.uber.org/fx"
+
+	"i18n-flow/internal/api/routes"
+	"i18n-flow/internal/config"
+	"i18n-flow/internal/di"
+	"i18n-flow/utils"
 )
 
-// Container 依赖注入容器
+// Container 依赖注入容器（基于 uber-go/fx）
 type Container struct {
-	db     *gorm.DB
-	config *config.Config
-
-	// Repositories
-	userRepo          domain.UserRepository
-	projectRepo       domain.ProjectRepository
-	languageRepo      domain.LanguageRepository
-	translationRepo   domain.TranslationRepository
-	projectMemberRepo domain.ProjectMemberRepository
-	redisClient       *repository.RedisClient
-
-	// Services
-	authService          domain.AuthService
-	userService          domain.UserService
-	projectService       domain.ProjectService
-	languageService      domain.LanguageService
-	translationService   domain.TranslationService
-	dashboardService     domain.DashboardService
-	projectMemberService domain.ProjectMemberService
-	cacheService         domain.CacheService
+	*fx.App
+	Config *config.Config
 }
 
-// NewContainer 创建新的容器实例
-func NewContainer(db *gorm.DB, cfg *config.Config) *Container {
+// NewContainer 创建容器
+func NewContainer(cfg *config.Config, onStart ...func(*routes.Router)) *Container {
+	var router *routes.Router
+
+	app := fx.New(
+		fx.NopLogger, // 禁用默认日志，使用应用自己的日志
+		di.AppModule,
+		fx.Invoke(func(lifecycle fx.Lifecycle, r *routes.Router) {
+			router = r
+			lifecycle.Append(fx.Hook{
+				OnStart: func(ctx context.Context) error {
+					utils.AppInfo("Router initialized via fx lifecycle")
+					return nil
+				},
+			})
+		}),
+	)
+
+	// 调用可选的启动回调
+	for _, fn := range onStart {
+		fn(router)
+	}
+
 	return &Container{
-		db:     db,
-		config: cfg,
+		App:   app,
+		Config: cfg,
 	}
 }
 
-// DB 获取数据库连接
-func (c *Container) DB() *gorm.DB {
-	return c.db
-}
-
-// Config 获取配置
-func (c *Container) Config() *config.Config {
-	return c.config
-}
-
-// UserRepository 获取用户仓储
-func (c *Container) UserRepository() domain.UserRepository {
-	if c.userRepo == nil {
-		c.userRepo = c.createUserRepository()
+// MustNewContainer 创建容器（失败 panic）
+func MustNewContainer(cfg *config.Config, onStart ...func(*routes.Router)) *Container {
+	c := NewContainer(cfg, onStart...)
+	if err := c.Err(); err != nil {
+		panic(err)
 	}
-	return c.userRepo
+	return c
 }
 
-// ProjectRepository 获取项目仓储
-func (c *Container) ProjectRepository() domain.ProjectRepository {
-	if c.projectRepo == nil {
-		c.projectRepo = c.createProjectRepository()
-	}
-	return c.projectRepo
+// Start 启动容器
+func (c *Container) Start(ctx context.Context) error {
+	return c.App.Start(ctx)
 }
 
-// LanguageRepository 获取语言仓储
-func (c *Container) LanguageRepository() domain.LanguageRepository {
-	if c.languageRepo == nil {
-		c.languageRepo = c.createLanguageRepository()
-	}
-	return c.languageRepo
+// Stop 停止容器
+func (c *Container) Stop(ctx context.Context) error {
+	return c.App.Stop(ctx)
 }
 
-// TranslationRepository 获取翻译仓储
-func (c *Container) TranslationRepository() domain.TranslationRepository {
-	if c.translationRepo == nil {
-		c.translationRepo = c.createTranslationRepository()
-	}
-	return c.translationRepo
+// GetConfig 获取配置
+func (c *Container) GetConfig() *config.Config {
+	return c.Config
 }
 
-// ProjectMemberRepository 获取项目成员仓储
-func (c *Container) ProjectMemberRepository() domain.ProjectMemberRepository {
-	if c.projectMemberRepo == nil {
-		c.projectMemberRepo = c.createProjectMemberRepository()
-	}
-	return c.projectMemberRepo
-}
-
-// AuthService 获取认证服务
-func (c *Container) AuthService() domain.AuthService {
-	if c.authService == nil {
-		c.authService = c.createAuthService()
-	}
-	return c.authService
-}
-
-// UserService 获取用户服务
-func (c *Container) UserService() domain.UserService {
-	if c.userService == nil {
-		c.userService = c.createUserService()
-	}
-	return c.userService
-}
-
-// ProjectService 获取项目服务
-func (c *Container) ProjectService() domain.ProjectService {
-	if c.projectService == nil {
-		c.projectService = c.createProjectService()
-	}
-	return c.projectService
-}
-
-// LanguageService 获取语言服务
-func (c *Container) LanguageService() domain.LanguageService {
-	if c.languageService == nil {
-		c.languageService = c.createLanguageService()
-	}
-	return c.languageService
-}
-
-// TranslationService 获取翻译服务
-func (c *Container) TranslationService() domain.TranslationService {
-	if c.translationService == nil {
-		c.translationService = c.createTranslationService()
-	}
-	return c.translationService
-}
-
-// DashboardService 获取仪表板服务
-func (c *Container) DashboardService() domain.DashboardService {
-	if c.dashboardService == nil {
-		c.dashboardService = c.createDashboardService()
-	}
-	return c.dashboardService
-}
-
-// ProjectMemberService 获取项目成员服务
-func (c *Container) ProjectMemberService() domain.ProjectMemberService {
-	if c.projectMemberService == nil {
-		c.projectMemberService = c.createProjectMemberService()
-	}
-	return c.projectMemberService
-}
-
-// RedisClient 获取Redis客户端
-func (c *Container) RedisClient() *repository.RedisClient {
-	if c.redisClient == nil {
-		c.redisClient = c.createRedisClient()
-	}
-	return c.redisClient
-}
-
-// CacheService 获取缓存服务
-func (c *Container) CacheService() domain.CacheService {
-	if c.cacheService == nil {
-		c.cacheService = c.createCacheService()
-	}
-	return c.cacheService
-}
-
-// 创建仓储实例的私有方法
-
-// createUserRepository 创建用户仓储
-func (c *Container) createUserRepository() domain.UserRepository {
-	return repository.NewUserRepository(c.db)
-}
-
-// createProjectRepository 创建项目仓储
-func (c *Container) createProjectRepository() domain.ProjectRepository {
-	return repository.NewProjectRepository(c.db)
-}
-
-// createLanguageRepository 创建语言仓储
-func (c *Container) createLanguageRepository() domain.LanguageRepository {
-	return repository.NewLanguageRepository(c.db)
-}
-
-// createTranslationRepository 创建翻译仓储
-func (c *Container) createTranslationRepository() domain.TranslationRepository {
-	return repository.NewTranslationRepository(c.db)
-}
-
-// createProjectMemberRepository 创建项目成员仓储
-func (c *Container) createProjectMemberRepository() domain.ProjectMemberRepository {
-	return repository.NewProjectMemberRepository(c.db)
-}
-
-// createRedisClient 创建Redis客户端
-func (c *Container) createRedisClient() *repository.RedisClient {
-	return repository.NewRedisClient(&c.config.Redis)
-}
-
-// 创建服务实例的私有方法
-
-// createAuthService 创建认证服务
-func (c *Container) createAuthService() domain.AuthService {
-	return service.NewAuthService(c.config.JWT)
-}
-
-// createUserService 创建用户服务
-func (c *Container) createUserService() domain.UserService {
-	baseService := service.NewUserService(c.UserRepository(), c.AuthService())
-	// 如果有缓存服务，返回带缓存的版本
-	if c.CacheService() != nil {
-		return service.NewCachedUserService(baseService, c.CacheService())
-	}
-	return baseService
-}
-
-// createProjectService 创建项目服务
-func (c *Container) createProjectService() domain.ProjectService {
-	baseService := service.NewProjectService(
-		c.ProjectRepository(),
-		c.UserRepository(),
-		c.ProjectMemberRepository(),
-	)
-	// 如果有缓存服务，返回带缓存的版本
-	if c.CacheService() != nil {
-		return service.NewCachedProjectService(baseService, c.CacheService())
-	}
-	return baseService
-}
-
-// createLanguageService 创建语言服务
-func (c *Container) createLanguageService() domain.LanguageService {
-	baseService := service.NewLanguageService(c.LanguageRepository())
-	// 如果有缓存服务，返回带缓存的版本
-	if c.CacheService() != nil {
-		return service.NewCachedLanguageService(baseService, c.CacheService())
-	}
-	return baseService
-}
-
-// createTranslationService 创建翻译服务
-func (c *Container) createTranslationService() domain.TranslationService {
-	baseService := service.NewTranslationService(
-		c.TranslationRepository(),
-		c.ProjectRepository(),
-		c.LanguageRepository(),
-	)
-	// 如果有缓存服务，返回带缓存的版本
-	if c.CacheService() != nil {
-		return service.NewCachedTranslationService(baseService, c.CacheService())
-	}
-	return baseService
-}
-
-// createDashboardService 创建仪表板服务
-func (c *Container) createDashboardService() domain.DashboardService {
-	baseService := service.NewDashboardService(
-		c.ProjectRepository(),
-		c.LanguageRepository(),
-		c.TranslationRepository(),
-	)
-	// 如果有缓存服务，返回带缓存的版本
-	if c.CacheService() != nil {
-		return service.NewCachedDashboardService(baseService, c.CacheService())
-	}
-	return baseService
-}
-
-// createProjectMemberService 创建项目成员服务
-func (c *Container) createProjectMemberService() domain.ProjectMemberService {
-	return service.NewProjectMemberService(
-		c.ProjectMemberRepository(),
-		c.UserRepository(),
-		c.ProjectRepository(),
-	)
-}
-
-// createCacheService 创建缓存服务
-func (c *Container) createCacheService() domain.CacheService {
-	return service.NewCacheService(c.RedisClient())
-}
+// AppModule 导出 fx 模块供外部使用
+var AppModule = di.AppModule
