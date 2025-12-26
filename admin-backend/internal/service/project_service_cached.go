@@ -32,8 +32,9 @@ func (s *CachedProjectService) Create(ctx context.Context, params domain.CreateP
 		return nil, err
 	}
 
-	// 清除项目列表缓存
-	s.cacheService.Delete(ctx, s.cacheService.GetProjectsKey())
+	// 清除项目列表缓存（包括所有分页的缓存）
+	baseKey := s.cacheService.GetProjectsKey()
+	s.cacheService.DeleteByPattern(ctx, baseKey+"*") // 使用通配符删除所有相关缓存
 
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
@@ -140,8 +141,9 @@ func (s *CachedProjectService) Update(ctx context.Context, id uint64, params dom
 	// 清除该项目的缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectKey(id))
 
-	// 清除项目列表缓存
-	s.cacheService.Delete(ctx, s.cacheService.GetProjectsKey())
+	// 清除项目列表缓存（包括所有分页的缓存）
+	baseKey := s.cacheService.GetProjectsKey()
+	s.cacheService.DeleteByPattern(ctx, baseKey+"*")
 
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
@@ -159,8 +161,9 @@ func (s *CachedProjectService) Delete(ctx context.Context, id uint64) error {
 	// 清除该项目的缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetProjectKey(id))
 
-	// 清除项目列表缓存
-	s.cacheService.Delete(ctx, s.cacheService.GetProjectsKey())
+	// 清除项目列表缓存（包括所有分页的缓存）
+	baseKey := s.cacheService.GetProjectsKey()
+	s.cacheService.DeleteByPattern(ctx, baseKey+"*")
 
 	// 清除仪表板缓存
 	s.cacheService.Delete(ctx, s.cacheService.GetDashboardStatsKey())
