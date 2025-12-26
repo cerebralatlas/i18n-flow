@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/api/response"
-	"i18n-flow/utils"
+	log_utils "i18n-flow/utils"
 	"io"
 	"net/http"
 	"regexp"
@@ -255,12 +255,12 @@ func validateTranslationRequest(c *gin.Context) {
 }
 
 // SecurityValidationMiddleware 安全验证中间件
-func SecurityValidationMiddleware() gin.HandlerFunc {
+func SecurityValidationMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 检查User-Agent
 		userAgent := c.GetHeader("User-Agent")
 		if userAgent == "" {
-			utils.AppWarn("请求缺少User-Agent头",
+			logger.Warn("Missing User-Agent header",
 				zap.String("ip", c.ClientIP()),
 				zap.String("path", c.Request.URL.Path),
 			)
@@ -276,9 +276,9 @@ func SecurityValidationMiddleware() gin.HandlerFunc {
 		for _, header := range suspiciousHeaders {
 			if value := c.GetHeader(header); value != "" {
 				// 记录可能的代理或伪造IP
-				utils.AppInfo("检测到代理头",
+				logger.Info("Proxy header detected",
 					zap.String("header", header),
-					zap.String("value", value),
+					zap.String("value", log_utils.SanitizeLogValue(value)),
 					zap.String("ip", c.ClientIP()),
 					zap.String("path", c.Request.URL.Path),
 				)

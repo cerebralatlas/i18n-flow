@@ -7,17 +7,20 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // ProjectHandler 项目处理器
 type ProjectHandler struct {
 	projectService domain.ProjectService
+	logger         *zap.Logger
 }
 
 // NewProjectHandler 创建项目处理器
-func NewProjectHandler(projectService domain.ProjectService) *ProjectHandler {
+func NewProjectHandler(projectService domain.ProjectService, logger *zap.Logger) *ProjectHandler {
 	return &ProjectHandler{
 		projectService: projectService,
+		logger:         logger,
 	}
 }
 
@@ -60,6 +63,21 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 创建项目成功日志
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Project created",
+		zap.Uint64("project_id", project.ID),
+		zap.String("project_name", project.Name),
+		zap.String("project_slug", project.Slug),
+		zap.Uint64("owner_id", userID.(uint64)),
+		zap.String("operator", operatorName),
+	)
 
 	response.Created(ctx, project)
 }
@@ -240,6 +258,20 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 		return
 	}
 
+	// 更新项目成功日志
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Project updated",
+		zap.Uint64("project_id", id),
+		zap.String("project_name", project.Name),
+		zap.Uint64("operator_id", userID.(uint64)),
+		zap.String("operator", operatorName),
+	)
+
 	response.Success(ctx, project)
 }
 
@@ -273,6 +305,23 @@ func (h *ProjectHandler) Delete(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 删除项目成功日志
+	operatorID, exists := ctx.Get("userID")
+	if !exists {
+		operatorID = uint64(0)
+	}
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Project deleted",
+		zap.Uint64("project_id", id),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+		zap.String("operator", operatorName),
+	)
 
 	response.NoContent(ctx)
 }

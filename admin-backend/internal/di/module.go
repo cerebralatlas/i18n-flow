@@ -21,6 +21,9 @@ var AppModule = fx.Module("app",
 	// 缓存服务
 	fx.Provide(NewCacheService),
 
+	// 监控器
+	fx.Provide(NewSimpleMonitor),
+
 	// Repositories
 	fx.Provide(NewUserRepository),
 	fx.Provide(NewProjectRepository),
@@ -47,4 +50,10 @@ var AppModule = fx.Module("app",
 	fx.Provide(handlers.NewProjectMemberHandler),
 	fx.Provide(handlers.NewCLIHandler),
 	fx.Provide(handlers.NewDashboardHandler),
+
+	// Logger
+	fx.Provide(NewLogger),
+
+	// DB Security Monitor
+	fx.Provide(NewDBSecurityMonitor),
 )

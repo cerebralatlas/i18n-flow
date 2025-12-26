@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
-	"i18n-flow/utils"
 	"runtime/debug"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
 )
 
-// ErrorHandlerMiddleware 全局错误处理中间件
-func ErrorHandlerMiddleware() gin.HandlerFunc {
+// ErrorHandlerMiddleware 创建带 logger 的错误处理中间件
+func ErrorHandlerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return gin.CustomRecovery(func(c *gin.Context, recovered interface{}) {
 		// 获取请求信息
 		fields := []zap.Field{
@@ -29,19 +28,19 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 		}
 
 		if err, ok := recovered.(string); ok {
-			utils.ErrorLog("Panic recovered", append(fields,
+			logger.Error("Panic recovered", append(fields,
 				zap.String("error", err),
 				zap.String("stack", string(debug.Stack())),
 			)...)
 			response.InternalServerError(c, "服务器发生异常")
 		} else if err, ok := recovered.(error); ok {
-			utils.ErrorLog("Panic recovered", append(fields,
+			logger.Error("Panic recovered", append(fields,
 				zap.Error(err),
 				zap.String("stack", string(debug.Stack())),
 			)...)
 			response.InternalServerError(c, "服务器发生异常")
 		} else {
-			utils.ErrorLog("Panic recovered", append(fields,
+			logger.Error("Panic recovered", append(fields,
 				zap.Any("error", recovered),
 				zap.String("stack", string(debug.Stack())),
 			)...)
@@ -59,8 +58,8 @@ func getRequestIDFromContext(c *gin.Context) string {
 	return ""
 }
 
-// AppErrorHandlerMiddleware 应用程序错误处理中间件
-func AppErrorHandlerMiddleware() gin.HandlerFunc {
+// AppErrorHandlerMiddleware 创建带 logger 的应用程序错误处理中间件
+func AppErrorHandlerMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		c.Next()
 
@@ -84,7 +83,7 @@ func AppErrorHandlerMiddleware() gin.HandlerFunc {
 			// 检查是否为应用程序错误
 			if appErr, ok := domain.IsAppError(err); ok {
 				// 记录错误日志
-				utils.ErrorLog("Application error", append(fields,
+				logger.Error("Application error", append(fields,
 					zap.String("error_type", string(appErr.Type)),
 					zap.String("error_code", appErr.Code),
 					zap.String("error_message", appErr.Message),
@@ -105,7 +104,7 @@ func AppErrorHandlerMiddleware() gin.HandlerFunc {
 			}
 
 			// 处理其他类型的错误
-			utils.ErrorLog("Unhandled error", append(fields, zap.Error(err))...)
+			logger.Error("Unhandled error", append(fields, zap.Error(err))...)
 			response.InternalServerError(c, "服务器内部错误")
 		}
 	}

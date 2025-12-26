@@ -44,20 +44,20 @@ type CLIConfig struct {
 
 // LogConfig 日志配置
 type LogConfig struct {
-	Level         string `json:"level"`          // 全局日志级别
-	Format        string `json:"format"`         // 日志格式
-	Output        string `json:"output"`         // 输出方式
-	LogDir        string `json:"log_dir"`        // 日志目录
-	DateFormat    string `json:"date_format"`    // 日期格式
-	MaxSize       int    `json:"max_size"`       // 最大文件大小
-	MaxAge        int    `json:"max_age"`        // 保留天数
-	MaxBackups    int    `json:"max_backups"`    // 最大备份数
-	Compress      bool   `json:"compress"`       // 是否压缩
-	EnableConsole bool   `json:"enable_console"` // 是否启用控制台
+	Level      string `json:"level"`       // 全局日志级别
+	Format     string `json:"format"`      // 日志格式
+	Output     string `json:"output"`      // 输出方式
+	LogDir     string `json:"log_dir"`     // 日志目录
+	DateFormat string `json:"date_format"` // 日期格式
+	MaxSize    int    `json:"max_size"`    // 最大文件大小
+	MaxAge     int    `json:"max_age"`     // 保留天数
+	MaxBackups int    `json:"max_backups"` // 最大备份数
+	Compress   bool   `json:"compress"`    // 是否压缩
 }
 
 // Config 应用配置
 type Config struct {
+	Env   string // 运行环境: development, staging, production
 	DB    DBConfig
 	JWT   JWTConfig
 	CLI   CLIConfig
@@ -74,6 +74,7 @@ func Load() (*Config, error) {
 	}
 
 	config := &Config{
+		Env: getEnv("ENV", "development"),
 		DB: DBConfig{
 			Username: getEnv("DB_USERNAME", "root"),
 			Password: getEnv("DB_PASSWORD", ""),
@@ -98,16 +99,15 @@ func Load() (*Config, error) {
 			Prefix:   getEnv("REDIS_PREFIX", "i18n_flow:"),
 		},
 		Log: LogConfig{
-			Level:         getEnv("LOG_LEVEL", "info"),
-			Format:        getEnv("LOG_FORMAT", "console"),
-			Output:        getEnv("LOG_OUTPUT", "both"),
-			LogDir:        getEnv("LOG_DIR", "logs"),
-			DateFormat:    getEnv("LOG_DATE_FORMAT", "2006-01-02"),
-			MaxSize:       getEnvAsInt("LOG_MAX_SIZE", 100),
-			MaxAge:        getEnvAsInt("LOG_MAX_AGE", 7),
-			MaxBackups:    getEnvAsInt("LOG_MAX_BACKUPS", 5),
-			Compress:      getEnvAsBool("LOG_COMPRESS", true),
-			EnableConsole: getEnvAsBool("LOG_ENABLE_CONSOLE", true),
+			Level:      getEnv("LOG_LEVEL", "info"),
+			Format:     getEnv("LOG_FORMAT", "console"),
+			Output:     getEnv("LOG_OUTPUT", "both"),
+			LogDir:     getEnv("LOG_DIR", "logs"),
+			DateFormat: getEnv("LOG_DATE_FORMAT", "2006-01-02"),
+			MaxSize:    getEnvAsInt("LOG_MAX_SIZE", 100),
+			MaxAge:     getEnvAsInt("LOG_MAX_AGE", 7),
+			MaxBackups: getEnvAsInt("LOG_MAX_BACKUPS", 5),
+			Compress:   getEnvAsBool("LOG_COMPRESS", true),
 		},
 	}
 
@@ -204,6 +204,16 @@ func (c *Config) Validate() error {
 	}
 	if !validLogLevels[c.Log.Level] {
 		return errors.New("log level must be one of: debug, info, warn, error, fatal")
+	}
+
+	validLogFormats := map[string]bool{"console": true, "json": true}
+	if !validLogFormats[c.Log.Format] {
+		return errors.New("log format must be one of: console, json")
+	}
+
+	validLogOutputs := map[string]bool{"stdout": true, "file": true, "both": true}
+	if !validLogOutputs[c.Log.Output] {
+		return errors.New("log output must be one of: stdout, file, both")
 	}
 
 	if c.Log.MaxSize <= 0 || c.Log.MaxSize > 1000 {

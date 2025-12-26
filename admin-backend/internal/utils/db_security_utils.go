@@ -9,6 +9,8 @@ import (
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/logger"
+	log_utils "i18n-flow/utils"
+	"go.uber.org/zap"
 )
 
 // DBSecurityConfig 数据库安全配置
@@ -37,13 +39,15 @@ func DefaultDBSecurityConfig() DBSecurityConfig {
 type SecurityLogger struct {
 	config DBSecurityConfig
 	logger logger.Interface
+	zapLogger *zap.Logger
 }
 
 // NewSecurityLogger 创建安全日志记录器
-func NewSecurityLogger(config DBSecurityConfig) *SecurityLogger {
+func NewSecurityLogger(config DBSecurityConfig, zapLogger *zap.Logger) *SecurityLogger {
 	return &SecurityLogger{
 		config: config,
 		logger: logger.Default.LogMode(config.LogLevel),
+		zapLogger: zapLogger,
 	}
 }
 
@@ -56,56 +60,80 @@ func (l *SecurityLogger) LogMode(level logger.LogLevel) logger.Interface {
 
 // Info 信息日志
 func (l *SecurityLogger) Info(ctx context.Context, msg string, data ...interface{}) {
-	if l.config.EnableQueryLogging {
-		// 使用标准日志记录
-		fmt.Printf("[DB INFO] %s %v\n", msg, data)
+	if l.config.EnableQueryLogging && l.zapLogger != nil {
+		l.zapLogger.Info("DB: "+msg, zap.Any("data", data))
 	}
 }
 
 // Warn 警告日志
 func (l *SecurityLogger) Warn(ctx context.Context, msg string, data ...interface{}) {
-	fmt.Printf("[DB WARN] %s %v\n", msg, data)
+	if l.zapLogger != nil {
+		l.zapLogger.Warn("DB: "+msg, zap.Any("data", data))
+	}
 }
 
 // Error 错误日志
 func (l *SecurityLogger) Error(ctx context.Context, msg string, data ...interface{}) {
-	fmt.Printf("[DB ERROR] %s %v\n", msg, data)
+	if l.zapLogger != nil {
+		l.zapLogger.Error("DB: "+msg, zap.Any("data", data))
+	}
 }
 
 // Trace 跟踪日志（查询日志）
 func (l *SecurityLogger) Trace(ctx context.Context, begin time.Time, fc func() (string, int64), err error) {
+	if l.zapLogger == nil {
+		return
+	}
+
 	elapsed := time.Since(begin)
 	sql, rows := fc()
 
 	// 检查查询长度
 	if len(sql) > l.config.MaxQueryLength {
-		fmt.Printf("[DB WARN] 检测到超长查询: sql=%s..., length=%d, elapsed=%v\n",
-			sql[:100], len(sql), elapsed)
+		l.zapLogger.Warn("DB: Oversized query detected",
+			zap.String("sql", log_utils.SanitizeLogValue(sql[:min(100, len(sql))])),
+			zap.Int("length", len(sql)),
+			zap.Duration("elapsed", elapsed),
+		)
 		return
 	}
 
 	// 检查可疑查询
 	if l.config.EnableSuspiciousCheck && l.isSuspiciousQuery(sql) {
-		fmt.Printf("[DB WARN] 检测到可疑查询: sql=%s, elapsed=%v, rows=%d, err=%v\n",
-			sql, elapsed, rows, err)
+		l.zapLogger.Warn("DB: Suspicious query detected",
+			zap.String("sql", log_utils.SanitizeLogValue(sql)),
+			zap.Duration("elapsed", elapsed),
+			zap.Int64("rows", rows),
+			zap.Error(err),
+		)
 	}
 
 	// 慢查询日志
 	if l.config.EnableSlowQueryLog && elapsed > l.config.SlowQueryThreshold {
-		fmt.Printf("[DB WARN] 慢查询检测: sql=%s, elapsed=%v, rows=%d, err=%v\n",
-			sql, elapsed, rows, err)
+		l.zapLogger.Warn("DB: Slow query detected",
+			zap.String("sql", log_utils.SanitizeLogValue(sql)),
+			zap.Duration("elapsed", elapsed),
+			zap.Int64("rows", rows),
+			zap.Error(err),
+		)
 	}
 
 	// 错误查询日志
 	if err != nil && err != gorm.ErrRecordNotFound {
-		fmt.Printf("[DB ERROR] 查询执行错误: sql=%s, elapsed=%v, err=%v\n",
-			sql, elapsed, err)
+		l.zapLogger.Error("DB: Query execution error",
+			zap.String("sql", log_utils.SanitizeLogValue(sql)),
+			zap.Duration("elapsed", elapsed),
+			zap.Error(err),
+		)
 	}
 
 	// 正常查询日志（仅在调试模式下）
 	if l.config.EnableQueryLogging && l.config.LogLevel == logger.Info {
-		fmt.Printf("[DB INFO] 查询执行: sql=%s, elapsed=%v, rows=%d\n",
-			sql, elapsed, rows)
+		l.zapLogger.Info("DB: Query executed",
+			zap.String("sql", log_utils.SanitizeLogValue(sql)),
+			zap.Duration("elapsed", elapsed),
+			zap.Int64("rows", rows),
+		)
 	}
 }
 
@@ -328,12 +356,12 @@ type DBSecurityMonitor struct {
 }
 
 // NewDBSecurityMonitor 创建数据库安全监控器
-func NewDBSecurityMonitor() *DBSecurityMonitor {
+func NewDBSecurityMonitor(zapLogger *zap.Logger) *DBSecurityMonitor {
 	config := DefaultDBSecurityConfig()
 	return &DBSecurityMonitor{
 		config:    config,
 		whitelist: DefaultQueryWhitelist(),
-		logger:    NewSecurityLogger(config),
+		logger:    NewSecurityLogger(config, zapLogger),
 	}
 }
 
@@ -346,6 +374,3 @@ func (m *DBSecurityMonitor) GetLogger() logger.Interface {
 func (m *DBSecurityMonitor) ValidateQuery(sql string) error {
 	return m.whitelist.ValidateQuery(sql)
 }
-
-// 全局数据库安全监控器
-var GlobalDBSecurityMonitor = NewDBSecurityMonitor()

@@ -7,13 +7,17 @@ import (
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/repository"
 	"i18n-flow/internal/service"
+	internal_utils "i18n-flow/internal/utils"
+	log_utils "i18n-flow/utils"
 
+	"go.uber.org/fx"
+	"go.uber.org/zap"
 	"gorm.io/gorm"
 )
 
 // NewDB 提供数据库连接
-func NewDB(cfg *config.Config) (*gorm.DB, error) {
-	db, err := repository.InitDB(cfg)
+func NewDB(cfg *config.Config, logger *zap.Logger, monitor *internal_utils.DBSecurityMonitor) (*gorm.DB, error) {
+	db, err := repository.InitDB(cfg, logger, monitor)
 	if err != nil {
 		return nil, fmt.Errorf("初始化数据库失败: %w", err)
 	}
@@ -134,4 +138,34 @@ func NewProjectMemberService(
 	projectRepo domain.ProjectRepository,
 ) domain.ProjectMemberService {
 	return service.NewProjectMemberService(memberRepo, userRepo, projectRepo)
+}
+
+// NewSimpleMonitor 提供简单监控器
+func NewSimpleMonitor(db *gorm.DB, redisClient *repository.RedisClient) *internal_utils.SimpleMonitor {
+	return internal_utils.NewSimpleMonitor(db, redisClient.GetClient())
+}
+
+// LoggerResult 日志器提供结果（支持生命周期管理）
+type LoggerResult struct {
+	fx.Out
+	Logger   *zap.Logger
+	SyncFunc func() `name:"logger-sync"`
+}
+
+// NewLogger 提供日志器
+func NewLogger(cfg *config.Config) (LoggerResult, error) {
+	// 直接使用配置文件中的日志配置
+	loggerManager, err := log_utils.NewLoggerManager(cfg.Log)
+	if err != nil {
+		return LoggerResult{}, fmt.Errorf("初始化日志系统失败: %w", err)
+	}
+	return LoggerResult{
+		Logger:   loggerManager.GetAppLogger(),
+		SyncFunc: loggerManager.SyncAll,
+	}, nil
+}
+
+// NewDBSecurityMonitor 提供数据库安全监控器
+func NewDBSecurityMonitor(logger *zap.Logger) *internal_utils.DBSecurityMonitor {
+	return internal_utils.NewDBSecurityMonitor(logger)
 }

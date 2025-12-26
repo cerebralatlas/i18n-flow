@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"html"
 	"i18n-flow/internal/api/response"
-	"i18n-flow/utils"
+	log_utils "i18n-flow/utils"
 	"io"
 	"net/http"
 	"regexp"
@@ -40,12 +40,12 @@ func DefaultXSSProtectionConfig() XSSProtectionConfig {
 }
 
 // XSSProtectionMiddleware XSS防护中间件
-func XSSProtectionMiddleware() gin.HandlerFunc {
-	return XSSProtectionMiddlewareWithConfig(DefaultXSSProtectionConfig())
+func XSSProtectionMiddleware(logger *zap.Logger) gin.HandlerFunc {
+	return XSSProtectionMiddlewareWithConfig(logger, DefaultXSSProtectionConfig())
 }
 
 // XSSProtectionMiddlewareWithConfig 带配置的XSS防护中间件
-func XSSProtectionMiddlewareWithConfig(config XSSProtectionConfig) gin.HandlerFunc {
+func XSSProtectionMiddlewareWithConfig(logger *zap.Logger, config XSSProtectionConfig) gin.HandlerFunc {
 	// 创建HTML清理策略
 	var policy *bluemonday.Policy
 	if config.EnableStrictMode {
@@ -89,7 +89,7 @@ func XSSProtectionMiddlewareWithConfig(config XSSProtectionConfig) gin.HandlerFu
 
 		// 处理JSON请求
 		if strings.Contains(contentType, "application/json") {
-			if err := processJSONRequest(c, policy, xssPatterns, config); err != nil {
+			if err := processJSONRequest(c, policy, xssPatterns, config, logger); err != nil {
 				response.BadRequest(c, fmt.Sprintf("XSS防护检查失败: %s", err.Error()))
 				return
 			}
@@ -100,7 +100,7 @@ func XSSProtectionMiddlewareWithConfig(config XSSProtectionConfig) gin.HandlerFu
 }
 
 // processJSONRequest 处理JSON请求
-func processJSONRequest(c *gin.Context, policy *bluemonday.Policy, xssPatterns []*regexp.Regexp, config XSSProtectionConfig) error {
+func processJSONRequest(c *gin.Context, policy *bluemonday.Policy, xssPatterns []*regexp.Regexp, config XSSProtectionConfig, logger *zap.Logger) error {
 	// 读取请求体
 	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
@@ -130,11 +130,11 @@ func processJSONRequest(c *gin.Context, policy *bluemonday.Policy, xssPatterns [
 
 	// 记录XSS尝试
 	if hasXSS && config.LogSuspiciousInput {
-		utils.AppWarn("检测到XSS尝试",
+		logger.Error("XSS attempt detected",
 			zap.String("ip", c.ClientIP()),
 			zap.String("path", c.Request.URL.Path),
 			zap.String("method", c.Request.Method),
-			zap.String("user_agent", c.GetHeader("User-Agent")),
+			zap.String("user_agent", log_utils.SanitizeLogValue(c.GetHeader("User-Agent"))),
 		)
 	}
 
@@ -334,7 +334,7 @@ func HTMLEscapeMiddleware() gin.HandlerFunc {
 }
 
 // CSPViolationReportMiddleware CSP违规报告中间件
-func CSPViolationReportMiddleware() gin.HandlerFunc {
+func CSPViolationReportMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 处理CSP违规报告
 		if c.Request.URL.Path == "/csp-report" && c.Request.Method == http.MethodPost {
@@ -345,10 +345,10 @@ func CSPViolationReportMiddleware() gin.HandlerFunc {
 			}
 
 			// 记录CSP违规
-			utils.AppWarn("CSP违规报告",
+			logger.Warn("CSP violation report",
 				zap.String("ip", c.ClientIP()),
-				zap.String("user_agent", c.GetHeader("User-Agent")),
-				zap.String("report", string(body)),
+				zap.String("user_agent", log_utils.SanitizeLogValue(c.GetHeader("User-Agent"))),
+				zap.String("report", log_utils.SanitizeLogValue(string(body))),
 			)
 
 			c.JSON(http.StatusOK, gin.H{"status": "received"})

@@ -5,11 +5,11 @@ import (
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/domain"
 	internal_utils "i18n-flow/internal/utils"
-	"log"
 	"os"
 	"strings"
 	"time"
 
+	"go.uber.org/zap"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
@@ -17,7 +17,7 @@ import (
 )
 
 // InitDB 初始化数据库连接
-func InitDB(cfg *config.Config) (*gorm.DB, error) {
+func InitDB(cfg *config.Config, zapLogger *zap.Logger, monitor *internal_utils.DBSecurityMonitor) (*gorm.DB, error) {
 	// 优化DSN配置，添加连接参数
 	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8mb4&parseTime=True&loc=Local&timeout=10s&readTimeout=30s&writeTimeout=30s&interpolateParams=true",
 		cfg.DB.Username,
@@ -38,9 +38,9 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 
 	// 配置安全日志记录器
 	if os.Getenv("GO_ENV") == "production" {
-		gormConfig.Logger = internal_utils.GlobalDBSecurityMonitor.GetLogger().LogMode(logger.Warn)
+		gormConfig.Logger = monitor.GetLogger().LogMode(logger.Warn)
 	} else {
-		gormConfig.Logger = internal_utils.GlobalDBSecurityMonitor.GetLogger().LogMode(logger.Info)
+		gormConfig.Logger = monitor.GetLogger().LogMode(logger.Info)
 	}
 
 	db, err := gorm.Open(mysql.Open(dsn), gormConfig)
@@ -73,12 +73,12 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 	}
 
 	// 创建额外的性能优化索引
-	if err := createOptimizationIndexes(db); err != nil {
-		log.Printf("创建优化索引时出现警告: %v", err)
+	if err := createOptimizationIndexes(db, zapLogger); err != nil {
+		zapLogger.Warn("Warning during index creation", zap.Error(err))
 	}
 
 	// 初始化种子数据
-	if err := initSeedData(db); err != nil {
+	if err := initSeedData(db, zapLogger); err != nil {
 		return nil, fmt.Errorf("初始化种子数据失败: %w", err)
 	}
 
@@ -86,14 +86,14 @@ func InitDB(cfg *config.Config) (*gorm.DB, error) {
 }
 
 // initSeedData 初始化种子数据
-func initSeedData(db *gorm.DB) error {
+func initSeedData(db *gorm.DB, zapLogger *zap.Logger) error {
 	// 创建管理员用户
-	if err := createAdminUser(db); err != nil {
+	if err := createAdminUser(db, zapLogger); err != nil {
 		return err
 	}
 
 	// 创建常见语言
-	if err := createDefaultLanguages(db); err != nil {
+	if err := createDefaultLanguages(db, zapLogger); err != nil {
 		return err
 	}
 
@@ -101,7 +101,7 @@ func initSeedData(db *gorm.DB) error {
 }
 
 // createAdminUser 创建默认管理员用户
-func createAdminUser(db *gorm.DB) error {
+func createAdminUser(db *gorm.DB, zapLogger *zap.Logger) error {
 	var count int64
 	if err := db.Model(&domain.User{}).Count(&count).Error; err != nil {
 		return err
@@ -137,7 +137,7 @@ func createAdminUser(db *gorm.DB) error {
 			return fmt.Errorf("创建管理员用户失败: %w", err)
 		}
 
-		log.Printf("已创建默认管理员用户: %s", adminUsername)
+		zapLogger.Info("Default admin user created", zap.String("username", adminUsername))
 	} else {
 		// 检查现有用户是否需要更新角色和邮箱
 		var admin domain.User
@@ -159,20 +159,20 @@ func createAdminUser(db *gorm.DB) error {
 			if needUpdate {
 				admin.UpdatedBy = 1 // 系统管理员更新
 				if err := db.Save(&admin).Error; err != nil {
-					log.Printf("更新管理员用户信息失败: %v", err)
+					zapLogger.Warn("Failed to update admin user info", zap.Error(err))
 				} else {
-					log.Println("已更新管理员用户信息")
+					zapLogger.Info("Admin user info updated")
 				}
 			}
 		}
-		log.Println("管理员用户已存在，无需创建")
+		zapLogger.Info("Admin user already exists, skipping creation")
 	}
 
 	return nil
 }
 
 // createDefaultLanguages 创建默认语言
-func createDefaultLanguages(db *gorm.DB) error {
+func createDefaultLanguages(db *gorm.DB, zapLogger *zap.Logger) error {
 	var count int64
 	if err := db.Model(&domain.Language{}).Count(&count).Error; err != nil {
 		return err
@@ -207,9 +207,9 @@ func createDefaultLanguages(db *gorm.DB) error {
 			return fmt.Errorf("创建默认语言失败: %w", err)
 		}
 
-		log.Println("已创建默认语言列表")
+		zapLogger.Info("Default language list created")
 	} else {
-		log.Println("语言列表已存在，无需创建")
+		zapLogger.Info("Language list already exists, skipping creation")
 	}
 
 	return nil
@@ -224,7 +224,7 @@ type IndexDefinition struct {
 }
 
 // createOptimizationIndexes 创建额外的性能优化索引
-func createOptimizationIndexes(db *gorm.DB) error {
+func createOptimizationIndexes(db *gorm.DB, zapLogger *zap.Logger) error {
 	// 定义需要创建的索引
 	indexes := []IndexDefinition{
 		{
@@ -286,8 +286,8 @@ func createOptimizationIndexes(db *gorm.DB) error {
 	}
 
 	for _, idx := range indexes {
-		if err := createIndexIfNotExists(db, idx); err != nil {
-			log.Printf("创建索引 %s 时出现警告: %v", idx.Name, err)
+		if err := createIndexIfNotExists(db, idx, zapLogger); err != nil {
+			zapLogger.Warn("Warning during index creation", zap.String("index", idx.Name), zap.Error(err))
 		}
 	}
 
@@ -295,7 +295,7 @@ func createOptimizationIndexes(db *gorm.DB) error {
 }
 
 // createIndexIfNotExists 如果索引不存在则创建
-func createIndexIfNotExists(db *gorm.DB, idx IndexDefinition) error {
+func createIndexIfNotExists(db *gorm.DB, idx IndexDefinition, zapLogger *zap.Logger) error {
 	// 检查索引是否已存在
 	exists, err := indexExists(db, idx.TableName, idx.Name)
 	if err != nil {
@@ -325,7 +325,7 @@ func createIndexIfNotExists(db *gorm.DB, idx IndexDefinition) error {
 		return fmt.Errorf("创建索引失败: %w", err)
 	}
 
-	log.Printf("成功创建索引: %s", idx.Name)
+	zapLogger.Info("Index created successfully", zap.String("index", idx.Name))
 	return nil
 }
 

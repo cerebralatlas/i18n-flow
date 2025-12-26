@@ -3,7 +3,7 @@ package middleware
 import (
 	"fmt"
 	"i18n-flow/internal/api/response"
-	"i18n-flow/utils"
+	log_utils "i18n-flow/utils"
 	"regexp"
 	"strings"
 	"time"
@@ -40,21 +40,21 @@ func DefaultSQLSecurityConfig() SQLSecurityConfig {
 }
 
 // SQLSecurityMiddleware SQL安全中间件
-func SQLSecurityMiddleware() gin.HandlerFunc {
-	return SQLSecurityMiddlewareWithConfig(DefaultSQLSecurityConfig())
+func SQLSecurityMiddleware(logger *zap.Logger) gin.HandlerFunc {
+	return SQLSecurityMiddlewareWithConfig(logger, DefaultSQLSecurityConfig())
 }
 
 // SQLSecurityMiddlewareWithConfig 带配置的SQL安全中间件
-func SQLSecurityMiddlewareWithConfig(config SQLSecurityConfig) gin.HandlerFunc {
+func SQLSecurityMiddlewareWithConfig(logger *zap.Logger, config SQLSecurityConfig) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 验证查询参数
-		if err := validateQueryParams(c, config); err != nil {
+		if err := validateQueryParams(c, config, logger); err != nil {
 			response.BadRequest(c, fmt.Sprintf("查询参数验证失败: %s", err.Error()))
 			return
 		}
 
 		// 验证路径参数
-		if err := validatePathParams(c, config); err != nil {
+		if err := validatePathParams(c, config, logger); err != nil {
 			response.BadRequest(c, fmt.Sprintf("路径参数验证失败: %s", err.Error()))
 			return
 		}
@@ -64,7 +64,7 @@ func SQLSecurityMiddlewareWithConfig(config SQLSecurityConfig) gin.HandlerFunc {
 }
 
 // validateQueryParams 验证查询参数
-func validateQueryParams(c *gin.Context, config SQLSecurityConfig) error {
+func validateQueryParams(c *gin.Context, config SQLSecurityConfig, logger *zap.Logger) error {
 	queryParams := c.Request.URL.Query()
 
 	for key, values := range queryParams {
@@ -76,9 +76,9 @@ func validateQueryParams(c *gin.Context, config SQLSecurityConfig) error {
 
 			// 检查危险关键词
 			if containsForbiddenKeywords(value, config.ForbiddenKeywords) {
-				utils.AppWarn("检测到可疑查询参数",
+				logger.Error("Suspicious query parameter detected",
 					zap.String("param", key),
-					zap.String("value", value),
+					zap.String("value", log_utils.SanitizeLogValue(value)),
 					zap.String("ip", c.ClientIP()),
 					zap.String("path", c.Request.URL.Path),
 				)
@@ -107,7 +107,7 @@ func validateQueryParams(c *gin.Context, config SQLSecurityConfig) error {
 }
 
 // validatePathParams 验证路径参数
-func validatePathParams(c *gin.Context, config SQLSecurityConfig) error {
+func validatePathParams(c *gin.Context, config SQLSecurityConfig, logger *zap.Logger) error {
 	// 获取路径参数
 	params := c.Params
 
@@ -119,9 +119,9 @@ func validatePathParams(c *gin.Context, config SQLSecurityConfig) error {
 
 		// 检查危险关键词
 		if containsForbiddenKeywords(param.Value, config.ForbiddenKeywords) {
-			utils.AppWarn("检测到可疑路径参数",
+			logger.Error("Suspicious path parameter detected",
 				zap.String("param", param.Key),
-				zap.String("value", param.Value),
+				zap.String("value", log_utils.SanitizeLogValue(param.Value)),
 				zap.String("ip", c.ClientIP()),
 				zap.String("path", c.Request.URL.Path),
 			)
@@ -218,7 +218,7 @@ func isValidID(id string) bool {
 }
 
 // WhitelistQueryMiddleware 查询白名单中间件
-func WhitelistQueryMiddleware(allowedParams []string) gin.HandlerFunc {
+func WhitelistQueryMiddleware(logger *zap.Logger, allowedParams []string) gin.HandlerFunc {
 	allowedMap := make(map[string]bool)
 	for _, param := range allowedParams {
 		allowedMap[param] = true
@@ -229,7 +229,7 @@ func WhitelistQueryMiddleware(allowedParams []string) gin.HandlerFunc {
 
 		for key := range queryParams {
 			if !allowedMap[key] {
-				utils.AppWarn("检测到未授权的查询参数",
+				logger.Warn("Unauthorized query parameter detected",
 					zap.String("param", key),
 					zap.String("ip", c.ClientIP()),
 					zap.String("path", c.Request.URL.Path),
@@ -257,7 +257,7 @@ func DatabaseQueryLogMiddleware() gin.HandlerFunc {
 }
 
 // SQLInjectionDetectionMiddleware SQL注入检测中间件
-func SQLInjectionDetectionMiddleware() gin.HandlerFunc {
+func SQLInjectionDetectionMiddleware(logger *zap.Logger) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		// 检查所有输入参数
 		suspiciousPatterns := []string{
@@ -279,9 +279,9 @@ func SQLInjectionDetectionMiddleware() gin.HandlerFunc {
 			for _, value := range values {
 				for _, pattern := range suspiciousPatterns {
 					if matched, _ := regexp.MatchString("(?i)"+pattern, value); matched {
-						utils.AppError("检测到SQL注入尝试",
+						logger.Error("SQL injection attempt detected",
 							zap.String("param", key),
-							zap.String("value", value),
+							zap.String("value", log_utils.SanitizeLogValue(value)),
 							zap.String("pattern", pattern),
 							zap.String("ip", c.ClientIP()),
 							zap.String("path", c.Request.URL.Path),

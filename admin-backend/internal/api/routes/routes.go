@@ -6,7 +6,6 @@ import (
 	"i18n-flow/internal/api/response"
 	"i18n-flow/internal/domain"
 	internal_utils "i18n-flow/internal/utils"
-	"i18n-flow/utils"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -25,6 +24,7 @@ type Router struct {
 	ProjectMemberHandler *handlers.ProjectMemberHandler
 	CLIHandler           *handlers.CLIHandler
 	middlewareFactory    *middleware.MiddlewareFactory
+	Logger               *zap.Logger
 }
 
 // RouterDeps 定义 Router 的依赖（用于 fx.In）
@@ -40,6 +40,7 @@ type RouterDeps struct {
 	AuthService          domain.AuthService
 	UserService          domain.UserService
 	ProjectMemberService domain.ProjectMemberService
+	Logger               *zap.Logger
 }
 
 // NewRouter 创建路由器
@@ -57,6 +58,7 @@ func NewRouter(deps RouterDeps) *Router {
 			deps.UserService,
 			deps.ProjectMemberService,
 		),
+		Logger: deps.Logger,
 	}
 }
 
@@ -264,7 +266,7 @@ func (r *Router) setupMonitoringRoutes(engine *gin.Engine, monitor *internal_uti
 	// 详细统计端点
 	engine.GET("/stats/detailed", monitor.DetailedStats)
 
-	utils.AppInfo("Monitoring endpoints configured",
+	r.Logger.Info("Monitoring endpoints configured",
 		zap.String("health_check", "GET /health"),
 		zap.String("basic_stats", "GET /stats"),
 		zap.String("detailed_stats", "GET /stats/detailed"),

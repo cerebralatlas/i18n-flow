@@ -7,17 +7,20 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // UserHandler 用户处理器
 type UserHandler struct {
 	userService domain.UserService
+	logger      *zap.Logger
 }
 
 // NewUserHandler 创建用户处理器
-func NewUserHandler(userService domain.UserService) *UserHandler {
+func NewUserHandler(userService domain.UserService, logger *zap.Logger) *UserHandler {
 	return &UserHandler{
 		userService: userService,
+		logger:      logger,
 	}
 }
 
@@ -47,12 +50,45 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		// 根据错误类型返回不同状态码
 		switch err {
 		case domain.ErrUserNotFound, domain.ErrInvalidPassword:
+			h.logger.Info("User login failed",
+				zap.String("username", req.Username),
+				zap.String("reason", "invalid_credentials"),
+				zap.String("client_ip", ctx.ClientIP()),
+				zap.String("user_agent", ctx.Request.UserAgent()),
+			)
 			response.Unauthorized(ctx, err.Error())
 		default:
+			h.logger.Info("User login failed",
+				zap.String("username", req.Username),
+				zap.String("reason", "internal_error"),
+				zap.String("client_ip", ctx.ClientIP()),
+				zap.Error(err),
+			)
 			response.InternalServerError(ctx, "登录失败")
 		}
 		return
 	}
+
+	// 登录成功日志
+	var userID uint64
+	var username, role string
+	if user, ok := resp.User.(map[string]interface{}); ok {
+		if id, ok := user["id"].(uint64); ok {
+			userID = id
+		}
+		if u, ok := user["username"].(string); ok {
+			username = u
+		}
+		if r, ok := user["role"].(string); ok {
+			role = r
+		}
+	}
+	h.logger.Info("User login successful",
+		zap.Uint64("user_id", userID),
+		zap.String("username", username),
+		zap.String("role", role),
+		zap.String("client_ip", ctx.ClientIP()),
+	)
 
 	response.Success(ctx, resp)
 }
@@ -154,6 +190,23 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 创建用户成功日志
+	operatorID, _ := ctx.Get("userID")
+	operatorName := "system"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("User created",
+		zap.Uint64("user_id", user.ID),
+		zap.String("username", user.Username),
+		zap.String("email", user.Email),
+		zap.String("role", user.Role),
+		zap.String("operator", operatorName),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+	)
 
 	response.Created(ctx, user)
 }
@@ -285,6 +338,21 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
+	// 更新用户成功日志
+	operatorID, _ := ctx.Get("userID")
+	operatorName := "system"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("User updated",
+		zap.Uint64("user_id", user.ID),
+		zap.String("username", user.Username),
+		zap.String("operator", operatorName),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+	)
+
 	response.Success(ctx, user)
 }
 
@@ -373,6 +441,20 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 		return
 	}
 
+	// 重置密码成功日志
+	operatorID, _ := ctx.Get("userID")
+	operatorName := "system"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Password reset",
+		zap.Uint64("user_id", id),
+		zap.String("operator", operatorName),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+	)
+
 	response.Success(ctx, map[string]string{"message": "密码重置成功"})
 }
 
@@ -410,6 +492,20 @@ func (h *UserHandler) DeleteUser(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 删除用户成功日志
+	operatorID, _ := ctx.Get("userID")
+	operatorName := "system"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("User deleted",
+		zap.Uint64("user_id", id),
+		zap.String("operator", operatorName),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+	)
 
 	response.Success(ctx, map[string]string{"message": "用户删除成功"})
 }

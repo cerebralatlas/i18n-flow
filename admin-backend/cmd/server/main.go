@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
 	"i18n-flow/internal/api/middleware"
-	"i18n-flow/internal/api/routes"
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/container"
 	internal_utils "i18n-flow/internal/utils"
-	"i18n-flow/utils"
 	"log"
-	"os"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"go.uber.org/zap"
@@ -41,132 +38,60 @@ func main() {
 		log.Fatalf("加载配置失败: %v", err)
 	}
 
-	// 初始化日志系统
-	if err := initLogger(cfg); err != nil {
-		log.Fatalf("初始化日志系统失败: %v", err)
-	}
-	defer utils.SyncAll()
-
-	// 获取环境变量
-	env := os.Getenv("ENV")
-	if env == "" {
-		env = "development"
-	}
-
-	utils.AppInfo("Application starting",
-		zap.String("version", "1.0.0"),
-		zap.String("environment", env),
-		zap.String("log_level", cfg.Log.Level),
-		zap.String("log_dir", cfg.Log.LogDir),
-	)
-
-	// 创建容器并初始化依赖
-	var routeManager *routes.Router
-	c := container.NewContainer(cfg, func(router *routes.Router) {
-		routeManager = router
-	})
-
-	// 启动容器（初始化数据库、Redis 等）
-	utils.AppInfo("Initializing dependencies via fx")
-	if err := c.Start(context.Background()); err != nil {
-		utils.AppError("Failed to initialize dependencies", zap.Error(err))
-		os.Exit(1)
-	}
-	defer c.Stop(context.Background())
-
-	if routeManager == nil {
-		utils.AppError("Failed to get router from fx container")
-		os.Exit(1)
-	}
-
-	// 创建Gin引擎
-	router := gin.Default()
-
-	// 移除Gin默认的日志中间件
-	router.Use(gin.Recovery())
-
-	// 应用全局中间件
-	setupMiddleware(router, nil)
-
-	// 设置路由
-	routeManager.SetupRoutes(router, nil)
-
-	// 启动服务器
-	utils.AppInfo("Server starting",
-		zap.String("address", ":8080"),
-		zap.String("docs", "http://localhost:8080/swagger/index.html"),
-	)
-
-	if err := router.Run(":8080"); err != nil {
-		utils.AppError("Failed to start server", zap.Error(err))
-		os.Exit(1)
-	}
-}
-
-// initLogger 初始化日志系统
-func initLogger(cfg *config.Config) error {
-	logConfig := utils.MultiLogConfig{
-		Level:         cfg.Log.Level,
-		Format:        cfg.Log.Format,
-		Output:        cfg.Log.Output,
-		LogDir:        cfg.Log.LogDir,
-		DateFormat:    cfg.Log.DateFormat,
-		MaxSize:       cfg.Log.MaxSize,
-		MaxAge:        cfg.Log.MaxAge,
-		MaxBackups:    cfg.Log.MaxBackups,
-		Compress:      cfg.Log.Compress,
-		EnableConsole: cfg.Log.EnableConsole,
-		LogTypes: map[string]string{
-			"access": "info",
-			"error":  "error",
-			"auth":   "info",
-			"db":     "warn",
-			"app":    cfg.Log.Level,
-		},
-	}
-
-	return utils.InitMultiLogger(logConfig)
+	// 使用 FX 运行应用（阻塞直到收到停止信号）
+	// FX 将自动管理：
+	// - 依赖注入
+	// - 生命周期（启动/停止）
+	// - 优雅关闭
+	container.Run(cfg, setupMiddleware)
 }
 
 // setupMiddleware 设置全局中间件
-func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor) {
-	// 安全HTTP头中间件（最先设置，确保所有响应都包含安全头）
+func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor, logger *zap.Logger) {
+	// 请求ID中间件（最先设置，确保所有后续中间件都能使用请求ID）
+	router.Use(middleware.RequestIDMiddleware())
+
+	// 统一日志中间件（第二个设置，确保所有请求都能被记录，并包含请求ID）
+	// 集成监控，用于记录请求指标
+	if monitor != nil {
+		router.Use(middleware.LoggingMiddleware(logger, middleware.LoggingOptions{
+			Monitor:              monitor,
+			LogRequestBody:       false,
+			SlowRequestThreshold: time.Second,
+		}))
+	} else {
+		router.Use(middleware.LoggingMiddleware(logger))
+	}
+
+	// 安全HTTP头中间件
 	router.Use(middleware.SecurityHeadersMiddleware())
 
 	// 全局限流中间件（使用 tollbooth，每秒100个请求）
 	router.Use(middleware.TollboothGlobalRateLimitMiddleware())
 
 	// 安全验证中间件
-	router.Use(middleware.SecurityValidationMiddleware())
+	router.Use(middleware.SecurityValidationMiddleware(logger))
 
 	// SQL安全中间件
-	router.Use(middleware.SQLSecurityMiddleware())
+	router.Use(middleware.SQLSecurityMiddleware(logger))
 
 	// 增强输入验证中间件
 	router.Use(middleware.EnhancedInputValidationMiddleware())
 
 	// XSS防护中间件
-	router.Use(middleware.XSSProtectionMiddleware())
+	router.Use(middleware.XSSProtectionMiddleware(logger))
 
 	// CSP违规报告中间件
-	router.Use(middleware.CSPViolationReportMiddleware())
-
-	// 请求ID中间件
-	router.Use(middleware.RequestIDMiddleware())
+	router.Use(middleware.CSPViolationReportMiddleware(logger))
 
 	// 跳过监控端点的日志记录
-	router.Use(middleware.HealthCheckSkipMiddleware("/health", "/stats", "/metrics"))
-
-	// 增强的日志中间件（集成监控）
-	if monitor != nil {
-		router.Use(middleware.EnhancedLoggingMiddleware(monitor))
-	}
+	router.Use(middleware.SkipLoggingMiddleware("/health", "/stats", "/metrics"))
 
 	// 全局错误处理中间件
-	router.Use(middleware.ErrorHandlerMiddleware())
+	router.Use(middleware.ErrorHandlerMiddleware(logger))
 
 	// 应用程序错误处理中间件
-	router.Use(middleware.AppErrorHandlerMiddleware())
+	router.Use(middleware.AppErrorHandlerMiddleware(logger))
 
 	// 请求大小限制中间件 (32MB)
 	router.Use(middleware.RequestSizeLimitMiddleware(32 << 20))

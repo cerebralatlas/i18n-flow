@@ -7,17 +7,20 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"go.uber.org/zap"
 )
 
 // TranslationHandler 翻译处理器
 type TranslationHandler struct {
 	translationService domain.TranslationService
+	logger             *zap.Logger
 }
 
 // NewTranslationHandler 创建翻译处理器
-func NewTranslationHandler(translationService domain.TranslationService) *TranslationHandler {
+func NewTranslationHandler(translationService domain.TranslationService, logger *zap.Logger) *TranslationHandler {
 	return &TranslationHandler{
 		translationService: translationService,
+		logger:             logger,
 	}
 }
 
@@ -73,6 +76,21 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 创建翻译成功日志
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Translation created",
+		zap.Uint64("translation_id", translation.ID),
+		zap.String("translation_key", translation.KeyName),
+		zap.Uint64("project_id", req.ProjectID),
+		zap.Uint64("operator_id", userID.(uint64)),
+		zap.String("operator", operatorName),
+	)
 
 	response.Created(ctx, translation)
 }
@@ -371,6 +389,21 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 		return
 	}
 
+	// 更新翻译成功日志
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Translation updated",
+		zap.Uint64("translation_id", id),
+		zap.String("translation_key", translation.KeyName),
+		zap.Uint64("project_id", req.ProjectID),
+		zap.Uint64("operator_id", userID.(uint64)),
+		zap.String("operator", operatorName),
+	)
+
 	response.Success(ctx, translation)
 }
 
@@ -405,6 +438,23 @@ func (h *TranslationHandler) Delete(ctx *gin.Context) {
 		return
 	}
 
+	// 删除翻译成功日志
+	operatorID, exists := ctx.Get("userID")
+	if !exists {
+		operatorID = uint64(0)
+	}
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Translation deleted",
+		zap.Uint64("translation_id", id),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+		zap.String("operator", operatorName),
+	)
+
 	response.NoContent(ctx)
 }
 
@@ -432,6 +482,23 @@ func (h *TranslationHandler) DeleteBatch(ctx *gin.Context) {
 		response.InternalServerError(ctx, "批量删除翻译失败")
 		return
 	}
+
+	// 批量删除翻译成功日志
+	operatorID, exists := ctx.Get("userID")
+	if !exists {
+		operatorID = uint64(0)
+	}
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Translation batch deleted",
+		zap.Int("deleted_count", len(ids)),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+		zap.String("operator", operatorName),
+	)
 
 	response.NoContent(ctx)
 }
@@ -513,6 +580,25 @@ func (h *TranslationHandler) Import(ctx *gin.Context) {
 		}
 		return
 	}
+
+	// 导入翻译成功日志
+	operatorID, exists := ctx.Get("userID")
+	if !exists {
+		operatorID = uint64(0)
+	}
+	operatorName := "unknown"
+	if opUser, ok := ctx.Get("username"); ok {
+		if op, ok := opUser.(string); ok {
+			operatorName = op
+		}
+	}
+	h.logger.Info("Translation imported",
+		zap.Uint64("project_id", projectID),
+		zap.String("format", format),
+		zap.Int("data_size", len(data)),
+		zap.Uint64("operator_id", operatorID.(uint64)),
+		zap.String("operator", operatorName),
+	)
 
 	response.Success(ctx, gin.H{"message": "导入翻译成功"})
 }

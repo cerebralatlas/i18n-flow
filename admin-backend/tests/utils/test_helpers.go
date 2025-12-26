@@ -13,7 +13,6 @@ import (
 	"gorm.io/gorm"
 
 	"i18n-flow/internal/domain"
-	"i18n-flow/utils"
 )
 
 // CreateTempDir 创建临时目录并在测试结束后删除
@@ -30,23 +29,6 @@ func CreateTempDir(t *testing.T, prefix string) string {
 func SetupTestLogger(t *testing.T) (*zap.Logger, *observer.ObservedLogs) {
 	core, logs := observer.New(zap.InfoLevel)
 	logger := zap.New(core)
-
-	// 设置测试日志器
-	// 注意：这里不再需要保存和恢复原始日志器，因为我们使用的是多日志系统
-	logConfig := utils.MultiLogConfig{
-		Level:         "info",
-		Format:        "console",
-		Output:        "stdout",
-		LogDir:        t.TempDir(),
-		DateFormat:    "2006-01-02",
-		MaxSize:       1,
-		MaxAge:        1,
-		MaxBackups:    1,
-		Compress:      false,
-		EnableConsole: true,
-	}
-	utils.InitMultiLogger(logConfig)
-
 	return logger, logs
 }
 
