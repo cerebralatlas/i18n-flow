@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/dto"
-	"sync"
 )
 
 // CachedProjectService 带缓存的项目服务实现
 type CachedProjectService struct {
 	projectService *ProjectService
 	cacheService   domain.CacheService
-	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
-	cacheMutexes sync.Map
+	mutexManager   *CacheMutexManager
 }
 
 // NewCachedProjectService 创建带缓存的项目服务实例
@@ -21,30 +19,11 @@ func NewCachedProjectService(
 	projectService *ProjectService,
 	cacheService domain.CacheService,
 ) *CachedProjectService {
-	svc := &CachedProjectService{
+	return &CachedProjectService{
 		projectService: projectService,
 		cacheService:   cacheService,
+		mutexManager:   NewCacheMutexManager(),
 	}
-	return svc
-}
-
-// getMutex 获取指定键的互斥锁，用于防止缓存击穿
-func (s *CachedProjectService) getMutex(key string) *sync.Mutex {
-	if mutex, exists := s.cacheMutexes.Load(key); exists {
-		return mutex.(*sync.Mutex)
-	}
-
-	mutex := &sync.Mutex{}
-	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
-	if loaded {
-		return actual.(*sync.Mutex)
-	}
-	return mutex
-}
-
-// removeMutex 移除指定键的互斥锁
-func (s *CachedProjectService) removeMutex(key string) {
-	s.cacheMutexes.Delete(key)
 }
 
 // Create 创建项目（更新缓存）
@@ -68,11 +47,11 @@ func (s *CachedProjectService) GetByID(ctx context.Context, id uint64) (*domain.
 	cacheKey := s.cacheService.GetProjectKey(id)
 
 	// 使用互斥锁防止缓存击穿
-	mutex := s.getMutex(cacheKey)
+	mutex := s.mutexManager.GetMutex(cacheKey)
 	mutex.Lock()
 	defer func() {
 		mutex.Unlock()
-		s.removeMutex(cacheKey) // 请求完成后移除锁
+		s.mutexManager.RemoveMutex(cacheKey) // 请求完成后移除锁
 	}()
 
 	// 尝试从缓存获取
@@ -113,11 +92,11 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 	cacheKey += fmt.Sprintf(":%d:%d", limit, offset)
 
 	// 使用互斥锁防止缓存击穿
-	mutex := s.getMutex(cacheKey)
+	mutex := s.mutexManager.GetMutex(cacheKey)
 	mutex.Lock()
 	defer func() {
 		mutex.Unlock()
-		s.removeMutex(cacheKey) // 请求完成后移除锁
+		s.mutexManager.RemoveMutex(cacheKey) // 请求完成后移除锁
 	}()
 
 	// 尝试从缓存获取

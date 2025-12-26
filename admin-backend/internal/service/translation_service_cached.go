@@ -7,7 +7,6 @@ import (
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/dto"
 	"strconv"
-	"sync"
 	"time"
 )
 
@@ -15,8 +14,7 @@ import (
 type CachedTranslationService struct {
 	translationService *TranslationService
 	cacheService       domain.CacheService
-	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
-	cacheMutexes sync.Map
+	mutexManager       *CacheMutexManager
 }
 
 // NewCachedTranslationService 创建带缓存的翻译服务实例
@@ -24,31 +22,11 @@ func NewCachedTranslationService(
 	translationService *TranslationService,
 	cacheService domain.CacheService,
 ) *CachedTranslationService {
-	svc := &CachedTranslationService{
+	return &CachedTranslationService{
 		translationService: translationService,
 		cacheService:       cacheService,
+		mutexManager:       NewCacheMutexManager(),
 	}
-	return svc
-}
-
-// getMutex 获取指定键的互斥锁，用于防止缓存击穿
-func (s *CachedTranslationService) getMutex(key string) *sync.Mutex {
-	if mutex, exists := s.cacheMutexes.Load(key); exists {
-		return mutex.(*sync.Mutex)
-	}
-
-	mutex := &sync.Mutex{}
-	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
-	if loaded {
-		// 已经有其他协程创建了锁，返回已有的
-		return actual.(*sync.Mutex)
-	}
-	return mutex
-}
-
-// removeMutex 移除指定键的互斥锁
-func (s *CachedTranslationService) removeMutex(key string) {
-	s.cacheMutexes.Delete(key)
 }
 
 // Create 创建翻译（更新缓存）
@@ -135,11 +113,11 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 	cacheKey := fmt.Sprintf("%s:%d:%d", s.cacheService.GetTranslationKey(projectID), limit, offset)
 
 	// 使用互斥锁防止缓存击穿
-	mutex := s.getMutex(cacheKey)
+	mutex := s.mutexManager.GetMutex(cacheKey)
 	mutex.Lock()
 	defer func() {
 		mutex.Unlock()
-		s.removeMutex(cacheKey) // 请求完成后移除锁
+		s.mutexManager.RemoveMutex(cacheKey) // 请求完成后移除锁
 	}()
 
 	// 尝试从缓存获取
@@ -192,11 +170,11 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 	}
 
 	// 使用互斥锁防止缓存击穿
-	mutex := s.getMutex(cacheKey)
+	mutex := s.mutexManager.GetMutex(cacheKey)
 	mutex.Lock()
 	defer func() {
 		mutex.Unlock()
-		s.removeMutex(cacheKey) // 请求完成后移除锁
+		s.mutexManager.RemoveMutex(cacheKey) // 请求完成后移除锁
 	}()
 
 	// 尝试从缓存获取

@@ -5,15 +5,13 @@ import (
 	"fmt"
 	"i18n-flow/internal/domain"
 	"i18n-flow/internal/dto"
-	"sync"
 )
 
 // CachedUserService 带缓存的用户服务实现
 type CachedUserService struct {
 	userService  *UserService
 	cacheService domain.CacheService
-	// 用于防止缓存击穿的互斥锁，使用 sync.Map 线程安全
-	cacheMutexes sync.Map
+	mutexManager *CacheMutexManager
 }
 
 // NewCachedUserService 创建带缓存的用户服务实例
@@ -21,30 +19,11 @@ func NewCachedUserService(
 	userService *UserService,
 	cacheService domain.CacheService,
 ) *CachedUserService {
-	svc := &CachedUserService{
+	return &CachedUserService{
 		userService:  userService,
 		cacheService: cacheService,
+		mutexManager: NewCacheMutexManager(),
 	}
-	return svc
-}
-
-// getMutex 获取指定键的互斥锁，用于防止缓存击穿
-func (s *CachedUserService) getMutex(key string) *sync.Mutex {
-	if mutex, exists := s.cacheMutexes.Load(key); exists {
-		return mutex.(*sync.Mutex)
-	}
-
-	mutex := &sync.Mutex{}
-	actual, loaded := s.cacheMutexes.LoadOrStore(key, mutex)
-	if loaded {
-		return actual.(*sync.Mutex)
-	}
-	return mutex
-}
-
-// removeMutex 移除指定键的互斥锁
-func (s *CachedUserService) removeMutex(key string) {
-	s.cacheMutexes.Delete(key)
 }
 
 // Login 用户登录
@@ -64,11 +43,11 @@ func (s *CachedUserService) GetUserInfo(ctx context.Context, userID uint64) (*do
 	cacheKey := fmt.Sprintf("user:%d", userID)
 
 	// 使用互斥锁防止缓存击穿
-	mutex := s.getMutex(cacheKey)
+	mutex := s.mutexManager.GetMutex(cacheKey)
 	mutex.Lock()
 	defer func() {
 		mutex.Unlock()
-		s.removeMutex(cacheKey) // 请求完成后移除锁
+		s.mutexManager.RemoveMutex(cacheKey) // 请求完成后移除锁
 	}()
 
 	// 尝试从缓存获取
