@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 	"strconv"
 	"time"
 )
@@ -30,29 +29,29 @@ func NewCachedTranslationService(
 }
 
 // Create 创建翻译（更新缓存）
-func (s *CachedTranslationService) Create(ctx context.Context, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
-	translation, err := s.translationService.Create(ctx, req, userID)
+func (s *CachedTranslationService) Create(ctx context.Context, input domain.TranslationInput, userID uint64) (*domain.Translation, error) {
+	translation, err := s.translationService.Create(ctx, input, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 清除相关缓存
-	s.invalidateProjectCache(ctx, req.ProjectID)
+	s.invalidateProjectCache(ctx, input.ProjectID)
 
 	return translation, nil
 }
 
 // CreateBatch 批量创建翻译（更新缓存）
-func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
-	err := s.translationService.CreateBatch(ctx, requests)
+func (s *CachedTranslationService) CreateBatch(ctx context.Context, inputs []domain.TranslationInput) error {
+	err := s.translationService.CreateBatch(ctx, inputs)
 	if err != nil {
 		return err
 	}
 
 	// 清除相关缓存
 	projectIDs := make(map[uint64]bool)
-	for _, req := range requests {
-		projectIDs[req.ProjectID] = true
+	for _, input := range inputs {
+		projectIDs[input.ProjectID] = true
 	}
 
 	for projectID := range projectIDs {
@@ -62,30 +61,30 @@ func (s *CachedTranslationService) CreateBatch(ctx context.Context, requests []d
 	return nil
 }
 
-// CreateBatchFromRequest 从批量翻译请求创建翻译（更新缓存）
-func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, req dto.BatchTranslationRequest) error {
-	err := s.translationService.CreateBatchFromRequest(ctx, req)
+// CreateBatchFromRequest 从批量翻译参数创建翻译（更新缓存）
+func (s *CachedTranslationService) CreateBatchFromRequest(ctx context.Context, params domain.BatchTranslationParams) error {
+	err := s.translationService.CreateBatchFromRequest(ctx, params)
 	if err != nil {
 		return err
 	}
 
 	// 清除相关缓存
-	s.invalidateProjectCache(ctx, req.ProjectID)
+	s.invalidateProjectCache(ctx, params.ProjectID)
 
 	return nil
 }
 
 // UpsertBatch 批量创建或更新翻译（更新缓存）
-func (s *CachedTranslationService) UpsertBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
-	err := s.translationService.UpsertBatch(ctx, requests)
+func (s *CachedTranslationService) UpsertBatch(ctx context.Context, inputs []domain.TranslationInput) error {
+	err := s.translationService.UpsertBatch(ctx, inputs)
 	if err != nil {
 		return err
 	}
 
 	// 清除相关缓存
 	projectIDs := make(map[uint64]bool)
-	for _, req := range requests {
-		projectIDs[req.ProjectID] = true
+	for _, input := range inputs {
+		projectIDs[input.ProjectID] = true
 	}
 
 	for projectID := range projectIDs {
@@ -124,7 +123,6 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 	var cachedResult TranslationCacheResult
 	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &cachedResult)
 	if err == nil {
-		//fmt.Printf("翻译列表缓存命中 [project=%d, total=%d]\n", projectID, cachedResult.Total)
 		return cachedResult.Translations, cachedResult.Total, nil
 	}
 
@@ -142,11 +140,8 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 
 	expiration := s.cacheService.AddRandomExpiration(domain.DefaultExpiration)
 	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, cachedResult, expiration); err != nil {
-		// 缓存更新失败，但不影响返回结果，记录日志用于调试
-		//fmt.Printf("翻译列表缓存更新失败 [project=%d, limit=%d, offset=%d]: %v\n", projectID, limit, offset, err)
-	} /*else {
-		fmt.Printf("翻译列表缓存更新成功 [project=%d, total=%d]\n", projectID, total)
-	}*/
+		// 缓存更新失败，但不影响返回结果
+	}
 
 	return translations, total, nil
 }
@@ -181,7 +176,6 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 	var cachedResult MatrixCacheResult
 	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &cachedResult)
 	if err == nil {
-		//fmt.Printf("翻译矩阵缓存命中 [project=%d, keyword=%s, total=%d]\n", projectID, keyword, cachedResult.Total)
 		return cachedResult.Matrix, cachedResult.Total, nil
 	}
 
@@ -208,32 +202,29 @@ func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint
 	}
 
 	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, cachedResult, expiration); err != nil {
-		// 缓存更新失败，但不影响返回结果，记录日志用于调试
-		//fmt.Printf("翻译矩阵缓存更新失败 [project=%d, keyword=%s, limit=%d, offset=%d]: %v\n", projectID, keyword, limit, offset, err)
-	} /*else {
-		fmt.Printf("翻译矩阵缓存更新成功 [project=%d, keyword=%s, total=%d, keys=%d]\n", projectID, keyword, total, len(matrix))
-	}*/
+		// 缓存更新失败，但不影响返回结果
+	}
 
 	return matrix, total, nil
 }
 
 // Update 更新翻译（更新缓存）
-func (s *CachedTranslationService) Update(ctx context.Context, id uint64, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *CachedTranslationService) Update(ctx context.Context, id uint64, input domain.TranslationInput, userID uint64) (*domain.Translation, error) {
 	// 先获取原始翻译，用于后续清除缓存
 	oldTranslation, err := s.translationService.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
-	translation, err := s.translationService.Update(ctx, id, req, userID)
+	translation, err := s.translationService.Update(ctx, id, input, userID)
 	if err != nil {
 		return nil, err
 	}
 
 	// 清除相关缓存
 	s.invalidateProjectCache(ctx, oldTranslation.ProjectID)
-	if req.ProjectID != 0 && req.ProjectID != oldTranslation.ProjectID {
-		s.invalidateProjectCache(ctx, req.ProjectID)
+	if input.ProjectID != 0 && input.ProjectID != oldTranslation.ProjectID {
+		s.invalidateProjectCache(ctx, input.ProjectID)
 	}
 
 	return translation, nil

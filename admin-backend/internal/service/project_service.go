@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 	"strings"
 
 	"github.com/gosimple/slug"
@@ -30,9 +29,9 @@ func NewProjectService(
 }
 
 // Create 创建项目
-func (s *ProjectService) Create(ctx context.Context, req dto.CreateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *ProjectService) Create(ctx context.Context, params domain.CreateProjectParams, userID uint64) (*domain.Project, error) {
 	// 生成slug
-	projectSlug := slug.Make(req.Name)
+	projectSlug := slug.Make(params.Name)
 	if projectSlug == "" {
 		return nil, domain.ErrInvalidSlug
 	}
@@ -45,8 +44,8 @@ func (s *ProjectService) Create(ctx context.Context, req dto.CreateProjectReques
 
 	// 创建项目
 	project := &domain.Project{
-		Name:        strings.TrimSpace(req.Name),
-		Description: strings.TrimSpace(req.Description),
+		Name:        strings.TrimSpace(params.Name),
+		Description: strings.TrimSpace(params.Description),
 		Slug:        projectSlug,
 		Status:      "active",
 		CreatedBy:   userID,
@@ -81,7 +80,7 @@ func (s *ProjectService) GetAll(ctx context.Context, limit, offset int, keyword 
 }
 
 // Update 更新项目
-func (s *ProjectService) Update(ctx context.Context, id uint64, req dto.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
+func (s *ProjectService) Update(ctx context.Context, id uint64, params domain.UpdateProjectParams, userID uint64) (*domain.Project, error) {
 	// 获取现有项目
 	project, err := s.projectRepo.GetByID(ctx, id)
 	if err != nil {
@@ -89,10 +88,10 @@ func (s *ProjectService) Update(ctx context.Context, id uint64, req dto.UpdatePr
 	}
 
 	// 更新字段
-	if req.Name != "" {
-		project.Name = strings.TrimSpace(req.Name)
+	if params.Name != "" {
+		project.Name = strings.TrimSpace(params.Name)
 		// 如果名称改变，重新生成slug
-		newSlug := slug.Make(req.Name)
+		newSlug := slug.Make(params.Name)
 		if newSlug != project.Slug {
 			// 检查新slug是否已存在
 			existingProject, err := s.projectRepo.GetBySlug(ctx, newSlug)
@@ -103,15 +102,15 @@ func (s *ProjectService) Update(ctx context.Context, id uint64, req dto.UpdatePr
 		}
 	}
 
-	if req.Description != "" {
-		project.Description = strings.TrimSpace(req.Description)
+	if params.Description != "" {
+		project.Description = strings.TrimSpace(params.Description)
 	}
 
-	if req.Status != "" {
-		if req.Status != "active" && req.Status != "archived" {
+	if params.Status != "" {
+		if params.Status != "active" && params.Status != "archived" {
 			return nil, domain.ErrInvalidInput
 		}
-		project.Status = req.Status
+		project.Status = params.Status
 	}
 
 	// 更新UpdatedBy字段

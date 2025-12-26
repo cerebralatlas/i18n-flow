@@ -49,8 +49,16 @@ func (h *TranslationHandler) Create(ctx *gin.Context) {
 		response.Unauthorized(ctx, "未找到用户信息")
 		return
 	}
+	// DTO -> Domain params
+	input := domain.TranslationInput{
+		ProjectID:  req.ProjectID,
+		KeyName:    req.KeyName,
+		Context:    req.Context,
+		LanguageID: req.LanguageID,
+		Value:      req.Value,
+	}
 
-	translation, err := h.translationService.Create(ctx.Request.Context(), req, userID.(uint64))
+	translation, err := h.translationService.Create(ctx.Request.Context(), input, userID.(uint64))
 	if err != nil {
 		// 检查是否是AppError类型
 		if appErr, ok := domain.IsAppError(err); ok {
@@ -110,8 +118,16 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 	// 先尝试解析为前端格式（带有translations字段的对象格式）
 	var batchReq dto.BatchTranslationRequest
 	if err := ctx.ShouldBindJSON(&batchReq); err == nil && batchReq.Translations != nil {
+		// DTO -> Domain params
+		params := domain.BatchTranslationParams{
+			ProjectID:    batchReq.ProjectID,
+			KeyName:      batchReq.KeyName,
+			Context:      batchReq.Context,
+			Translations: batchReq.Translations,
+		}
+
 		// 使用前端格式处理
-		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), batchReq)
+		err := h.translationService.CreateBatchFromRequest(ctx.Request.Context(), params)
 		if err != nil {
 			// 检查是否是AppError类型
 			if appErr, ok := domain.IsAppError(err); ok {
@@ -148,7 +164,19 @@ func (h *TranslationHandler) CreateBatch(ctx *gin.Context) {
 		return
 	}
 
-	err := h.translationService.CreateBatch(ctx.Request.Context(), requests)
+	// Convert DTOs to domain inputs
+	inputs := make([]domain.TranslationInput, len(requests))
+	for i, req := range requests {
+		inputs[i] = domain.TranslationInput{
+			ProjectID:  req.ProjectID,
+			KeyName:    req.KeyName,
+			Context:    req.Context,
+			LanguageID: req.LanguageID,
+			Value:      req.Value,
+		}
+	}
+
+	err := h.translationService.CreateBatch(ctx.Request.Context(), inputs)
 	if err != nil {
 		// 检查是否是AppError类型
 		if appErr, ok := domain.IsAppError(err); ok {
@@ -359,8 +387,16 @@ func (h *TranslationHandler) Update(ctx *gin.Context) {
 		response.Unauthorized(ctx, "未找到用户信息")
 		return
 	}
+	// DTO -> Domain params
+	input := domain.TranslationInput{
+		ProjectID:  req.ProjectID,
+		KeyName:    req.KeyName,
+		Context:    req.Context,
+		LanguageID: req.LanguageID,
+		Value:      req.Value,
+	}
 
-	translation, err := h.translationService.Update(ctx.Request.Context(), id, req, userID.(uint64))
+	translation, err := h.translationService.Update(ctx.Request.Context(), id, input, userID.(uint64))
 	if err != nil {
 		// 检查是否是AppError类型
 		if appErr, ok := domain.IsAppError(err); ok {

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 )
 
 // ProjectMemberService 项目成员服务实现
@@ -27,28 +26,28 @@ func NewProjectMemberService(
 }
 
 // AddMember 添加项目成员
-func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, req dto.AddProjectMemberRequest, userID uint64) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, params domain.AddMemberParams, createdBy uint64) (*domain.ProjectMember, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
 	}
 
 	// 检查用户是否存在
-	if _, err := s.userRepo.GetByID(ctx, req.UserID); err != nil {
+	if _, err := s.userRepo.GetByID(ctx, params.MemberUserID); err != nil {
 		return nil, err
 	}
 
 	// 检查用户是否已是项目成员
-	if _, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, req.UserID); err == nil {
+	if _, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, params.MemberUserID); err == nil {
 		return nil, domain.ErrMemberExists
 	}
 
 	member := &domain.ProjectMember{
 		ProjectID: projectID,
-		UserID:    req.UserID,
-		Role:      req.Role,
-		CreatedBy: userID,
-		UpdatedBy: userID,
+		UserID:    params.MemberUserID,
+		Role:      params.Role,
+		CreatedBy: createdBy,
+		UpdatedBy: createdBy,
 	}
 
 	if err := s.memberRepo.Create(ctx, member); err != nil {
@@ -59,7 +58,7 @@ func (s *ProjectMemberService) AddMember(ctx context.Context, projectID uint64, 
 }
 
 // GetProjectMembers 获取项目成员列表
-func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint64) ([]*dto.ProjectMemberInfo, error) {
+func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID uint64) ([]*domain.ProjectMemberInfo, error) {
 	// 检查项目是否存在
 	if _, err := s.projectRepo.GetByID(ctx, projectID); err != nil {
 		return nil, err
@@ -71,7 +70,7 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	if len(members) == 0 {
-		return []*dto.ProjectMemberInfo{}, nil
+		return []*domain.ProjectMemberInfo{}, nil
 	}
 
 	// 批量获取用户信息 (修复 N+1 查询)
@@ -91,14 +90,14 @@ func (s *ProjectMemberService) GetProjectMembers(ctx context.Context, projectID 
 	}
 
 	// 构建成员信息
-	var memberInfos []*dto.ProjectMemberInfo
+	var memberInfos []*domain.ProjectMemberInfo
 	for _, member := range members {
 		user, exists := userMap[member.UserID]
 		if !exists {
 			continue // 跳过不存在的用户
 		}
 
-		memberInfo := &dto.ProjectMemberInfo{
+		memberInfo := &domain.ProjectMemberInfo{
 			ID:       member.ID,
 			UserID:   member.UserID,
 			Username: user.Username,
@@ -141,13 +140,13 @@ func (s *ProjectMemberService) GetUserProjects(ctx context.Context, userID uint6
 }
 
 // UpdateMemberRole 更新成员角色
-func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint64, req dto.UpdateProjectMemberRequest) (*domain.ProjectMember, error) {
+func (s *ProjectMemberService) UpdateMemberRole(ctx context.Context, projectID, userID uint64, params domain.UpdateMemberRoleParams) (*domain.ProjectMember, error) {
 	member, err := s.memberRepo.GetByProjectAndUser(ctx, projectID, userID)
 	if err != nil {
 		return nil, err
 	}
 
-	member.Role = req.Role
+	member.Role = params.Role
 	if err := s.memberRepo.Update(ctx, member); err != nil {
 		return nil, err
 	}

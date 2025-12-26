@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 	"strings"
 )
 
@@ -30,38 +29,38 @@ func NewTranslationService(
 }
 
 // Create 创建翻译
-func (s *TranslationService) Create(ctx context.Context, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *TranslationService) Create(ctx context.Context, input domain.TranslationInput, userID uint64) (*domain.Translation, error) {
 	// 验证项目是否存在
-	_, err := s.projectRepo.GetByID(ctx, req.ProjectID)
+	_, err := s.projectRepo.GetByID(ctx, input.ProjectID)
 	if err != nil {
 		return nil, domain.ErrProjectNotFound
 	}
 
 	// 验证语言是否存在
-	_, err = s.languageRepo.GetByID(ctx, req.LanguageID)
+	_, err = s.languageRepo.GetByID(ctx, input.LanguageID)
 	if err != nil {
 		return nil, domain.ErrLanguageNotFound
 	}
 
 	// 检查翻译是否已存在
-	keyName := strings.TrimSpace(req.KeyName)
-	existing, err := s.translationRepo.GetByProjectKeyLanguage(ctx, req.ProjectID, keyName, req.LanguageID)
+	keyName := strings.TrimSpace(input.KeyName)
+	existing, err := s.translationRepo.GetByProjectKeyLanguage(ctx, input.ProjectID, keyName, input.LanguageID)
 	if err == nil && existing != nil {
 		return nil, domain.NewAppErrorWithDetails(
 			domain.ErrorTypeConflict,
 			"TRANSLATION_EXISTS",
 			"该项目中已存在相同键名和语言的翻译",
-			fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", req.ProjectID, keyName, req.LanguageID),
+			fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", input.ProjectID, keyName, input.LanguageID),
 		)
 	}
 
 	// 创建翻译
 	translation := &domain.Translation{
-		ProjectID:  req.ProjectID,
+		ProjectID:  input.ProjectID,
 		KeyName:    keyName,
-		Context:    strings.TrimSpace(req.Context),
-		LanguageID: req.LanguageID,
-		Value:      strings.TrimSpace(req.Value),
+		Context:    strings.TrimSpace(input.Context),
+		LanguageID: input.LanguageID,
+		Value:      strings.TrimSpace(input.Value),
 		Status:     "active",
 		CreatedBy:  userID,
 		UpdatedBy:  userID,
@@ -74,7 +73,7 @@ func (s *TranslationService) Create(ctx context.Context, req dto.CreateTranslati
 				domain.ErrorTypeConflict,
 				"TRANSLATION_EXISTS",
 				"该项目中已存在相同键名和语言的翻译",
-				fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", req.ProjectID, keyName, req.LanguageID),
+				fmt.Sprintf("项目ID: %d, 键名: %s, 语言ID: %d", input.ProjectID, keyName, input.LanguageID),
 			)
 		}
 		return nil, err
@@ -84,8 +83,8 @@ func (s *TranslationService) Create(ctx context.Context, req dto.CreateTranslati
 }
 
 // CreateBatch 批量创建翻译
-func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
-	if len(requests) == 0 {
+func (s *TranslationService) CreateBatch(ctx context.Context, inputs []domain.TranslationInput) error {
+	if len(inputs) == 0 {
 		return nil
 	}
 
@@ -93,9 +92,9 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.Cre
 	projectIDSet := make(map[uint64]bool)
 	languageIDSet := make(map[uint64]bool)
 
-	for _, req := range requests {
-		projectIDSet[req.ProjectID] = true
-		languageIDSet[req.LanguageID] = true
+	for _, input := range inputs {
+		projectIDSet[input.ProjectID] = true
+		languageIDSet[input.LanguageID] = true
 	}
 
 	// 转换为切片
@@ -127,12 +126,12 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.Cre
 	}
 
 	// 构建所有要查询的键（修复 N+1 查询问题）
-	keys := make([]domain.TranslationKey, 0, len(requests))
-	for _, req := range requests {
+	keys := make([]domain.TranslationKey, 0, len(inputs))
+	for _, input := range inputs {
 		keys = append(keys, domain.TranslationKey{
-			ProjectID:  req.ProjectID,
-			KeyName:    strings.TrimSpace(req.KeyName),
-			LanguageID: req.LanguageID,
+			ProjectID:  input.ProjectID,
+			KeyName:    strings.TrimSpace(input.KeyName),
+			LanguageID: input.LanguageID,
 		})
 	}
 
@@ -150,12 +149,12 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.Cre
 	}
 
 	// 检查重复翻译并转换为domain对象
-	translations := make([]*domain.Translation, 0, len(requests))
+	translations := make([]*domain.Translation, 0, len(inputs))
 	duplicates := make([]string, 0)
 
-	for _, req := range requests {
-		keyName := strings.TrimSpace(req.KeyName)
-		mapKey := fmt.Sprintf("%d:%s:%d", req.ProjectID, keyName, req.LanguageID)
+	for _, input := range inputs {
+		keyName := strings.TrimSpace(input.KeyName)
+		mapKey := fmt.Sprintf("%d:%s:%d", input.ProjectID, keyName, input.LanguageID)
 
 		// 使用 map 快速查找
 		if existing, exists := existingMap[mapKey]; exists {
@@ -164,11 +163,11 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.Cre
 		}
 
 		translations = append(translations, &domain.Translation{
-			ProjectID:  req.ProjectID,
+			ProjectID:  input.ProjectID,
 			KeyName:    keyName,
-			Context:    strings.TrimSpace(req.Context),
-			LanguageID: req.LanguageID,
-			Value:      strings.TrimSpace(req.Value),
+			Context:    strings.TrimSpace(input.Context),
+			LanguageID: input.LanguageID,
+			Value:      strings.TrimSpace(input.Value),
 			Status:     "active",
 		})
 	}
@@ -194,8 +193,8 @@ func (s *TranslationService) CreateBatch(ctx context.Context, requests []dto.Cre
 // UpsertBatch 批量创建或更新翻译
 // 如果翻译已存在（基于 project_id + key_name + language_id），则更新
 // 如果不存在，则创建
-func (s *TranslationService) UpsertBatch(ctx context.Context, requests []dto.CreateTranslationRequest) error {
-	if len(requests) == 0 {
+func (s *TranslationService) UpsertBatch(ctx context.Context, inputs []domain.TranslationInput) error {
+	if len(inputs) == 0 {
 		return nil
 	}
 
@@ -203,9 +202,9 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []dto.Cre
 	projectIDSet := make(map[uint64]bool)
 	languageIDSet := make(map[uint64]bool)
 
-	for _, req := range requests {
-		projectIDSet[req.ProjectID] = true
-		languageIDSet[req.LanguageID] = true
+	for _, input := range inputs {
+		projectIDSet[input.ProjectID] = true
+		languageIDSet[input.LanguageID] = true
 	}
 
 	// 转换为切片
@@ -237,14 +236,14 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []dto.Cre
 	}
 
 	// 转换为 domain 对象
-	translations := make([]*domain.Translation, 0, len(requests))
-	for _, req := range requests {
+	translations := make([]*domain.Translation, 0, len(inputs))
+	for _, input := range inputs {
 		translations = append(translations, &domain.Translation{
-			ProjectID:  req.ProjectID,
-			KeyName:    strings.TrimSpace(req.KeyName),
-			Context:    strings.TrimSpace(req.Context),
-			LanguageID: req.LanguageID,
-			Value:      strings.TrimSpace(req.Value),
+			ProjectID:  input.ProjectID,
+			KeyName:    strings.TrimSpace(input.KeyName),
+			Context:    strings.TrimSpace(input.Context),
+			LanguageID: input.LanguageID,
+			Value:      strings.TrimSpace(input.Value),
 			Status:     "active",
 		})
 	}
@@ -253,9 +252,9 @@ func (s *TranslationService) UpsertBatch(ctx context.Context, requests []dto.Cre
 	return s.translationRepo.UpsertBatch(ctx, translations)
 }
 
-// CreateBatchFromRequest 从批量翻译请求创建或更新翻译
+// CreateBatchFromRequest 从批量翻译参数创建或更新翻译
 // 现在使用 UpsertBatch，支持创建和更新操作
-func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dto.BatchTranslationRequest) error {
+func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, params domain.BatchTranslationParams) error {
 	// 获取所有语言
 	languages, err := s.languageRepo.GetAll(ctx)
 	if err != nil {
@@ -269,30 +268,30 @@ func (s *TranslationService) CreateBatchFromRequest(ctx context.Context, req dto
 	}
 
 	// 转换为标准翻译请求
-	var requests []dto.CreateTranslationRequest
-	for langCode, value := range req.Translations {
+	var inputs []domain.TranslationInput
+	for langCode, value := range params.Translations {
 		// 跳过空值
 		if value == "" {
 			continue
 		}
 
 		if langID, exists := languageCodeToID[langCode]; exists {
-			requests = append(requests, dto.CreateTranslationRequest{
-				ProjectID:  req.ProjectID,
-				KeyName:    req.KeyName,
-				Context:    req.Context,
+			inputs = append(inputs, domain.TranslationInput{
+				ProjectID:  params.ProjectID,
+				KeyName:    params.KeyName,
+				Context:    params.Context,
 				LanguageID: langID,
 				Value:      value,
 			})
 		}
 	}
 
-	if len(requests) == 0 {
+	if len(inputs) == 0 {
 		return fmt.Errorf("no valid translations to create")
 	}
 
 	// 使用 UpsertBatch 而不是 CreateBatch，支持创建和更新
-	return s.UpsertBatch(ctx, requests)
+	return s.UpsertBatch(ctx, inputs)
 }
 
 // GetByID 根据ID获取翻译
@@ -333,7 +332,7 @@ func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint64, li
 }
 
 // Update 更新翻译
-func (s *TranslationService) Update(ctx context.Context, id uint64, req dto.CreateTranslationRequest, userID uint64) (*domain.Translation, error) {
+func (s *TranslationService) Update(ctx context.Context, id uint64, input domain.TranslationInput, userID uint64) (*domain.Translation, error) {
 	// 获取现有翻译
 	translation, err := s.translationRepo.GetByID(ctx, id)
 	if err != nil {
@@ -341,34 +340,34 @@ func (s *TranslationService) Update(ctx context.Context, id uint64, req dto.Crea
 	}
 
 	// 如果项目ID改变，验证新项目
-	if req.ProjectID != 0 && req.ProjectID != translation.ProjectID {
-		_, err := s.projectRepo.GetByID(ctx, req.ProjectID)
+	if input.ProjectID != 0 && input.ProjectID != translation.ProjectID {
+		_, err := s.projectRepo.GetByID(ctx, input.ProjectID)
 		if err != nil {
 			return nil, domain.ErrProjectNotFound
 		}
-		translation.ProjectID = req.ProjectID
+		translation.ProjectID = input.ProjectID
 	}
 
 	// 如果语言ID改变，验证新语言
-	if req.LanguageID != 0 && req.LanguageID != translation.LanguageID {
-		_, err := s.languageRepo.GetByID(ctx, req.LanguageID)
+	if input.LanguageID != 0 && input.LanguageID != translation.LanguageID {
+		_, err := s.languageRepo.GetByID(ctx, input.LanguageID)
 		if err != nil {
 			return nil, domain.ErrLanguageNotFound
 		}
-		translation.LanguageID = req.LanguageID
+		translation.LanguageID = input.LanguageID
 	}
 
 	// 更新其他字段
-	if req.KeyName != "" {
-		translation.KeyName = strings.TrimSpace(req.KeyName)
+	if input.KeyName != "" {
+		translation.KeyName = strings.TrimSpace(input.KeyName)
 	}
 
-	if req.Context != "" {
-		translation.Context = strings.TrimSpace(req.Context)
+	if input.Context != "" {
+		translation.Context = strings.TrimSpace(input.Context)
 	}
 
-	if req.Value != "" {
-		translation.Value = strings.TrimSpace(req.Value)
+	if input.Value != "" {
+		translation.Value = strings.TrimSpace(input.Value)
 	}
 
 	// 更新UpdatedBy字段
@@ -460,7 +459,7 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint6
 	}
 
 	// 转换为翻译请求
-	var requests []dto.CreateTranslationRequest
+	var inputs []domain.TranslationInput
 
 	// 检测数据格式并转换
 	matrix := s.normalizeImportData(rawData)
@@ -468,7 +467,7 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint6
 	for key, translations := range matrix {
 		for langCode, value := range translations {
 			if langID, exists := languageCodeToID[langCode]; exists {
-				requests = append(requests, dto.CreateTranslationRequest{
+				inputs = append(inputs, domain.TranslationInput{
 					ProjectID:  projectID,
 					KeyName:    key,
 					LanguageID: langID,
@@ -478,11 +477,11 @@ func (s *TranslationService) importFromJSON(ctx context.Context, projectID uint6
 		}
 	}
 
-	if len(requests) == 0 {
+	if len(inputs) == 0 {
 		return fmt.Errorf("no valid translations found in import data")
 	}
 
-	return s.CreateBatch(ctx, requests)
+	return s.CreateBatch(ctx, inputs)
 }
 
 // normalizeImportData 标准化导入数据格式

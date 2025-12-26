@@ -4,7 +4,6 @@ import (
 	"context"
 	"fmt"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 )
 
 // CachedProjectService 带缓存的项目服务实现
@@ -27,8 +26,8 @@ func NewCachedProjectService(
 }
 
 // Create 创建项目（更新缓存）
-func (s *CachedProjectService) Create(ctx context.Context, req dto.CreateProjectRequest, userID uint64) (*domain.Project, error) {
-	project, err := s.projectService.Create(ctx, req, userID)
+func (s *CachedProjectService) Create(ctx context.Context, params domain.CreateProjectParams, userID uint64) (*domain.Project, error) {
+	project, err := s.projectService.Create(ctx, params, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -132,8 +131,8 @@ func (s *CachedProjectService) GetAll(ctx context.Context, limit, offset int, ke
 }
 
 // Update 更新项目（更新缓存）
-func (s *CachedProjectService) Update(ctx context.Context, id uint64, req dto.UpdateProjectRequest, userID uint64) (*domain.Project, error) {
-	project, err := s.projectService.Update(ctx, id, req, userID)
+func (s *CachedProjectService) Update(ctx context.Context, id uint64, params domain.UpdateProjectParams, userID uint64) (*domain.Project, error) {
+	project, err := s.projectService.Update(ctx, id, params, userID)
 	if err != nil {
 		return nil, err
 	}

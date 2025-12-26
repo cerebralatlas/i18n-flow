@@ -44,8 +44,14 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.LoginParams{
+		Username: req.Username,
+		Password: req.Password,
+	}
+
 	// 调用登录服务
-	resp, err := h.userService.Login(ctx.Request.Context(), req)
+	result, err := h.userService.Login(ctx.Request.Context(), params)
 	if err != nil {
 		// 根据错误类型返回不同状态码
 		switch err {
@@ -69,19 +75,12 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		return
 	}
 
-	// 登录成功日志
 	var userID uint64
 	var username, role string
-	if user, ok := resp.User.(map[string]interface{}); ok {
-		if id, ok := user["id"].(uint64); ok {
-			userID = id
-		}
-		if u, ok := user["username"].(string); ok {
-			username = u
-		}
-		if r, ok := user["role"].(string); ok {
-			role = r
-		}
+	if result.User != nil {
+		userID = result.User.ID
+		username = result.User.Username
+		role = result.User.Role
 	}
 	h.logger.Info("User login successful",
 		zap.Uint64("user_id", userID),
@@ -89,6 +88,13 @@ func (h *UserHandler) Login(ctx *gin.Context) {
 		zap.String("role", role),
 		zap.String("client_ip", ctx.ClientIP()),
 	)
+
+	// Convert to DTO response
+	resp := dto.LoginResponse{
+		Token:        result.AccessToken,
+		RefreshToken: result.RefreshToken,
+		User:         result.User,
+	}
 
 	response.Success(ctx, resp)
 }
@@ -114,7 +120,7 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 	}
 
 	// 调用刷新服务
-	resp, err := h.userService.RefreshToken(ctx.Request.Context(), req)
+	result, err := h.userService.RefreshToken(ctx.Request.Context(), req.RefreshToken)
 	if err != nil {
 		switch err {
 		case domain.ErrInvalidToken:
@@ -123,6 +129,13 @@ func (h *UserHandler) RefreshToken(ctx *gin.Context) {
 			response.InternalServerError(ctx, "刷新token失败")
 		}
 		return
+	}
+
+	// Convert to DTO response
+	resp := dto.LoginResponse{
+		Token:        result.AccessToken,
+		RefreshToken: result.RefreshToken,
+		User:         result.User,
 	}
 
 	response.Success(ctx, resp)
@@ -177,8 +190,16 @@ func (h *UserHandler) CreateUser(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.CreateUserParams{
+		Username: req.Username,
+		Email:    req.Email,
+		Password: req.Password,
+		Role:     req.Role,
+	}
+
 	// 调用创建用户服务
-	user, err := h.userService.CreateUser(ctx.Request.Context(), req)
+	user, err := h.userService.CreateUser(ctx.Request.Context(), params)
 	if err != nil {
 		switch err {
 		case domain.ErrUserExists:
@@ -322,8 +343,16 @@ func (h *UserHandler) UpdateUser(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.UpdateUserParams{
+		Username: req.Username,
+		Email:    req.Email,
+		Role:     req.Role,
+		Status:   req.Status,
+	}
+
 	// 调用更新用户服务
-	user, err := h.userService.UpdateUser(ctx.Request.Context(), id, req)
+	user, err := h.userService.UpdateUser(ctx.Request.Context(), id, params)
 	if err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
@@ -384,8 +413,14 @@ func (h *UserHandler) ChangePassword(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.ChangePasswordParams{
+		OldPassword: req.OldPassword,
+		NewPassword: req.NewPassword,
+	}
+
 	// 调用修改密码服务
-	if err := h.userService.ChangePassword(ctx.Request.Context(), userID.(uint64), req); err != nil {
+	if err := h.userService.ChangePassword(ctx.Request.Context(), userID.(uint64), params); err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
 			response.NotFound(ctx, "用户不存在")
@@ -431,7 +466,7 @@ func (h *UserHandler) ResetPassword(ctx *gin.Context) {
 	}
 
 	// 调用重置密码服务
-	if err := h.userService.ResetPassword(ctx.Request.Context(), id, req); err != nil {
+	if err := h.userService.ResetPassword(ctx.Request.Context(), id, req.NewPassword); err != nil {
 		switch err {
 		case domain.ErrUserNotFound:
 			response.NotFound(ctx, "用户不存在")

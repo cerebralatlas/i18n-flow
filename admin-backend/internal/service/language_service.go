@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 	"strings"
 )
 
@@ -20,9 +19,9 @@ func NewLanguageService(languageRepo domain.LanguageRepository) *LanguageService
 }
 
 // Create 创建语言
-func (s *LanguageService) Create(ctx context.Context, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+func (s *LanguageService) Create(ctx context.Context, params domain.CreateLanguageParams, userID uint64) (*domain.Language, error) {
 	// 验证语言代码格式
-	code := strings.TrimSpace(req.Code)
+	code := strings.TrimSpace(params.Code)
 	if code == "" {
 		return nil, domain.ErrInvalidLanguage
 	}
@@ -34,7 +33,7 @@ func (s *LanguageService) Create(ctx context.Context, req dto.CreateLanguageRequ
 	}
 
 	// 如果设置为默认语言，需要先取消其他默认语言
-	if req.IsDefault {
+	if params.IsDefault {
 		if err := s.clearDefaultLanguage(ctx); err != nil {
 			return nil, err
 		}
@@ -43,8 +42,8 @@ func (s *LanguageService) Create(ctx context.Context, req dto.CreateLanguageRequ
 	// 创建语言
 	language := &domain.Language{
 		Code:      code,
-		Name:      strings.TrimSpace(req.Name),
-		IsDefault: req.IsDefault,
+		Name:      strings.TrimSpace(params.Name),
+		IsDefault: params.IsDefault,
 		Status:    "active",
 		CreatedBy: userID,
 		UpdatedBy: userID,
@@ -68,7 +67,7 @@ func (s *LanguageService) GetAll(ctx context.Context) ([]*domain.Language, error
 }
 
 // Update 更新语言
-func (s *LanguageService) Update(ctx context.Context, id uint64, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
+func (s *LanguageService) Update(ctx context.Context, id uint64, params domain.CreateLanguageParams, userID uint64) (*domain.Language, error) {
 	// 获取现有语言
 	language, err := s.languageRepo.GetByID(ctx, id)
 	if err != nil {
@@ -76,8 +75,8 @@ func (s *LanguageService) Update(ctx context.Context, id uint64, req dto.CreateL
 	}
 
 	// 更新字段
-	if req.Code != "" {
-		code := strings.TrimSpace(req.Code)
+	if params.Code != "" {
+		code := strings.TrimSpace(params.Code)
 		if code != language.Code {
 			// 检查新代码是否已存在
 			existingLanguage, err := s.languageRepo.GetByCode(ctx, code)
@@ -88,18 +87,18 @@ func (s *LanguageService) Update(ctx context.Context, id uint64, req dto.CreateL
 		}
 	}
 
-	if req.Name != "" {
-		language.Name = strings.TrimSpace(req.Name)
+	if params.Name != "" {
+		language.Name = strings.TrimSpace(params.Name)
 	}
 
 	// 处理默认语言设置
-	if req.IsDefault && !language.IsDefault {
+	if params.IsDefault && !language.IsDefault {
 		// 如果要设置为默认语言，先取消其他默认语言
 		if err := s.clearDefaultLanguage(ctx); err != nil {
 			return nil, err
 		}
 		language.IsDefault = true
-	} else if !req.IsDefault && language.IsDefault {
+	} else if !params.IsDefault && language.IsDefault {
 		// 不允许取消默认语言，除非有其他默认语言
 		language.IsDefault = false
 	}

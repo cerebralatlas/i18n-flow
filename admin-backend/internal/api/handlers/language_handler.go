@@ -49,7 +49,14 @@ func (h *LanguageHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	language, err := h.languageService.Create(ctx.Request.Context(), req, userID.(uint64))
+	// DTO -> Domain params
+	params := domain.CreateLanguageParams{
+		Code:      req.Code,
+		Name:      req.Name,
+		IsDefault: req.IsDefault,
+	}
+
+	language, err := h.languageService.Create(ctx.Request.Context(), params, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrLanguageExists:
@@ -119,7 +126,14 @@ func (h *LanguageHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	language, err := h.languageService.Update(ctx.Request.Context(), id, req, userID.(uint64))
+	// DTO -> Domain params
+	params := domain.CreateLanguageParams{
+		Code:      req.Code,
+		Name:      req.Name,
+		IsDefault: req.IsDefault,
+	}
+
+	language, err := h.languageService.Update(ctx.Request.Context(), id, params, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrLanguageNotFound:

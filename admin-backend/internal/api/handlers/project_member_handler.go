@@ -59,8 +59,14 @@ func (h *ProjectMemberHandler) AddMember(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.AddMemberParams{
+		MemberUserID: req.UserID,
+		Role:         req.Role,
+	}
+
 	// 调用添加成员服务
-	member, err := h.projectMemberService.AddMember(ctx.Request.Context(), projectID, req, currentUserID.(uint64))
+	member, err := h.projectMemberService.AddMember(ctx.Request.Context(), projectID, params, currentUserID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:
@@ -189,8 +195,13 @@ func (h *ProjectMemberHandler) UpdateMemberRole(ctx *gin.Context) {
 		return
 	}
 
+	// DTO -> Domain params
+	params := domain.UpdateMemberRoleParams{
+		Role: req.Role,
+	}
+
 	// 调用更新成员角色服务
-	member, err := h.projectMemberService.UpdateMemberRole(ctx.Request.Context(), projectID, userID, req)
+	member, err := h.projectMemberService.UpdateMemberRole(ctx.Request.Context(), projectID, userID, params)
 	if err != nil {
 		switch err {
 		case domain.ErrMemberNotFound:

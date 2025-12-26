@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 )
 
 // DashboardService 仪表板服务实现
@@ -27,8 +26,8 @@ func NewDashboardService(
 }
 
 // GetStats 获取仪表板统计信息
-func (s *DashboardService) GetStats(ctx context.Context) (*dto.DashboardStats, error) {
-	stats := &dto.DashboardStats{}
+func (s *DashboardService) GetStats(ctx context.Context) (*domain.DashboardStats, error) {
+	stats := &domain.DashboardStats{}
 
 	// 获取项目总数
 	_, totalProjects, err := s.projectRepo.GetAll(ctx, 1000000, 0, "") // 大数获取全部，无关键词过滤

@@ -51,7 +51,13 @@ func (h *ProjectHandler) Create(ctx *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.Create(ctx.Request.Context(), req, userID.(uint64))
+	// DTO -> Domain params
+	params := domain.CreateProjectParams{
+		Name:        req.Name,
+		Description: req.Description,
+	}
+
+	project, err := h.projectService.Create(ctx.Request.Context(), params, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectExists:
@@ -245,7 +251,14 @@ func (h *ProjectHandler) Update(ctx *gin.Context) {
 		return
 	}
 
-	project, err := h.projectService.Update(ctx.Request.Context(), id, req, userID.(uint64))
+	// DTO -> Domain params
+	params := domain.UpdateProjectParams{
+		Name:        req.Name,
+		Description: req.Description,
+		Status:      req.Status,
+	}
+
+	project, err := h.projectService.Update(ctx.Request.Context(), id, params, userID.(uint64))
 	if err != nil {
 		switch err {
 		case domain.ErrProjectNotFound:

@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 	"strings"
 
 	"golang.org/x/crypto/bcrypt"
@@ -24,15 +23,15 @@ func NewUserService(userRepo domain.UserRepository, authService domain.AuthServi
 }
 
 // Login 用户登录
-func (s *UserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.LoginResponse, error) {
+func (s *UserService) Login(ctx context.Context, params domain.LoginParams) (*domain.LoginResult, error) {
 	// 查询用户
-	user, err := s.userRepo.GetByUsername(ctx, req.Username)
+	user, err := s.userRepo.GetByUsername(ctx, params.Username)
 	if err != nil {
 		return nil, domain.ErrUserNotFound
 	}
 
 	// 验证密码
-	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.Password))
+	err = bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.Password))
 	if err != nil {
 		return nil, domain.ErrInvalidPassword
 	}
@@ -53,17 +52,17 @@ func (s *UserService) Login(ctx context.Context, req dto.LoginRequest) (*dto.Log
 	userResponse := *user
 	userResponse.Password = ""
 
-	return &dto.LoginResponse{
-		Token:        token,
+	return &domain.LoginResult{
+		User:         &userResponse,
+		AccessToken:  token,
 		RefreshToken: refreshToken,
-		User:         userResponse,
 	}, nil
 }
 
 // RefreshToken 刷新token
-func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) (*dto.LoginResponse, error) {
+func (s *UserService) RefreshToken(ctx context.Context, refreshToken string) (*domain.LoginResult, error) {
 	// 验证刷新token
-	userFromToken, err := s.authService.ValidateRefreshToken(ctx, req.RefreshToken)
+	userFromToken, err := s.authService.ValidateRefreshToken(ctx, refreshToken)
 	if err != nil {
 		return nil, domain.ErrInvalidToken
 	}
@@ -81,7 +80,7 @@ func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) 
 	}
 
 	// 生成新刷新token
-	refreshToken, err := s.authService.GenerateRefreshToken(ctx, user)
+	newRefreshToken, err := s.authService.GenerateRefreshToken(ctx, user)
 	if err != nil {
 		return nil, err
 	}
@@ -90,10 +89,10 @@ func (s *UserService) RefreshToken(ctx context.Context, req dto.RefreshRequest) 
 	userResponse := *user
 	userResponse.Password = ""
 
-	return &dto.LoginResponse{
-		Token:        token,
-		RefreshToken: refreshToken,
-		User:         userResponse,
+	return &domain.LoginResult{
+		User:         &userResponse,
+		AccessToken:  token,
+		RefreshToken: newRefreshToken,
 	}, nil
 }
 
@@ -110,30 +109,30 @@ func (s *UserService) GetUserInfo(ctx context.Context, userID uint64) (*domain.U
 }
 
 // CreateUser 创建用户
-func (s *UserService) CreateUser(ctx context.Context, req dto.CreateUserRequest) (*domain.User, error) {
+func (s *UserService) CreateUser(ctx context.Context, params domain.CreateUserParams) (*domain.User, error) {
 	// 检查用户名是否已存在
-	if _, err := s.userRepo.GetByUsername(ctx, req.Username); err == nil {
+	if _, err := s.userRepo.GetByUsername(ctx, params.Username); err == nil {
 		return nil, domain.ErrUserExists
 	}
 
 	// 检查邮箱是否已存在
-	if req.Email != "" {
-		if _, err := s.userRepo.GetByEmail(ctx, req.Email); err == nil {
+	if params.Email != "" {
+		if _, err := s.userRepo.GetByEmail(ctx, params.Email); err == nil {
 			return nil, domain.ErrEmailExists
 		}
 	}
 
 	// 加密密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.Password), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.Password), bcrypt.DefaultCost)
 	if err != nil {
 		return nil, err
 	}
 
 	user := &domain.User{
-		Username: req.Username,
-		Email:    req.Email,
+		Username: params.Username,
+		Email:    params.Email,
 		Password: string(hashedPassword),
-		Role:     req.Role,
+		Role:     params.Role,
 		Status:   "active",
 	}
 
@@ -174,35 +173,35 @@ func (s *UserService) GetUserByID(ctx context.Context, id uint64) (*domain.User,
 }
 
 // UpdateUser 更新用户
-func (s *UserService) UpdateUser(ctx context.Context, id uint64, req dto.UpdateUserRequest) (*domain.User, error) {
+func (s *UserService) UpdateUser(ctx context.Context, id uint64, params domain.UpdateUserParams) (*domain.User, error) {
 	user, err := s.userRepo.GetByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
 
 	// 更新字段
-	if req.Username != "" && req.Username != user.Username {
+	if params.Username != "" && params.Username != user.Username {
 		// 检查新用户名是否已存在
-		if _, err := s.userRepo.GetByUsername(ctx, req.Username); err == nil {
+		if _, err := s.userRepo.GetByUsername(ctx, params.Username); err == nil {
 			return nil, domain.ErrUserExists
 		}
-		user.Username = req.Username
+		user.Username = params.Username
 	}
 
-	if req.Email != "" && req.Email != user.Email {
+	if params.Email != "" && params.Email != user.Email {
 		// 检查新邮箱是否已存在
-		if _, err := s.userRepo.GetByEmail(ctx, req.Email); err == nil {
+		if _, err := s.userRepo.GetByEmail(ctx, params.Email); err == nil {
 			return nil, domain.ErrEmailExists
 		}
-		user.Email = req.Email
+		user.Email = params.Email
 	}
 
-	if req.Role != "" {
-		user.Role = req.Role
+	if params.Role != "" {
+		user.Role = params.Role
 	}
 
-	if req.Status != "" {
-		user.Status = req.Status
+	if params.Status != "" {
+		user.Status = params.Status
 	}
 
 	if err := s.userRepo.Update(ctx, user); err != nil {
@@ -215,19 +214,19 @@ func (s *UserService) UpdateUser(ctx context.Context, id uint64, req dto.UpdateU
 }
 
 // ChangePassword 修改密码
-func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req dto.ChangePasswordRequest) error {
+func (s *UserService) ChangePassword(ctx context.Context, userID uint64, params domain.ChangePasswordParams) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	// 验证旧密码
-	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(req.OldPassword)); err != nil {
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(params.OldPassword)); err != nil {
 		return domain.ErrInvalidPassword
 	}
 
 	// 加密新密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(params.NewPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}
@@ -237,14 +236,14 @@ func (s *UserService) ChangePassword(ctx context.Context, userID uint64, req dto
 }
 
 // ResetPassword 重置用户密码（管理员功能）
-func (s *UserService) ResetPassword(ctx context.Context, userID uint64, req dto.ResetPasswordRequest) error {
+func (s *UserService) ResetPassword(ctx context.Context, userID uint64, newPassword string) error {
 	user, err := s.userRepo.GetByID(ctx, userID)
 	if err != nil {
 		return err
 	}
 
 	// 加密新密码
-	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(req.NewPassword), bcrypt.DefaultCost)
+	hashedPassword, err := bcrypt.GenerateFromPassword([]byte(newPassword), bcrypt.DefaultCost)
 	if err != nil {
 		return err
 	}

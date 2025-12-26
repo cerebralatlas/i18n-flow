@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 )
 
 // CachedDashboardService 带缓存的仪表板服务实现
@@ -26,7 +25,7 @@ func NewCachedDashboardService(
 }
 
 // GetStats 获取仪表板统计信息（使用缓存）
-func (s *CachedDashboardService) GetStats(ctx context.Context) (*dto.DashboardStats, error) {
+func (s *CachedDashboardService) GetStats(ctx context.Context) (*domain.DashboardStats, error) {
 	cacheKey := s.cacheService.GetDashboardStatsKey()
 
 	// 使用互斥锁防止缓存击穿
@@ -38,7 +37,7 @@ func (s *CachedDashboardService) GetStats(ctx context.Context) (*dto.DashboardSt
 	}()
 
 	// 尝试从缓存获取
-	var stats *dto.DashboardStats
+	var stats *domain.DashboardStats
 	err := s.cacheService.GetJSONWithEmptyCheck(ctx, cacheKey, &stats)
 	if err == nil {
 		return stats, nil
@@ -54,7 +53,6 @@ func (s *CachedDashboardService) GetStats(ctx context.Context) (*dto.DashboardSt
 	expiration := s.cacheService.AddRandomExpiration(domain.LongExpiration)
 	if err := s.cacheService.SetJSONWithEmptyCache(ctx, cacheKey, stats, expiration); err != nil {
 		// 缓存更新失败，但不影响返回结果
-		//fmt.Printf("缓存更新失败: %v\n", err)
 	}
 
 	return stats, nil

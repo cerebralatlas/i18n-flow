@@ -3,7 +3,6 @@ package service
 import (
 	"context"
 	"i18n-flow/internal/domain"
-	"i18n-flow/internal/dto"
 )
 
 // CachedLanguageService 带缓存的语言服务实现
@@ -26,8 +25,8 @@ func NewCachedLanguageService(
 }
 
 // Create 创建语言（更新缓存）
-func (s *CachedLanguageService) Create(ctx context.Context, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
-	language, err := s.languageService.Create(ctx, req, userID)
+func (s *CachedLanguageService) Create(ctx context.Context, params domain.CreateLanguageParams, userID uint64) (*domain.Language, error) {
+	language, err := s.languageService.Create(ctx, params, userID)
 	if err != nil {
 		return nil, err
 	}
@@ -85,8 +84,8 @@ func (s *CachedLanguageService) GetAll(ctx context.Context) ([]*domain.Language,
 }
 
 // Update 更新语言（更新缓存）
-func (s *CachedLanguageService) Update(ctx context.Context, id uint64, req dto.CreateLanguageRequest, userID uint64) (*domain.Language, error) {
-	language, err := s.languageService.Update(ctx, id, req, userID)
+func (s *CachedLanguageService) Update(ctx context.Context, id uint64, params domain.CreateLanguageParams, userID uint64) (*domain.Language, error) {
+	language, err := s.languageService.Update(ctx, id, params, userID)
 	if err != nil {
 		return nil, err
 	}
