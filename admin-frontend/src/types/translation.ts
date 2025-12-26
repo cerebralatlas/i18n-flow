@@ -1,64 +1,73 @@
-// excel导入数据
-export interface ExcelData {
-  key: string;
-  [languageCode: string]: string;
+// Translation data models
+export interface Translation {
+  id: number
+  project_id: number
+  language_id: number
+  key_name: string
+  value: string
+  context?: string
+  status: 'active' | 'deprecated'
+  created_at: string
+  updated_at: string
 }
 
-export interface ExcelPreviewColumns {
-  title: string;
-  dataIndex: string;
-  key: string;
-  fixed: string;
-  width: number;
-}
-
-// 翻译请求参数
-export interface TranslationRequest {
-  project_id: number;
-  key_name: string;
-  context?: string;
-  language_id: number;
-  value: string;
-}
-
-// 批量翻译请求
-export interface BatchTranslationRequest {
-  project_id: number;
-  key_name: string;
-  context?: string;
-  translations: Record<string, string>; // 语言代码 -> 翻译值
-}
-
-// 翻译响应
-export interface TranslationResponse {
-  id: number;
-  project_id: number;
-  key_name: string;
-  context: string;
-  language_id: number;
-  value: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  project_name: string;
-  language_code: string;
-  language_name: string;
-}
-
-// 语言类型
 export interface Language {
-  id: number;
-  code: string;
-  name: string;
-  is_default: boolean;
-  status: string;
-  created_at: string;
-  updated_at: string;
+  id: number
+  code: string
+  name: string
+  is_default: boolean
+  status: 'active' | 'inactive'
+  created_at: string
+  updated_at: string
 }
 
-// 表格分页
-export interface TranslationTablePagination {
-  current: number,
-  pageSize: number,
-  total: number
+// Translation matrix for table display
+export interface TranslationMatrixRow {
+  key_name: string
+  context?: string
+  translations: Record<string, TranslationCell>
+}
+
+export interface TranslationCell {
+  id?: number
+  language_id: number
+  value: string
+  status?: 'active' | 'deprecated'
+}
+
+export interface TranslationMatrix {
+  languages: Language[]
+  rows: TranslationMatrixRow[]
+  total_count: number
+  page: number
+  page_size: number
+  total_pages: number
+}
+
+// API request models
+export interface CreateTranslationRequest {
+  project_id: number
+  language_id: number
+  key_name: string
+  value: string
+  context?: string
+}
+
+export interface BatchTranslationRequest {
+  project_id: number
+  key_name: string
+  context?: string
+  translations: Record<string, string> // language_code -> value
+}
+
+export interface CreateLanguageRequest {
+  code: string
+  name: string
+  is_default?: boolean
+}
+
+export interface ImportTranslationsData {
+  [languageCode: string]: {
+    [key: string]: string
+  }
 }

@@ -1,117 +1,54 @@
-# i18n-flow Admin Frontend
+# admin-frontend
 
-A modern React-based admin panel for managing internationalization (i18n) projects and translations.
+This template should help get you started developing with Vue 3 in Vite.
 
-## Overview
+## Recommended IDE Setup
 
-The i18n-flow Admin Frontend provides a user-friendly interface for managing multilingual content across projects. It allows users to:
+[VS Code](https://code.visualstudio.com/) + [Vue (Official)](https://marketplace.visualstudio.com/items?itemName=Vue.volar) (and disable Vetur).
 
-- Manage i18n projects
-- Add and edit translation keys
-- Manage translations across multiple languages
-- Import/export translation data
-- Monitor translation status and progress
+## Recommended Browser Setup
 
-## Tech Stack
+- Chromium-based browsers (Chrome, Edge, Brave, etc.):
+  - [Vue.js devtools](https://chromewebstore.google.com/detail/vuejs-devtools/nhdogjmejiglipccpnnnanhbledajbpd) 
+  - [Turn on Custom Object Formatter in Chrome DevTools](http://bit.ly/object-formatters)
+- Firefox:
+  - [Vue.js devtools](https://addons.mozilla.org/en-US/firefox/addon/vue-js-devtools/)
+  - [Turn on Custom Object Formatter in Firefox DevTools](https://fxdx.dev/firefox-devtools-custom-object-formatters/)
 
-- **Framework**: React 19
-- **UI Library**: Ant Design 5
-- **Styling**: Tailwind CSS 4
-- **Routing**: React Router 7
-- **HTTP Client**: Axios
-- **Build Tool**: Vite
-- **Language**: TypeScript
-- **Data Export**: XLSX
+## Type Support for `.vue` Imports in TS
 
-## Features
+TypeScript cannot handle type information for `.vue` imports by default, so we replace the `tsc` CLI with `vue-tsc` for type checking. In editors, we need [Volar](https://marketplace.visualstudio.com/items?itemName=Vue.volar) to make the TypeScript language service aware of `.vue` types.
 
-### Authentication
+## Customize configuration
 
-- Secure login system
-- Protected routes for authenticated users
+See [Vite Configuration Reference](https://vite.dev/config/).
 
-### Project Management
+## Project Setup
 
-- Create, view, edit, and delete i18n projects
-- Project details including name, description, and slug
-
-### Translation Management
-
-- Manage translation keys and their values across multiple languages
-- Filter and search for specific translations
-- Batch operations for translation updates
-- Context support for translations
-
-### Dashboard
-
-- Overview of translation progress
-- Project statistics and status
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (latest LTS version recommended)
-- pnpm
-
-### Installation
-
-```bash
-# Clone the repository
-git clone [repository-url]
-
-# Navigate to the project directory
-cd i18n-flow/admin-frontend
-
-# Install dependencies
+```sh
 pnpm install
 ```
 
-### Development
+### Compile and Hot-Reload for Development
 
-```bash
-# Start the development server
+```sh
 pnpm dev
 ```
 
-The application will be available at <http://localhost:5173> by default.
+### Type-Check, Compile and Minify for Production
 
-### Building for Production
-
-```bash
-# Build the application
+```sh
 pnpm build
-
-# Preview the production build
-pnpm preview
 ```
 
-## Project Structure
+### Run Unit Tests with [Vitest](https://vitest.dev/)
 
-```
-src/
-├── assets/       # Static assets like images
-├── components/   # Reusable UI components
-├── contexts/     # React context providers
-├── hooks/        # Custom React hooks
-├── pages/        # Application pages
-├── services/     # API service integrations
-├── types/        # TypeScript type definitions
-└── utils/        # Utility functions
+```sh
+pnpm test:unit
 ```
 
-## API Integration
+### Lint with [ESLint](https://eslint.org/)
 
-The frontend connects to a backend API for data operations. The API endpoints are abstracted through service modules:
-
-- `projectService`: Manages project CRUD operations
-- `translationService`: Handles translation-related operations
-- `dashboardService`: Provides dashboard statistics and data
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch
-3. Commit your changes
-4. Push to the branch
-5. Open a Pull Request
+```sh
+pnpm lint
+```

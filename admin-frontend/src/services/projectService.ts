@@ -1,44 +1,56 @@
-import api from '../utils/api';
-import { ProjectFormData, Project } from '../types/project';
-import { ApiResponse, PaginatedResponse } from '../types/api';
+import api from './api'
+import type {
+  Project,
+  CreateProjectRequest,
+  UpdateProjectRequest,
+  ProjectListParams,
+  ProjectListResponse,
+} from '@/types/api'
 
-export const projectService = {
-  // 获取项目列表
-  getProjects: async (page: number = 1, pageSize: number = 10, keyword: string = ''): Promise<PaginatedResponse<Project>> => {
-    const response: PaginatedResponse<Project> = await api.get('/api/projects', {
-      params: { page, page_size: pageSize, keyword }
-    });
-    return response;
-  },
+/**
+ * 获取项目列表
+ * @param params 查询参数（分页、关键词搜索）
+ * @returns 项目列表和分页信息
+ */
+export const getProjects = async (params?: ProjectListParams): Promise<ProjectListResponse> => {
+  return api.get('/projects', { params })
+}
 
-  // 获取项目详情
-  getProjectById: async (id: number): Promise<Project> => {
-    const response: ApiResponse<Project> = await api.get(`/api/projects/detail/${id}`);
-    return response.data;
-  },
+/**
+ * 根据 ID 获取项目详情
+ * @param id 项目 ID
+ * @returns 项目详情
+ */
+export const getProjectById = async (id: number): Promise<Project> => {
+  return api.get(`/projects/detail/${id}`)
+}
 
-  // 创建项目
-  createProject: async (project: ProjectFormData): Promise<Project> => {
-    const response: ApiResponse<Project> = await api.post('/api/projects', project);
-    return response.data;
-  },
+/**
+ * 创建新项目
+ * @param data 项目信息
+ * @returns 创建的项目
+ */
+export const createProject = async (data: CreateProjectRequest): Promise<Project> => {
+  return api.post('/projects', data)
+}
 
-  // 更新项目
-  updateProject: async (id: number, project: ProjectFormData): Promise<Project> => {
-    const response: ApiResponse<Project> = await api.put(`/api/projects/update/${id}`, project);
-    return response.data;
-  },
+/**
+ * 更新项目
+ * @param id 项目 ID
+ * @param data 更新的项目信息
+ * @returns 更新后的项目
+ */
+export const updateProject = async (
+  id: number,
+  data: UpdateProjectRequest
+): Promise<Project> => {
+  return api.put(`/projects/update/${id}`, data)
+}
 
-  // 删除项目
-  deleteProject: async (id: number): Promise<void> => {
-    await api.delete(`/api/projects/delete/${id}`);
-  },
-
-  // 获取用户可访问的项目列表
-  getAccessibleProjects: async (page: number = 1, pageSize: number = 10, keyword: string = ''): Promise<PaginatedResponse<Project>> => {
-    const response: PaginatedResponse<Project> = await api.get('/api/projects/accessible', {
-      params: { page, page_size: pageSize, keyword }
-    });
-    return response;
-  }
-};
+/**
+ * 删除项目
+ * @param id 项目 ID
+ */
+export const deleteProject = async (id: number): Promise<void> => {
+  return api.delete(`/projects/delete/${id}`)
+}

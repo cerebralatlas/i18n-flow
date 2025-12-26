@@ -1,4 +1,0 @@
-# .dockerignore
-node_modules
-.git
-.DS_Store

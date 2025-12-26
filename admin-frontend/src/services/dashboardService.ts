@@ -1,16 +1,10 @@
-import api from '../utils/api';
-import { ApiResponse } from '../types/api';
-
-export interface DashboardStats {
-  total_projects: number;
-  total_translations: number;
-  total_languages: number;
-  total_keys: number;
-}
+import api from './api'
+import type { DashboardStats } from '@/types/api'
 
 /**
- * 获取仪表板统计数据
+ * 获取仪表板统计信息
+ * @returns 仪表板统计数据
  */
-export async function getDashboardStats(): Promise<ApiResponse<DashboardStats>> {
-  return await api.get("/api/dashboard/stats");
+export const getDashboardStats = async (): Promise<DashboardStats> => {
+  return api.get('/dashboard/stats')
 }
