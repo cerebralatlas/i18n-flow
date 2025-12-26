@@ -94,7 +94,7 @@ type MiddlewareSetupFunc func(*gin.Engine, *internal_utils.SimpleMonitor, *zap.L
 // NewApp 创建 FX 应用（符合 FX 最佳实践）
 func NewApp(cfg *config.Config, setupMiddleware MiddlewareSetupFunc) *fx.App {
 	return fx.New(
-		fx.NopLogger, // 禁用 FX 默认日志，使用应用自己的日志
+		fx.NopLogger, // 暂时注释掉以查看错误日志
 
 		// 通过 fx.Supply 提供配置
 		fx.Supply(cfg),

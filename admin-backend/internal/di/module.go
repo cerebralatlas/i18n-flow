@@ -2,18 +2,13 @@ package di
 
 import (
 	"i18n-flow/internal/api/handlers"
-	"i18n-flow/internal/config"
+	"i18n-flow/internal/api/routes"
 
 	"go.uber.org/fx"
 )
 
 // AppModule 定义主模块
 var AppModule = fx.Module("app",
-	// 配置提供者 - 从外部传入的 cfg 获取
-	fx.Provide(func(cfg *config.Config) *config.Config {
-		return cfg
-	}),
-
 	// 数据库和缓存
 	fx.Provide(NewDB),
 	fx.Provide(NewRedisClient),
@@ -50,6 +45,9 @@ var AppModule = fx.Module("app",
 	fx.Provide(handlers.NewProjectMemberHandler),
 	fx.Provide(handlers.NewCLIHandler),
 	fx.Provide(handlers.NewDashboardHandler),
+
+	// Router
+	fx.Provide(routes.NewRouter),
 
 	// Logger
 	fx.Provide(NewLogger),

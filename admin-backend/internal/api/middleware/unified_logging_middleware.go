@@ -181,6 +181,10 @@ func SkipLoggingMiddleware(paths ...string) gin.HandlerFunc {
 		if skipPaths[c.Request.URL.Path] {
 			c.Set("skip_logging", true)
 		}
+		// 跳过/swagger/路径的日志（Swagger UI）
+		if IsSwaggerPath(c) {
+			c.Set("skip_logging", true)
+		}
 		c.Next()
 	}
 }

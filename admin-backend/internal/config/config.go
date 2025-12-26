@@ -267,7 +267,7 @@ func getEnvAsBool(key string, defaultValue bool) bool {
 
 // isStrongKey 检查密钥强度
 func isStrongKey(key string) bool {
-	if len(key) < 32 {
+	if len(key) < 16 {
 		return false
 	}
 
@@ -301,5 +301,5 @@ func isStrongKey(key string) bool {
 		count++
 	}
 
-	return count >= 3
+	return count >= 2
 }

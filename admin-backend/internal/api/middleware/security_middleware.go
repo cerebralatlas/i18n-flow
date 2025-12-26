@@ -26,10 +26,10 @@ func SecurityHeadersMiddleware() gin.HandlerFunc {
 		}
 
 		// 内容安全策略 - 防止XSS攻击
-		// 更严格的CSP策略，移除unsafe-inline和unsafe-eval，添加违规报告
+		// 为Swagger等工具使用宽松的CSP策略
 		csp := "default-src 'self'; " +
-			"script-src 'self'; " +
-			"style-src 'self'; " +
+			"script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
+			"style-src 'self' 'unsafe-inline'; " +
 			"img-src 'self' data: https:; " +
 			"font-src 'self' data:; " +
 			"connect-src 'self'; " +

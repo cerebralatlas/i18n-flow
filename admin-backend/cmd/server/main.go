@@ -1,6 +1,7 @@
 package main
 
 import (
+	_ "i18n-flow/docs" // 导入 swagger 文档（需要初始化 SwaggerInfo）
 	"i18n-flow/internal/api/middleware"
 	"i18n-flow/internal/config"
 	"i18n-flow/internal/container"
@@ -69,14 +70,14 @@ func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor, 
 	// 全局限流中间件（使用 tollbooth，每秒100个请求）
 	router.Use(middleware.TollboothGlobalRateLimitMiddleware())
 
-	// 安全验证中间件
-	router.Use(middleware.SecurityValidationMiddleware(logger))
+	// 安全验证中间件（跳过 swagger 路径）
+	router.Use(middleware.SkipForSwagger(middleware.SecurityValidationMiddleware(logger)))
 
-	// SQL安全中间件
-	router.Use(middleware.SQLSecurityMiddleware(logger))
+	// SQL安全中间件（跳过 swagger 路径）
+	router.Use(middleware.SkipForSwagger(middleware.SQLSecurityMiddleware(logger)))
 
-	// 增强输入验证中间件
-	router.Use(middleware.EnhancedInputValidationMiddleware())
+	// 增强输入验证中间件（跳过 swagger 路径）
+	router.Use(middleware.SkipForSwagger(middleware.EnhancedInputValidationMiddleware()))
 
 	// XSS防护中间件
 	router.Use(middleware.XSSProtectionMiddleware(logger))
@@ -84,7 +85,7 @@ func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor, 
 	// CSP违规报告中间件
 	router.Use(middleware.CSPViolationReportMiddleware(logger))
 
-	// 跳过监控端点的日志记录
+	// 跳过监控端点和 swagger 的日志记录
 	router.Use(middleware.SkipLoggingMiddleware("/health", "/stats", "/metrics"))
 
 	// 全局错误处理中间件
@@ -96,11 +97,11 @@ func setupMiddleware(router *gin.Engine, monitor *internal_utils.SimpleMonitor, 
 	// 请求大小限制中间件 (32MB)
 	router.Use(middleware.RequestSizeLimitMiddleware(32 << 20))
 
-	// 请求验证中间件
-	router.Use(middleware.RequestValidationMiddleware())
+	// 请求验证中间件（跳过 swagger 路径）
+	router.Use(middleware.SkipForSwagger(middleware.RequestValidationMiddleware()))
 
-	// 分页参数验证中间件
-	router.Use(middleware.PaginationValidationMiddleware())
+	// 分页参数验证中间件（跳过 swagger 路径）
+	router.Use(middleware.SkipForSwagger(middleware.PaginationValidationMiddleware()))
 
 	// 允许跨域请求
 	router.Use(middleware.CORSMiddleware())
