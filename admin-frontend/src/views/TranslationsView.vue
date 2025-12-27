@@ -1,201 +1,237 @@
 <template>
   <div class="translations-view">
-    <div class="header">
-      <h1>翻译管理</h1>
-      <div class="header-actions">
-        <select v-model="selectedProjectId" @change="handleProjectChange" class="project-selector">
-          <option :value="null" disabled>选择项目</option>
-          <option v-for="project in projects" :key="project.id" :value="project.id">
-            {{ project.name }}
-          </option>
-        </select>
-      </div>
-    </div>
-
-    <div v-if="selectedProjectId" class="content">
-      <!-- Toolbar -->
-      <div class="toolbar">
-        <div class="search-box">
-          <input
-            v-model="searchKeyword"
-            @input="handleSearch"
-            type="text"
-            placeholder="搜索翻译键..."
-            class="search-input"
-          />
+    <el-card class="box-card" shadow="hover">
+      <template #header>
+        <div class="card-header">
+          <h1 class="page-title">翻译管理</h1>
+          <div class="header-actions">
+            <!-- Project Selector -->
+            <el-select
+              v-model="selectedProjectId"
+              placeholder="选择项目"
+              filterable
+              @change="handleProjectChange"
+              class="project-selector"
+              size="large"
+            >
+              <el-option
+                v-for="project in projects"
+                :key="project.id"
+                :label="project.name"
+                :value="project.id"
+              />
+            </el-select>
+          </div>
         </div>
-        <div class="toolbar-actions">
-          <button @click="showAddKeyDialog = true" class="btn btn-primary">
-            <span class="icon">+</span> 添加翻译键
-          </button>
-          <button @click="handleExport" class="btn btn-secondary" :disabled="loading">
-            <span class="icon">↓</span> 导出
-          </button>
-          <button @click="showImportDialog = true" class="btn btn-secondary">
-            <span class="icon">↑</span> 导入
-          </button>
+      </template>
+
+      <div v-if="selectedProjectId" class="content-wrapper">
+        <!-- Toolbar -->
+        <div class="toolbar">
+          <div class="search-box">
+            <el-input
+              v-model="searchKeyword"
+              @input="handleSearch"
+              placeholder="搜索翻译键..."
+              clearable
+              prefix-icon="Search"
+              class="search-input"
+            />
+          </div>
+          <div class="toolbar-actions">
+            <el-button type="primary" @click="showAddKeyDialog = true" icon="Plus">
+              添加翻译键
+            </el-button>
+            <el-button @click="handleExport" :loading="loading" icon="Download">
+              导出
+            </el-button>
+            <el-button @click="showImportDialog = true" icon="Upload">
+              导入
+            </el-button>
+          </div>
         </div>
-      </div>
 
-      <!-- Loading State -->
-      <div v-if="loading" class="loading">加载中...</div>
+        <!-- Translation Matrix Table -->
+        <el-table
+          v-loading="loading"
+          :data="matrix?.rows || []"
+          style="width: 100%"
+          border
+          stripe
+          height="calc(100vh - 350px)"
+          class="translation-table"
+        >
+          <!-- Key Column -->
+          <el-table-column prop="key_name" label="翻译键" fixed width="220" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="key-text">{{ row.key_name }}</span>
+            </template>
+          </el-table-column>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="error">{{ error }}</div>
+          <!-- Context Column -->
+          <el-table-column prop="context" label="上下文" width="180" show-overflow-tooltip>
+            <template #default="{ row }">
+              <span class="context-text">{{ row.context || '-' }}</span>
+            </template>
+          </el-table-column>
 
-      <!-- Translation Matrix Table -->
-      <div v-else-if="matrix && matrix.languages && matrix.rows" class="table-wrapper">
-        <table class="translation-matrix">
-          <thead>
-            <tr>
-              <th class="key-column">翻译键</th>
-              <th class="context-column">上下文</th>
-              <th v-for="lang in matrix.languages" :key="lang.id" class="language-column">
-                {{ lang.name }}
-                <span class="language-code">{{ lang.code }}</span>
-              </th>
-              <th class="actions-column">操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr v-if="matrix.rows.length === 0">
-              <td :colspan="(matrix.languages?.length || 0) + 3" class="empty-state">
-                暂无翻译数据，点击"添加翻译键"开始
-              </td>
-            </tr>
-            <tr v-for="(row, index) in matrix.rows" :key="row.key_name">
-              <td class="key-column">
-                <strong>{{ row.key_name }}</strong>
-              </td>
-              <td class="context-column">
-                <span class="context-text">{{ row.context || '-' }}</span>
-              </td>
-              <td
-                v-for="lang in matrix.languages"
-                :key="lang.id"
-                class="translation-cell"
+          <!-- Dynamic Language Columns -->
+          <el-table-column
+            v-for="lang in matrix?.languages || []"
+            :key="lang.id"
+            :label="lang.name"
+            min-width="250"
+          >
+            <template #header>
+              <div class="column-header">
+                {{ lang.name }} <el-tag size="small" type="info" class="lang-tag">{{ lang.code }}</el-tag>
+              </div>
+            </template>
+            <template #default="{ row }">
+              <div
+                class="cell-wrapper"
                 @click="editCell(row.key_name, lang)"
+                :class="{ 'is-empty': !row.translations[lang.code]?.value }"
               >
+                <!-- Editing Mode -->
                 <div
-                  v-if="
-                    editingCell?.keyName === row.key_name && editingCell?.languageId === lang.id
-                  "
+                  v-if="editingCell?.keyName === row.key_name && editingCell?.languageId === lang.id"
                   class="cell-editing"
+                  @click.stop
                 >
-                  <textarea
+                  <el-input
                     v-model="editingValue"
+                    type="textarea"
+                    :rows="2"
+                    ref="editInput"
                     @blur="saveCell"
                     @keydown.enter.exact.prevent="saveCell"
                     @keydown.esc="cancelEdit"
-                    ref="editInput"
-                    class="cell-input"
-                  ></textarea>
+                    placeholder="输入翻译..."
+                  />
                 </div>
+                <!-- Display Mode -->
                 <div v-else class="cell-display">
                   <span v-if="row.translations[lang.code]?.value" class="cell-value">
                     {{ row.translations[lang.code].value }}
                   </span>
-                  <span v-else class="cell-empty">未翻译</span>
+                  <span v-else class="cell-placeholder">点击添加翻译</span>
                 </div>
-              </td>
-              <td class="actions-column">
-                <button
-                  @click="handleDeleteKey(row.key_name)"
-                  class="btn-icon btn-danger"
-                  title="删除翻译键"
-                >
-                  ×
-                </button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </template>
+          </el-table-column>
+
+          <!-- Actions Column -->
+          <el-table-column label="操作" width="80" fixed="right" align="center">
+            <template #default="{ row }">
+              <el-button
+                type="danger"
+                circle
+                size="small"
+                icon="Delete"
+                @click="handleDeleteKey(row.key_name)"
+                title="删除翻译键"
+              />
+            </template>
+          </el-table-column>
+        </el-table>
+
+        <!-- Pagination -->
+        <div class="pagination-wrapper" v-if="matrix && matrix.total_count > 0">
+          <el-pagination
+            v-model:current-page="currentPage"
+            v-model:page-size="pageSize"
+            :page-sizes="[10, 20, 50, 100]"
+            layout="total, sizes, prev, pager, next, jumper"
+            :total="matrix.total_count"
+            @size-change="loadMatrix"
+            @current-change="loadMatrix"
+            background
+          />
+        </div>
       </div>
 
-      <!-- Pagination -->
-      <div v-if="matrix && matrix.total_pages > 1" class="pagination">
-        <button
-          @click="changePage(matrix.page - 1)"
-          :disabled="matrix.page <= 1"
-          class="btn btn-secondary"
-        >
-          上一页
-        </button>
-        <span class="page-info">
-          第 {{ matrix.page }} / {{ matrix.total_pages }} 页 (共 {{ matrix.total_count }} 条)
-        </span>
-        <button
-          @click="changePage(matrix.page + 1)"
-          :disabled="matrix.page >= matrix.total_pages"
-          class="btn btn-secondary"
-        >
-          下一页
-        </button>
-      </div>
-    </div>
-
-    <div v-else class="empty-project">
-      <p>请选择一个项目以管理翻译</p>
-    </div>
+      <el-empty v-else description="请选择一个项目以管理翻译" class="empty-state">
+        <el-icon :size="60" class="empty-icon"><FolderOpened /></el-icon>
+      </el-empty>
+    </el-card>
 
     <!-- Add Key Dialog -->
-    <div v-if="showAddKeyDialog" class="modal-overlay" @click.self="showAddKeyDialog = false">
-      <div class="modal large-modal">
-        <h2>添加翻译键</h2>
-        <form @submit.prevent="handleAddKey">
-          <div class="form-group">
-            <label>翻译键名 <span class="required">*</span></label>
-            <input v-model="newKey.keyName" type="text" required class="form-input" placeholder="例如: welcome.message" />
-          </div>
-          <div class="form-group">
-            <label>上下文（可选）</label>
-            <input v-model="newKey.context" type="text" class="form-input" placeholder="说明这个翻译键的使用场景" />
-          </div>
-          
-          <div class="form-group">
-            <label>翻译内容</label>
-            <div class="language-inputs">
-              <div v-for="lang in availableLanguages" :key="lang.id" class="language-input-row">
-                <label class="language-label">
-                  <span class="language-name">{{ lang.name }}</span>
-                  <span class="language-code-badge">{{ lang.code }}</span>
-                </label>
-                <input 
-                  v-model="newKey.translations[lang.code]" 
-                  type="text" 
-                  class="form-input"
-                  :placeholder="`输入 ${lang.name} 翻译（可选）`"
-                />
-              </div>
-            </div>
-          </div>
-          
-          <div class="form-actions">
-            <button type="button" @click="showAddKeyDialog = false" class="btn btn-secondary">
-              取消
-            </button>
-            <button type="submit" class="btn btn-primary">添加</button>
-          </div>
-        </form>
-      </div>
-    </div>
+    <el-dialog
+      v-model="showAddKeyDialog"
+      title="添加翻译键"
+      width="600px"
+      :close-on-click-modal="false"
+      destroy-on-close
+    >
+      <el-form :model="newKey" label-width="100px" @submit.prevent="handleAddKey">
+        <el-form-item label="翻译键名" required>
+          <el-input v-model="newKey.keyName" placeholder="例如: welcome.message" />
+        </el-form-item>
+        <el-form-item label="上下文">
+          <el-input v-model="newKey.context" placeholder="说明这个翻译键的使用场景" />
+        </el-form-item>
+        
+        <el-divider content-position="left">翻译内容</el-divider>
+        
+        <div class="language-inputs-scroll">
+          <el-form-item
+            v-for="lang in availableLanguages"
+            :key="lang.id"
+            :label="lang.name"
+          >
+            <el-input
+              v-model="newKey.translations[lang.code]"
+              :placeholder="`输入 ${lang.name} 翻译（可选）`"
+              type="textarea"
+              autosize
+            />
+          </el-form-item>
+        </div>
+      </el-form>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showAddKeyDialog = false">取消</el-button>
+          <el-button type="primary" @click="handleAddKey" :loading="loading">
+            添加
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
 
     <!-- Import Dialog -->
-    <div v-if="showImportDialog" class="modal-overlay" @click.self="showImportDialog = false">
-      <div class="modal">
-        <h2>导入翻译</h2>
-        <div class="form-group">
-          <label>选择JSON文件</label>
-          <input type="file" @change="handleFileSelect" accept=".json" class="form-input" />
-        </div>
-        <div class="form-actions">
-          <button @click="showImportDialog = false" class="btn btn-secondary">取消</button>
-          <button @click="handleImport" :disabled="!importFile" class="btn btn-primary">
-            导入
-          </button>
+    <el-dialog
+      v-model="showImportDialog"
+      title="导入翻译"
+      width="500px"
+    >
+      <div class="import-wrapper">
+        <p class="import-tip">请选择标准 JSON 格式的翻译文件</p>
+        <input
+          type="file"
+          ref="fileInput"
+          @change="handleFileSelect"
+          accept=".json"
+          class="file-input" 
+          style="display: none"
+        />
+        <div class="upload-area" @click="fileInput?.click()">
+            <el-icon class="upload-icon" :size="40"><UploadFilled /></el-icon>
+            <div class="upload-text" v-if="!importFile">点击选择文件</div>
+            <div class="file-name" v-else>
+                <el-icon><Document /></el-icon> {{ importFile.name }}
+            </div>
         </div>
       </div>
-    </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="showImportDialog = false">取消</el-button>
+          <el-button type="primary" @click="handleImport" :disabled="!importFile" :loading="loading">
+            导入
+          </el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -206,6 +242,8 @@ import { getLanguages } from '@/services/language'
 import type { TranslationMatrix, Language, BatchTranslationRequest, ImportTranslationsData } from '@/types/translation'
 import type { Project } from '@/types/api'
 import api from '@/services/api'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Plus, Download, Upload, UploadFilled, FolderOpened, Document, Delete } from '@element-plus/icons-vue'
 
 // State
 const projects = ref<Project[]>([])
@@ -223,13 +261,14 @@ const pageSize = ref(20)
 // Editing
 const editingCell = ref<{ keyName: string; languageId: number } | null>(null)
 const editingValue = ref('')
-const editInput = ref<HTMLTextAreaElement | null>(null)
+const editInput = ref<HTMLTextAreaElement[] | null>(null)
 
 // Dialogs
 const showAddKeyDialog = ref(false)
 const showImportDialog = ref(false)
 const newKey = ref({ keyName: '', context: '', translations: {} as Record<string, string> })
 const importFile = ref<File | null>(null)
+const fileInput = ref<HTMLInputElement | null>(null)
 
 // Available languages (active only)
 const availableLanguages = computed(() => {
@@ -286,7 +325,7 @@ const loadMatrix = async () => {
         page_size: pageSize.value,
         keyword: searchKeyword.value || undefined
       }
-    })
+    }) as any
     
     console.log('Translation matrix API response:', response)
     
@@ -376,9 +415,17 @@ const editCell = (keyName: string, lang: Language) => {
   })
 }
 
+// Cancel edit
+const cancelEdit = () => {
+  editingCell.value = null
+  editingValue.value = ''
+}
+
+const isSaving = ref(false)
+
 // Save cell
 const saveCell = async () => {
-  if (!editingCell.value || !selectedProjectId.value) return
+  if (!editingCell.value || !selectedProjectId.value || isSaving.value) return
 
   const { keyName, languageId } = editingCell.value
   const row = matrix.value?.rows.find((r) => r.key_name === keyName)
@@ -390,7 +437,13 @@ const saveCell = async () => {
   const existingCell = row.translations[lang.code]
 
   try {
+    isSaving.value = true
     if (existingCell?.id) {
+      await ElMessageBox.confirm('确定要修改这个翻译吗？', '修改确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning',
+      })
       // Update existing translation
       await api.put(`/translations/${existingCell.id}`, {
         project_id: selectedProjectId.value,
@@ -400,6 +453,11 @@ const saveCell = async () => {
         context: row.context,
       })
     } else {
+      await ElMessageBox.confirm('确定要添加这个新翻译吗？', '添加确认', {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info',
+      })
       // Create new translation
       await api.post('/translations', {
         project_id: selectedProjectId.value,
@@ -410,50 +468,58 @@ const saveCell = async () => {
       })
     }
 
+    ElMessage.success('保存成功')
     // Refresh matrix
     await loadMatrix()
   } catch (err: any) {
-    alert('保存失败: ' + (err.message || '未知错误'))
+    if (err !== 'cancel') {
+        ElMessage.error('保存失败: ' + (err.message || '未知错误'))
+    } else {
+        // User cancelled, revert value (reload matrix is overkill but safest)
+        // Or just re-display original value
+    }
   } finally {
+    isSaving.value = false
     cancelEdit()
   }
 }
 
-// Cancel edit
-const cancelEdit = () => {
-  editingCell.value = null
-  editingValue.value = ''
-}
 
-// Add new translation key
+// Add Key Logic with Confirmation
 const handleAddKey = async () => {
-  if (!selectedProjectId.value || !newKey.value.keyName) return
+    if (!selectedProjectId.value || !newKey.value.keyName) return
 
-  try {
-    const request: BatchTranslationRequest = {
-      project_id: selectedProjectId.value,
-      key_name: newKey.value.keyName,
-      context: newKey.value.context || undefined,
-      translations: newKey.value.translations
+    try {
+        await ElMessageBox.confirm('确定要添加这个新翻译键吗？', '添加确认', {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'info',
+        })
+
+        const request: BatchTranslationRequest = {
+            project_id: selectedProjectId.value,
+            key_name: newKey.value.keyName,
+            context: newKey.value.context || undefined,
+            translations: newKey.value.translations
+        }
+
+        await batchCreateTranslations(request)
+
+        ElMessage.success('添加成功')
+        // Reset form and refresh
+        newKey.value = { keyName: '', context: '', translations: {} }
+        showAddKeyDialog.value = false
+        await loadMatrix()
+    } catch (err: any) {
+        if (err !== 'cancel') {
+            ElMessage.error('添加失败: ' + (err.message || '未知错误'))
+        }
     }
-
-    await batchCreateTranslations(request)
-
-    // Reset form and refresh
-    newKey.value = { keyName: '', context: '', translations: {} }
-    showAddKeyDialog.value = false
-    await loadMatrix()
-  } catch (err: any) {
-    alert('添加失败: ' + (err.message || '未知错误'))
-  }
 }
 
 // Delete translation key
 const handleDeleteKey = async (keyName: string) => {
-  if (!confirm(`确定要删除翻译键 "${keyName}" 吗？这将删除所有语言的该键翻译。`)) {
-    return
-  }
-
+  // Confirmation moved inside try-catch block for ElMessageBox
   if (!selectedProjectId.value) return
 
   try {
@@ -466,9 +532,28 @@ const handleDeleteKey = async (keyName: string) => {
       if (cell.id) ids.push(cell.id)
     })
 
+
+
     if (ids.length > 0) {
-      await api.post('/translations/batch-delete', ids)
-      await loadMatrix()
+      // Use ElMessageBox for delete confirmation
+      try {
+        await ElMessageBox.confirm(
+          `确定要删除翻译键 "${keyName}" 吗？这将删除所有语言的该键翻译。`,
+          '删除确认',
+          {
+            confirmButtonText: '确定',
+            cancelButtonText: '取消',
+            type: 'warning',
+          }
+        )
+        await api.post('/translations/batch-delete', ids)
+        ElMessage.success('删除成功')
+        await loadMatrix()
+      } catch (err: any) {
+         if (err !== 'cancel') {
+            ElMessage.error('删除失败: ' + (err.message || '未知错误'))
+         }
+      }
     }
   } catch (err: any) {
     alert('删除失败: ' + (err.message || '未知错误'))
@@ -490,8 +575,9 @@ const handleExport = async () => {
     a.download = `translations-project-${selectedProjectId.value}.json`
     a.click()
     URL.revokeObjectURL(url)
+    ElMessage.success('导出成功')
   } catch (err: any) {
-    alert('导出失败: ' + (err.message || '未知错误'))
+    ElMessage.error('导出失败: ' + (err.message || '未知错误'))
   }
 }
 
@@ -499,7 +585,10 @@ const handleExport = async () => {
 const handleFileSelect = (event: Event) => {
   const target = event.target as HTMLInputElement
   if (target.files && target.files.length > 0) {
-    importFile.value = target.files[0]
+    const file = target.files[0]
+    if (file) {
+      importFile.value = file
+    }
   }
 }
 
@@ -517,60 +606,53 @@ const handleImport = async () => {
     importFile.value = null
     showImportDialog.value = false
     await loadMatrix()
-    alert('导入成功')
+    ElMessage.success('导入成功')
   } catch (err: any) {
-    alert('导入失败: ' + (err.message || '未知错误'))
+    ElMessage.error('导入失败: ' + (err.message || '未知错误'))
   }
 }
 </script>
 
 <style scoped>
 .translations-view {
-  padding: 2rem;
+  padding: 1.5rem;
+  background-color: #f3f4f6;
+  min-height: 100vh;
 }
 
-.header {
+.box-card {
+  border-radius: 8px;
+  border: none;
+}
+
+.card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
 }
 
-.header h1 {
-  font-size: 2rem;
+.page-title {
+  font-size: 1.5rem;
   font-weight: 600;
   color: #1f2937;
   margin: 0;
 }
 
 .project-selector {
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 1rem;
-  min-width: 200px;
-  cursor: pointer;
+  width: 240px;
 }
 
-.project-selector:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.content {
-  background: white;
-  border-radius: 0.5rem;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  overflow: hidden;
+.content-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
 }
 
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 1.5rem;
-  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 0.5rem;
 }
 
 .search-box {
@@ -578,332 +660,153 @@ const handleImport = async () => {
   max-width: 400px;
 }
 
-.search-input {
-  width: 100%;
-  padding: 0.5rem 1rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.search-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
 .toolbar-actions {
   display: flex;
-  gap: 0.75rem;
+  gap: 1rem;
 }
 
-.btn {
-  padding: 0.5rem 1rem;
-  border: none;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-
-.btn:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-primary {
-  background: #3b82f6;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #2563eb;
-}
-
-.btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  background: #e5e7eb;
-}
-
-.btn-icon {
-  width: 2rem;
-  height: 2rem;
-  padding: 0;
-  border: none;
-  background: transparent;
-  color: #6b7280;
-  cursor: pointer;
-  font-size: 1.5rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 0.25rem;
-  transition: all 0.2s;
-}
-
-.btn-icon:hover {
-  background: #f3f4f6;
-  color: #374151;
-}
-
-.btn-danger:hover {
-  background: #fee2e2;
-  color: #dc2626;
-}
-
-.icon {
-  font-size: 1rem;
-}
-
-.loading,
-.error {
-  padding: 3rem;
-  text-align: center;
-  color: #6b7280;
-}
-
-.error {
-  color: #dc2626;
-}
-
-.table-wrapper {
-  overflow-x: auto;
-}
-
-.translation-matrix {
+.translation-table {
   width: 100%;
-  border-collapse: collapse;
 }
 
-.translation-matrix th,
-.translation-matrix td {
-  padding: 0.75rem 1rem;
-  text-align: left;
-  border-bottom: 1px solid #e5e7eb;
-}
-
-.translation-matrix th {
-  background: #f9fafb;
+.key-text {
   font-weight: 600;
-  color: #374151;
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-
-.key-column {
-  min-width: 200px;
-  font-weight: 500;
-}
-
-.context-column {
-  min-width: 150px;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.language-column {
-  min-width: 200px;
-}
-
-.language-code {
-  margin-left: 0.5rem;
-  font-size: 0.75rem;
-  color: #6b7280;
-  font-weight: 400;
-}
-
-.actions-column {
-  width: 80px;
-  text-align: center;
-}
-
-.translation-cell {
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.translation-cell:hover {
-  background: #f9fafb;
-}
-
-.cell-editing {
-  padding: 0;
-  margin: -0.75rem -1rem;
-}
-
-.cell-input {
-  width: 100%;
-  min-height: 60px;
-  padding: 0.75rem 1rem;
-  border: 2px solid #3b82f6;
-  font-family: inherit;
-  font-size: 0.875rem;
-  resize: vertical;
-}
-
-.cell-input:focus {
-  outline: none;
-}
-
-.cell-display {
-  min-height: 1.5rem;
-}
-
-.cell-value {
   color: #1f2937;
 }
 
-.cell-empty {
+.context-text {
+  color: #6b7280;
+  font-style: italic;
+}
+
+.lang-tag {
+  margin-left: 8px;
+  font-weight: normal;
+}
+
+.column-header {
+  display: flex;
+  align-items: center;
+}
+
+.cell-wrapper {
+  padding: 8px 4px;
+  min-height: 48px;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.2s;
+  display: flex;
+  align-items: center;
+}
+
+.cell-wrapper:hover {
+  background-color: #f9fafb;
+}
+
+.cell-wrapper.is-empty {
+  background-color: #fff1f2;
+}
+
+.cell-wrapper.is-empty:hover {
+    background-color: #ffe4e6;
+}
+
+.cell-editing {
+  width: 100%;
+}
+
+.cell-display {
+  width: 100%;
+}
+
+.cell-value {
+    color: #374151;
+    white-space: pre-wrap;
+    word-break: break-word;
+}
+
+.cell-placeholder {
   color: #9ca3af;
   font-style: italic;
   font-size: 0.875rem;
 }
 
-.empty-state {
-  padding: 3rem !important;
-  text-align: center;
-  color: #6b7280;
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  gap: 1rem;
-  padding: 1.5rem;
-  border-top: 1px solid #e5e7eb;
-}
-
-.page-info {
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-.empty-project {
-  padding: 4rem;
-  text-align: center;
-  color: #6b7280;
-}
-
-/* Modal */
-.modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.modal {
-  background: white;
-  border-radius: 0.5rem;
-  padding: 2rem;
-  min-width: 400px;
-  max-width: 90%;
-  max-height: 85vh;
-  overflow-y: auto;
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
-}
-
-.large-modal {
-  min-width: 600px;
-}
-
-.modal h2 {
-  margin: 0 0 1.5rem 0;
-  font-size: 1.5rem;
-  color: #1f2937;
-}
-
-.form-group {
-  margin-bottom: 1.5rem;
-}
-
-.form-group label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.required {
-  color: #dc2626;
-  margin-left: 0.25rem;
-}
-
-.form-input {
-  width: 100%;
-  padding: 0.5rem 0.75rem;
-  border: 1px solid #d1d5db;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-}
-
-.form-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
-
-.language-inputs {
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  padding: 1rem;
-  background: #f9fafb;
-}
-
-.language-input-row {
-  display: grid;
-  grid-template-columns: 180px 1fr;
-  gap: 1rem;
-  align-items: center;
-  margin-bottom: 0.75rem;
-}
-
-.language-input-row:last-child {
-  margin-bottom: 0;
-}
-
-.language-label {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-weight: 500;
-  color: #374151;
-}
-
-.language-name {
-  font-size: 0.875rem;
-}
-
-.language-code-badge {
-  display: inline-block;
-  padding: 0.125rem 0.5rem;
-  background: #e0e7ff;
-  color: #4338ca;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 0.25rem;
-}
-
-.form-actions {
+.pagination-wrapper {
   display: flex;
   justify-content: flex-end;
-  gap: 0.75rem;
   margin-top: 1.5rem;
+}
+
+.empty-state {
+    padding: 60px 0;
+}
+
+/* Dialog Styles */
+.language-inputs-scroll {
+  max-height: 400px;
+  overflow-y: auto;
+  padding-right: 10px;
+}
+
+.import-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  border: 2px dashed #e5e7eb;
+  border-radius: 8px;
+  transition: border-color 0.3s;
+}
+
+.import-wrapper:hover {
+    border-color: #409eff;
+}
+
+.upload-area {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    cursor: pointer;
+    padding: 20px;
+    width: 100%;
+}
+
+.upload-icon {
+    color: #909399;
+    margin-bottom: 10px;
+}
+
+.upload-text {
+    color: #606266;
+    font-size: 14px;
+}
+
+.file-name {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #409eff;
+    font-weight: 500;
+}
+
+.import-tip {
+    margin-bottom: 15px;
+    font-size: 14px;
+    color: #606266;
+}
+
+/* Custom Scrollbar for language inputs */
+.language-inputs-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.language-inputs-scroll::-webkit-scrollbar-thumb {
+    background-color: #d1d5db;
+    border-radius: 3px;
+}
+
+.language-inputs-scroll::-webkit-scrollbar-track {
+    background-color: #f3f4f6;
 }
 </style>
