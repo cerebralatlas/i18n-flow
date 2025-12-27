@@ -59,6 +59,11 @@ func NewProjectMemberRepository(db *gorm.DB) domain.ProjectMemberRepository {
 	return repository.NewProjectMemberRepository(db)
 }
 
+// NewInvitationRepository 提供邀请码仓储
+func NewInvitationRepository(db *gorm.DB) domain.InvitationRepository {
+	return repository.NewInvitationRepository(db)
+}
+
 // NewAuthService 提供认证服务
 func NewAuthService(cfg *config.Config) domain.AuthService {
 	return service.NewAuthService(cfg.JWT)
@@ -138,6 +143,16 @@ func NewProjectMemberService(
 	projectRepo domain.ProjectRepository,
 ) domain.ProjectMemberService {
 	return service.NewProjectMemberService(memberRepo, userRepo, projectRepo)
+}
+
+// NewInvitationService 提供邀请码服务
+func NewInvitationService(
+	invitationRepo domain.InvitationRepository,
+	userRepo domain.UserRepository,
+	cfg *config.Config,
+) domain.InvitationService {
+	frontendURL := "" // 可以从配置中读取
+	return service.NewInvitationService(invitationRepo, userRepo, frontendURL)
 }
 
 // NewSimpleMonitor 提供简单监控器

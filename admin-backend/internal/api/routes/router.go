@@ -23,6 +23,7 @@ type Router struct {
 	DashboardHandler     *handlers.DashboardHandler
 	ProjectMemberHandler *handlers.ProjectMemberHandler
 	CLIHandler           *handlers.CLIHandler
+	InvitationHandler    *handlers.InvitationHandler
 	middlewareFactory    *middleware.MiddlewareFactory
 	Logger               *zap.Logger
 }
@@ -37,6 +38,7 @@ type RouterDeps struct {
 	DashboardHandler     *handlers.DashboardHandler
 	ProjectMemberHandler *handlers.ProjectMemberHandler
 	CLIHandler           *handlers.CLIHandler
+	InvitationHandler    *handlers.InvitationHandler
 	AuthService          domain.AuthService
 	UserService          domain.UserService
 	ProjectMemberService domain.ProjectMemberService
@@ -53,6 +55,7 @@ func NewRouter(deps RouterDeps) *Router {
 		DashboardHandler:     deps.DashboardHandler,
 		ProjectMemberHandler: deps.ProjectMemberHandler,
 		CLIHandler:           deps.CLIHandler,
+		InvitationHandler:    deps.InvitationHandler,
 		middlewareFactory: middleware.NewMiddlewareFactory(
 			deps.AuthService,
 			deps.UserService,
@@ -79,6 +82,8 @@ func (r *Router) SetupRoutes(engine *gin.Engine, monitor *internal_utils.SimpleM
 	api := engine.Group("/api")
 	{
 		r.setupPublicRoutes(api)
+		r.setupPublicInvitationRoutes(api)
+		r.setupPublicRegisterRoutes(api)
 		r.setupAuthenticatedRoutes(api)
 		r.setupCLIRoutes(api)
 	}
@@ -105,6 +110,9 @@ func (r *Router) setupAuthenticatedRoutes(rg *gin.RouterGroup) {
 
 	// 仪表板相关路由
 	r.setupDashboardRoutes(authRoutes)
+
+	// 邀请管理路由
+	r.setupInvitationRoutes(authRoutes)
 }
 
 // RouterModule 定义路由模块

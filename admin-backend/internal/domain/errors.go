@@ -144,6 +144,14 @@ var (
 	ErrInternalError = NewAppError(ErrorTypeInternal, "INTERNAL_ERROR", "内部服务器错误")
 	ErrUnauthorized  = NewAppError(ErrorTypeUnauthorized, "UNAUTHORIZED", "未授权访问")
 	ErrForbidden     = NewAppError(ErrorTypeForbidden, "FORBIDDEN", "禁止访问")
+
+	// 邀请相关错误
+	ErrInvitationNotFound   = NewAppError(ErrorTypeNotFound, "INVITATION_NOT_FOUND", "邀请码不存在")
+	ErrInvitationUsed       = NewAppError(ErrorTypeConflict, "INVITATION_USED", "邀请码已被使用")
+	ErrInvitationExpired    = NewAppError(ErrorTypeBadRequest, "INVITATION_EXPIRED", "邀请码已过期")
+	ErrInvitationRevoked    = NewAppError(ErrorTypeBadRequest, "INVITATION_REVOKED", "邀请码已被撤销")
+	ErrInvalidInvitation    = NewAppError(ErrorTypeValidation, "INVALID_INVITATION", "无效的邀请码")
+	ErrInvitationCodeExists = NewAppError(ErrorTypeConflict, "INVITATION_CODE_EXISTS", "邀请码已存在")
 )
 
 // IsAppError 检查是否为应用程序错误

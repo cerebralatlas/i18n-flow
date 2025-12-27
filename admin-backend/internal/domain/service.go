@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"time"
 )
 
 // UserService 用户服务接口
@@ -77,4 +78,39 @@ type ProjectMemberService interface {
 	RemoveMember(ctx context.Context, projectID, userID uint64) error
 	CheckPermission(ctx context.Context, userID, projectID uint64, requiredRole string) (bool, error)
 	GetMemberRole(ctx context.Context, userID, projectID uint64) (string, error)
+}
+
+// InvitationService 邀请码服务接口
+type InvitationService interface {
+	CreateInvitation(ctx context.Context, inviterID uint64, params CreateInvitationParams) (*Invitation, string, error)
+	GetInvitation(ctx context.Context, code string) (*Invitation, error)
+	GetInvitationsByInviter(ctx context.Context, inviterID uint64, limit, offset int) ([]*Invitation, int64, error)
+	ValidateInvitation(ctx context.Context, code string) (*Invitation, error)
+	UseInvitation(ctx context.Context, code string, userID uint64) error
+	RevokeInvitation(ctx context.Context, code string) error
+	DeleteInvitation(ctx context.Context, code string) error
+}
+
+// CreateInvitationParams 创建邀请参数
+type CreateInvitationParams struct {
+	Role           string `json:"role" binding:"omitempty,oneof=admin member viewer"`
+	ExpiresInDays  int    `json:"expires_in_days"`
+	Description    string `json:"description"`
+}
+
+// InvitationResult 邀请结果
+type InvitationResult struct {
+	Code           string    `json:"code"`
+	InvitationURL  string    `json:"invitation_url"`
+	Role           string    `json:"role"`
+	ExpiresAt      time.Time `json:"expires_at"`
+	Description    string    `json:"description,omitempty"`
+}
+
+// InvitationValidationResult 邀请验证结果
+type InvitationValidationResult struct {
+	Valid      bool      `json:"valid"`
+	Inviter    *User     `json:"inviter,omitempty"`
+	Role       string    `json:"role"`
+	ExpiresAt  time.Time `json:"expires_at"`
 }

@@ -83,3 +83,39 @@ type ProjectMember struct {
 	Project Project `gorm:"foreignKey:ProjectID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 	User    User    `gorm:"foreignKey:UserID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"-"`
 }
+
+// Invitation 邀请码领域模型
+type Invitation struct {
+	ID          uint64         `gorm:"primaryKey" json:"id"`
+	Code        string         `gorm:"size:64;not null;uniqueIndex:idx_invitation_code" json:"code"`                     // 邀请码
+	InviterID   uint64         `gorm:"not null;index:idx_invitation_inviter" json:"inviter_id"`                         // 邀请人ID
+	Role        string         `gorm:"size:20;default:member" json:"role"`                                              // 赋予被邀请人的角色: admin, member, viewer
+	Status      string         `gorm:"size:20;default:active;index:idx_invitation_status" json:"status"`                // 状态: active, used, revoked, expired
+	ExpiresAt   time.Time      `gorm:"not null;index:idx_invitation_expires" json:"expires_at"`                         // 过期时间
+	UsedAt      *time.Time     `json:"used_at,omitempty"`                                                                // 使用时间
+	UsedBy      *uint64        `json:"used_by,omitempty"`                                                                // 被邀请人ID
+	Description string         `gorm:"size:255" json:"description,omitempty"`                                            // 邀请描述
+	CreatedAt   time.Time      `json:"created_at"`
+	UpdatedAt   time.Time      `json:"updated_at"`
+
+	Inviter *User `gorm:"foreignKey:InviterID;constraint:OnUpdate:CASCADE,OnDelete:CASCADE" json:"inviter,omitempty"`
+}
+
+// InvitationStatus 邀请状态常量
+const (
+	InvitationStatusActive   = "active"
+	InvitationStatusUsed     = "used"
+	InvitationStatusRevoked  = "revoked"
+	InvitationStatusExpired  = "expired"
+)
+
+// IsValid 检查邀请是否有效
+func (i *Invitation) IsValid() bool {
+	if i.Status != InvitationStatusActive {
+		return false
+	}
+	if time.Now().After(i.ExpiresAt) {
+		return false
+	}
+	return true
+}

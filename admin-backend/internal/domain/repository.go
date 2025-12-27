@@ -76,3 +76,17 @@ type ProjectMemberRepository interface {
 	Update(ctx context.Context, member *ProjectMember) error
 	Delete(ctx context.Context, projectID, userID uint64) error
 }
+
+// InvitationRepository 邀请码数据访问接口
+type InvitationRepository interface {
+	GetByID(ctx context.Context, id uint64) (*Invitation, error)
+	GetByCode(ctx context.Context, code string) (*Invitation, error)
+	GetByInviter(ctx context.Context, inviterID uint64, limit, offset int) ([]*Invitation, int64, error)
+	GetActiveInvitations(ctx context.Context) ([]*Invitation, error)
+	Create(ctx context.Context, invitation *Invitation) error
+	Update(ctx context.Context, invitation *Invitation) error
+	MarkAsUsed(ctx context.Context, code string, userID uint64) error
+	Revoke(ctx context.Context, code string) error
+	Delete(ctx context.Context, code string) error
+	DeleteByID(ctx context.Context, id uint64) error
+}

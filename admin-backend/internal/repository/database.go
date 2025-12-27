@@ -67,6 +67,7 @@ func InitDB(cfg *config.Config, zapLogger *zap.Logger, monitor *internal_utils.D
 		&domain.Language{},
 		&domain.Translation{},
 		&domain.ProjectMember{},
+		&domain.Invitation{},
 	)
 	if err != nil {
 		return nil, fmt.Errorf("自动迁移表结构失败: %w", err)
