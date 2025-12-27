@@ -303,13 +303,18 @@ const loadMatrix = async () => {
         const translationCells: Record<string, any> = {}
         
         // Transform language code -> value to our cell structure
-        for (const [langCode, value] of Object.entries(translations as Record<string, any>)) {
+        for (const [langCode, cellData] of Object.entries(translations as Record<string, any>)) {
           const lang = languages.find(l => l.code === langCode)
           if (lang) {
+            // Backend now returns object {id: number, value: string}
+            // Add backwards compatibility check just in case
+            const value = typeof cellData === 'object' ? cellData.value : cellData
+            const id = typeof cellData === 'object' ? cellData.id : undefined
+
             translationCells[langCode] = {
               language_id: lang.id,
               value: value || '',
-              // We don't have ID from matrix endpoint, will need to fetch when editing
+              id: id,
             }
           }
         }

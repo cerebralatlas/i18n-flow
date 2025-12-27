@@ -94,10 +94,19 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 		return
 	}
 
+	// 转换为简单格式 (key -> language -> value)
+	simpleMatrix := make(map[string]map[string]string)
+	for key, langs := range matrix {
+		simpleMatrix[key] = make(map[string]string)
+		for lang, cell := range langs {
+			simpleMatrix[key][lang] = cell.Value
+		}
+	}
+
 	// 如果指定了locale，只返回该语言的数据
 	if locale != "" {
 		filteredMatrix := make(map[string]map[string]string)
-		for key, translations := range matrix {
+		for key, translations := range simpleMatrix {
 			if value, exists := translations[locale]; exists {
 				filteredMatrix[key] = map[string]string{locale: value}
 			}
@@ -107,7 +116,7 @@ func (h *CLIHandler) GetTranslations(ctx *gin.Context) {
 	}
 
 	// 返回完整的翻译矩阵
-	response.Success(ctx, matrix)
+	response.Success(ctx, simpleMatrix)
 }
 
 // PushKeysRequest 推送键请求

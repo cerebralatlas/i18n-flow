@@ -321,7 +321,7 @@ func (s *TranslationService) GetByProjectID(ctx context.Context, projectID uint6
 }
 
 // GetMatrix 获取翻译矩阵
-func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (s *TranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]domain.TranslationCell, int64, error) {
 	// 验证项目是否存在
 	_, err := s.projectRepo.GetByID(ctx, projectID)
 	if err != nil {
@@ -415,9 +415,18 @@ func (s *TranslationService) Export(ctx context.Context, projectID uint64, forma
 		return nil, err
 	}
 
+	// 转换为简单格式 (key -> language -> value)
+	simpleMatrix := make(map[string]map[string]string)
+	for key, langs := range matrix {
+		simpleMatrix[key] = make(map[string]string)
+		for lang, cell := range langs {
+			simpleMatrix[key][lang] = cell.Value
+		}
+	}
+
 	switch format {
 	case "json":
-		return json.MarshalIndent(matrix, "", "  ")
+		return json.MarshalIndent(simpleMatrix, "", "  ")
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", format)
 	}

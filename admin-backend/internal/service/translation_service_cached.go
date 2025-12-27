@@ -148,12 +148,12 @@ func (s *CachedTranslationService) GetByProjectID(ctx context.Context, projectID
 
 // MatrixCacheResult 定义缓存结果结构体
 type MatrixCacheResult struct {
-	Matrix map[string]map[string]string `json:"matrix"`
-	Total  int64                        `json:"total"`
+	Matrix map[string]map[string]domain.TranslationCell `json:"matrix"`
+	Total  int64                                        `json:"total"`
 }
 
 // GetMatrix 获取翻译矩阵（使用缓存）
-func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (s *CachedTranslationService) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]domain.TranslationCell, int64, error) {
 	// 优化缓存键生成，区分搜索和非搜索查询
 	var cacheKey string
 	if keyword != "" {
@@ -284,9 +284,18 @@ func (s *CachedTranslationService) Export(ctx context.Context, projectID uint64,
 		return nil, err
 	}
 
+	// 转换为简单格式 (key -> language -> value)
+	simpleMatrix := make(map[string]map[string]string)
+	for key, langs := range matrix {
+		simpleMatrix[key] = make(map[string]string)
+		for lang, cell := range langs {
+			simpleMatrix[key][lang] = cell.Value
+		}
+	}
+
 	switch format {
 	case "json":
-		return json.MarshalIndent(matrix, "", "  ")
+		return json.MarshalIndent(simpleMatrix, "", "  ")
 	default:
 		return nil, fmt.Errorf("unsupported format: %s", format)
 	}

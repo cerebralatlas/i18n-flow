@@ -125,7 +125,7 @@ func (r *TranslationRepository) GetStats(ctx context.Context) (totalTranslations
 }
 
 // GetMatrix 获取翻译矩阵（key-language映射），支持分页和搜索
-func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error) {
+func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]domain.TranslationCell, int64, error) {
 	// 优化：使用单个查询获取总数和键名
 	var totalCount int64
 	var keyNames []string
@@ -159,7 +159,7 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64,
 
 	// 如果没有数据，直接返回
 	if totalCount == 0 {
-		return make(map[string]map[string]string), 0, nil
+		return make(map[string]map[string]domain.TranslationCell), 0, nil
 	}
 
 	// 应用分页获取实际需要的键名
@@ -177,11 +177,12 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64,
 
 	// 如果分页后没有数据，返回空矩阵
 	if len(keyNames) == 0 {
-		return make(map[string]map[string]string), totalCount, nil
+		return make(map[string]map[string]domain.TranslationCell), totalCount, nil
 	}
 
 	// 优化：使用JOIN查询避免N+1问题，只查询必要字段
 	var results []struct {
+		ID           uint64 `gorm:"column:id"`
 		KeyName      string `gorm:"column:key_name"`
 		LanguageCode string `gorm:"column:language_code"`
 		Value        string `gorm:"column:value"`
@@ -189,7 +190,7 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64,
 
 	err := r.db.WithContext(ctx).
 		Table("translations t").
-		Select("t.key_name, l.code as language_code, t.value").
+		Select("t.id, t.key_name, l.code as language_code, t.value").
 		Joins("INNER JOIN languages l ON t.language_id = l.id AND l.status = ?", "active").
 		Where("t.project_id = ? AND t.key_name IN ? AND t.status = ?", projectID, keyNames, "active").
 		Find(&results).Error
@@ -199,12 +200,15 @@ func (r *TranslationRepository) GetMatrix(ctx context.Context, projectID uint64,
 	}
 
 	// 构建矩阵
-	matrix := make(map[string]map[string]string)
+	matrix := make(map[string]map[string]domain.TranslationCell)
 	for _, result := range results {
 		if matrix[result.KeyName] == nil {
-			matrix[result.KeyName] = make(map[string]string)
+			matrix[result.KeyName] = make(map[string]domain.TranslationCell)
 		}
-		matrix[result.KeyName][result.LanguageCode] = result.Value
+		matrix[result.KeyName][result.LanguageCode] = domain.TranslationCell{
+			ID:    result.ID,
+			Value: result.Value,
+		}
 	}
 
 	return matrix, totalCount, nil

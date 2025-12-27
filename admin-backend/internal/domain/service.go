@@ -47,7 +47,7 @@ type TranslationService interface {
 	UpsertBatch(ctx context.Context, inputs []TranslationInput) error
 	GetByID(ctx context.Context, id uint64) (*Translation, error)
 	GetByProjectID(ctx context.Context, projectID uint64, limit, offset int) ([]*Translation, int64, error)
-	GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error)
+	GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]TranslationCell, int64, error)
 	Update(ctx context.Context, id uint64, input TranslationInput, userID uint64) (*Translation, error)
 	Delete(ctx context.Context, id uint64) error
 	DeleteBatch(ctx context.Context, ids []uint64) error

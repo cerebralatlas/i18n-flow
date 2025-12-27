@@ -44,7 +44,7 @@ type TranslationRepository interface {
 	GetByProjectAndLanguage(ctx context.Context, projectID, languageID uint64) ([]*Translation, error)
 	GetByProjectKeyLanguage(ctx context.Context, projectID uint64, keyName string, languageID uint64) (*Translation, error)
 	GetByProjectKeyLanguages(ctx context.Context, keys []TranslationKey) ([]*Translation, error)
-	GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]string, int64, error)
+	GetMatrix(ctx context.Context, projectID uint64, limit, offset int, keyword string) (map[string]map[string]TranslationCell, int64, error)
 	GetStats(ctx context.Context) (totalTranslations int, totalKeys int, err error)
 	Create(ctx context.Context, translation *Translation) error
 	CreateBatch(ctx context.Context, translations []*Translation) error
@@ -59,6 +59,12 @@ type TranslationKey struct {
 	ProjectID  uint64
 	KeyName    string
 	LanguageID uint64
+}
+
+// TranslationCell 翻译矩阵单元格数据
+type TranslationCell struct {
+	ID    uint64 `json:"id"`
+	Value string `json:"value"`
 }
 
 // ProjectMemberRepository 项目成员数据访问接口
