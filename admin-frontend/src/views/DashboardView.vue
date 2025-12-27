@@ -24,28 +24,28 @@ const {
 const statCards = computed(() => [
   {
     title: '项目总数',
-    value: stats.value?.total_projects ?? 0,
+    value: stats.value?.TotalProjects ?? 0,
     icon: Folder,
     color: '#409eff',
     bgColor: '#ecf5ff',
   },
   {
     title: '语言总数',
-    value: stats.value?.total_languages ?? 0,
+    value: stats.value?.TotalLanguages ?? 0,
     icon: ChatDotRound,
     color: '#67c23a',
     bgColor: '#f0f9ff',
   },
   {
     title: '翻译键总数',
-    value: stats.value?.total_keys ?? 0,
+    value: stats.value?.TotalKeys ?? 0,
     icon: Document,
     color: '#e6a23c',
     bgColor: '#fdf6ec',
   },
   {
     title: '翻译总数',
-    value: stats.value?.total_translations ?? 0,
+    value: stats.value?.TotalTranslations ?? 0,
     icon: MessageBox,
     color: '#f56c6c',
     bgColor: '#fef0f0',

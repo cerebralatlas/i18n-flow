@@ -32,6 +32,12 @@ const router = createRouter({
           meta: { title: '项目管理' },
         },
         {
+          path: '/languages',
+          name: 'languages',
+          component: () => import('@/views/LanguagesView.vue'),
+          meta: { title: '语言管理' },
+        },
+        {
           path: '/translations',
           name: 'translations',
           component: () => import('@/views/TranslationsView.vue'),

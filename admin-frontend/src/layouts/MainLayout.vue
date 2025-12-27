@@ -78,7 +78,7 @@ const handleLogout = () => {
 <template>
   <el-container class="layout-container">
     <!-- 侧边栏 -->
-    <el-aside :width="isCollapse ? '64px' : '200px'" class="layout-aside">
+    <el-aside :width="isCollapse ? '64px' : '240px'" class="layout-aside">
       <div class="logo-container">
         <div v-if="!isCollapse" class="logo-text">
           <h2>i18n-flow</h2>
@@ -93,9 +93,6 @@ const handleLogout = () => {
         :collapse="isCollapse"
         :collapse-transition="false"
         class="layout-menu"
-        background-color="#001529"
-        text-color="#ffffff"
-        active-text-color="#1890ff"
         @select="handleMenuSelect"
       >
         <el-menu-item
@@ -152,7 +149,11 @@ const handleLogout = () => {
 
       <!-- 主内容区 -->
       <el-main class="layout-main">
-        <router-view />
+        <router-view v-slot="{ Component }">
+          <transition name="fade-slide" mode="out-in">
+            <component :is="Component" />
+          </transition>
+        </router-view>
       </el-main>
     </el-container>
   </el-container>
@@ -164,17 +165,20 @@ const handleLogout = () => {
 }
 
 .layout-aside {
-  background-color: #001529;
-  transition: width 0.3s;
-  overflow-x: hidden;
+  background-color: #0f172a;
+  transition: width 0.3s cubic-bezier(0.2, 0, 0, 1) 0s;
+  overflow: hidden;
+  box-shadow: 2px 0 8px 0 rgba(29, 35, 41, 0.05);
+  z-index: 10;
 }
 
 .logo-container {
-  height: 60px;
+  height: 64px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: #0f172a;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logo-text h2 {
@@ -182,32 +186,84 @@ const handleLogout = () => {
   color: #ffffff;
   font-size: 20px;
   font-weight: 600;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
+  background: linear-gradient(to right, #ffffff, #e2e8f0);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
 .logo-icon {
-  color: #1890ff;
-  font-size: 16px;
+  color: #3b82f6;
+  font-size: 20px;
   font-weight: 700;
 }
 
 .layout-menu {
   border-right: none;
-  height: calc(100vh - 60px);
+  height: calc(100vh - 64px);
+  background-color: #0f172a;
+  overflow-y: auto;
+}
+
+/* Menu Item Styles */
+:deep(.el-menu) {
+  background-color: #0f172a;
+  border-right: none;
+}
+
+:deep(.el-menu-item) {
+  height: 50px;
+  line-height: 50px;
+  margin: 4px 8px;
+  border-radius: 6px;
+  color: #94a3b8;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+/* Collapsed menu item centering */
+:deep(.el-menu--collapse .el-menu-item) {
+  margin: 4px 0;
+  justify-content: center;
+  padding: 0 !important;
+}
+
+:deep(.el-menu-item:hover) {
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #ffffff;
+}
+
+:deep(.el-menu-item.is-active) {
+  background-color: #3b82f6;
+  color: #ffffff;
+  font-weight: 500;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+:deep(.el-menu-item .el-icon) {
+  font-size: 18px;
+  margin-right: 12px;
+}
+
+:deep(.el-menu--collapse .el-menu-item .el-icon) {
+  margin-right: 0;
 }
 
 .layout-menu:not(.el-menu--collapse) {
-  width: 200px;
+  width: 240px;
 }
 
 .layout-header {
+  height: 64px;
   background: #ffffff;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid #f1f5f9;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 20px;
-  box-shadow: 0 1px 4px rgba(0, 21, 41, 0.08);
+  padding: 0 24px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.02);
+  z-index: 9;
 }
 
 .header-left {
@@ -224,40 +280,59 @@ const handleLogout = () => {
 .user-info {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   cursor: pointer;
-  padding: 4px 8px;
-  border-radius: 4px;
-  transition: background-color 0.3s;
+  padding: 6px 12px;
+  border-radius: 6px;
+  transition: all 0.3s;
 }
 
 .user-info:hover {
-  background-color: #f5f5f5;
+  background-color: #f8fafc;
 }
 
 .username {
   font-size: 14px;
-  color: #303133;
+  font-weight: 500;
+  color: #334155;
 }
 
 .user-detail {
   padding: 8px 0;
+  min-width: 180px;
 }
 
 .user-detail p {
-  margin: 4px 0;
+  margin: 6px 0;
   font-size: 13px;
-  color: #606266;
-  white-space: nowrap;
+  color: #64748b;
+  padding: 0 16px;
 }
 
 .layout-main {
-  background-color: #f5f7fa;
+  background-color: #f8fafc;
   padding: 24px;
   overflow-y: auto;
+  overflow-x: hidden;
 }
 
-/* 响应式设计 */
+/* Page Transitions */
+.fade-slide-enter-active,
+.fade-slide-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-slide-enter-from {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.fade-slide-leave-to {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+/* Responsive Design */
 @media (max-width: 768px) {
   .layout-main {
     padding: 16px;
@@ -265,6 +340,13 @@ const handleLogout = () => {
 
   .username {
     display: none;
+  }
+  
+  .layout-menu:not(.el-menu--collapse) {
+    width: 200px;
+    position: absolute;
+    z-index: 100;
+    height: 100vh;
   }
 }
 </style>
