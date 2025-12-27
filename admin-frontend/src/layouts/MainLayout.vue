@@ -11,6 +11,7 @@ import {
   ChatDotRound,
   Document,
   Setting,
+  UserFilled,
 } from '@element-plus/icons-vue'
 
 const route = useRoute()
@@ -20,34 +21,52 @@ const authStore = useAuthStore()
 // 侧边栏折叠状态
 const isCollapse = ref(false)
 
+// 判断是否为管理员
+const isAdmin = computed(() => authStore.user?.role === 'admin')
+
 // 菜单项配置
-const menuItems = [
-  {
-    index: '/dashboard',
-    title: '仪表板',
-    icon: Odometer,
-  },
-  {
-    index: '/projects',
-    title: '项目管理',
-    icon: FolderOpened,
-  },
-  {
-    index: '/languages',
-    title: '语言管理',
-    icon: ChatDotRound,
-  },
-  {
-    index: '/translations',
-    title: '翻译管理',
-    icon: Document,
-  },
-  {
+const menuItems = computed(() => {
+  const items = [
+    {
+      index: '/dashboard',
+      title: '仪表板',
+      icon: Odometer,
+    },
+    {
+      index: '/projects',
+      title: '项目管理',
+      icon: FolderOpened,
+    },
+    {
+      index: '/languages',
+      title: '语言管理',
+      icon: ChatDotRound,
+    },
+    {
+      index: '/translations',
+      title: '翻译管理',
+      icon: Document,
+    },
+  ]
+
+  // 管理员才能看到用户管理
+  if (isAdmin.value) {
+    items.push({
+      index: '/users',
+      title: '用户管理',
+      icon: UserFilled,
+    })
+  }
+
+  // 所有用户都能看到系统设置
+  items.push({
     index: '/settings',
     title: '系统设置',
     icon: Setting,
-  },
-]
+  })
+
+  return items
+})
 
 // 当前激活的菜单项
 const activeMenu = computed(() => {
