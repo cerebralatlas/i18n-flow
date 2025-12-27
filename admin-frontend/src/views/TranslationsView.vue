@@ -615,9 +615,7 @@ const handleImport = async () => {
 
 <style scoped>
 .translations-view {
-  padding: 1.5rem;
   background-color: #f3f4f6;
-  min-height: 100vh;
 }
 
 .box-card {

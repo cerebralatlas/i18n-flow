@@ -220,9 +220,7 @@ const handleDelete = (row: Language) => {
 
 <style scoped>
 .languages-view {
-  padding: 1.5rem;
   background-color: #f3f4f6;
-  min-height: 100vh;
 }
 
 .box-card {
