@@ -136,7 +136,7 @@ LibreTranslate 服务有速率限制，YFlow 已配置：
 YFlow 的 Docker Compose 已包含 LibreTranslate 服务：
 
 ```bash
-cd admin-backend
+cd yflow
 docker compose up -d libretranslate
 ```
 

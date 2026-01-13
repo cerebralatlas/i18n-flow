@@ -4,10 +4,10 @@
 
 ## 环境要求
 
-- **Go** 1.20+
-- **Node.js** 18+
-- **pnpm** 9+
-- **Bun** 1.0+
+- **Go** 1.23+
+- **Node.js** `^20.19.0 || >=22.12.0`
+- **pnpm**
+- **Rust** (stable) + Cargo
 - **MySQL** 8.0+
 - **Redis** 7.0+
 
@@ -23,7 +23,7 @@ cd yflow
 确保 MySQL 和 Redis 已启动，并创建数据库：
 
 ```sql
-CREATE DATABASE i18n_flow DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+CREATE DATABASE yflow DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 ```
 
 ## 3. 配置环境变量
@@ -38,20 +38,26 @@ cp .env.example .env
 编辑 `.env` 文件：
 
 ```env
+# Database
 DB_HOST=localhost
 DB_PORT=3306
-DB_USER=root
+DB_USERNAME=root
 DB_PASSWORD=your_password
-DB_NAME=i18n_flow
+DB_NAME=yflow
 
+# Redis
 REDIS_HOST=localhost
 REDIS_PORT=6379
 
-JWT_SECRET=your_jwt_secret
-JWT_ACCESS_EXPIRY=24h
-JWT_REFRESH_EXPIRY=7d
+# JWT (至少 32 位，生产环境务必替换)
+JWT_SECRET=your_jwt_secret_min_32_chars
+JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
 
-API_KEY=your_api_key_for_cli
+# CLI API Key（至少 16 位）
+CLI_API_KEY=your_api_key_min_16_chars
+
+ENV=development
+GO_ENV=development
 ```
 
 ### 前端配置
@@ -84,11 +90,11 @@ pnpm install
 pnpm dev
 ```
 
-前端将在 `http://localhost:5170` 启动。
+前端将在 `http://localhost:5173` 启动。
 
 ## 6. 首次访问
 
-1. 打开浏览器访问 `http://localhost:5170`
+1. 打开浏览器访问 `http://localhost:5173`
 2. 使用管理员账户登录（或联系系统管理员创建）
 3. 开始创建你的第一个项目！
 
@@ -97,11 +103,11 @@ pnpm dev
 ```bash
 cd cli
 
-# 安装依赖
-bun install
+# 编译 release
+cargo build --release
 
-# 全局链接
-bun link
+# 或安装到本机（~/.cargo/bin/yflow）
+# cargo install --path .
 ```
 
 现在可以使用 `yflow` 命令了。

@@ -97,7 +97,7 @@ var translations = {
     arch_cli: "CLI Tool",
     arch_cli_badge: "Rust + Clap",
     arch_cli_features: [
-      "Commander 命令行",
+      "Clap 命令行",
       "自动扫描 JSON 文件",
       "扁平化/结构化转换",
       "API Key 认证",
@@ -139,7 +139,7 @@ var translations = {
 
     arch_cli: "CLI Tool",
     arch_cli_badge: "Rust + Clap",
-    arch_cli_f1: "Commander 命令行",
+    arch_cli_f1: "Clap 命令行",
     arch_cli_f2: "自动扫描 JSON 文件",
     arch_cli_f3: "扁平化/结构化转换",
     arch_cli_f4: "API Key 认证",
@@ -370,7 +370,7 @@ var translations = {
     arch_cli: "CLI Tool",
     arch_cli_badge: "Rust + Clap",
     arch_cli_features: [
-      "Commander CLI framework",
+      "Clap CLI framework",
       "Auto-scan JSON files",
       "Flat/structured conversion",
       "API Key authentication",
@@ -412,7 +412,7 @@ var translations = {
 
     arch_cli: "CLI Tool",
     arch_cli_badge: "Rust + Clap",
-    arch_cli_f1: "Commander CLI framework",
+    arch_cli_f1: "Clap CLI framework",
     arch_cli_f2: "Auto-scan JSON files",
     arch_cli_f3: "Flat/structured conversion",
     arch_cli_f4: "API Key authentication",

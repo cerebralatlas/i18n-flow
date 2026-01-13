@@ -19,7 +19,7 @@ features:
   - title: 团队协作
     details: 支持邀请码注册、项目权限管理、团队协作翻译
   - title: CLI 自动化
-    details: 使用 Bun 构建的 CLI 工具，支持导入、同步翻译到本地
+    details: 使用 Rust 构建的 CLI 工具，支持导入、同步翻译到本地
   - title: 翻译矩阵
     details: 直观的矩阵视图，轻松管理多语言翻译
 ---
@@ -33,7 +33,7 @@ cd admin-backend && air
 # 2. 启动前端
 cd admin-frontend && pnpm dev
 
-# 3. 访问 http://localhost:5170
+# 3. 访问 http://localhost:5173
 ```
 
 [开始使用 →](/guide/quick-start)

@@ -6,10 +6,10 @@ Thank you for your interest in contributing to YFlow! This document provides gui
 
 ### Prerequisites
 
-- **Go** 1.21+ (for backend)
-- **Node.js** 18+ (for frontend)
-- **pnpm** 8+ (for frontend)
-- **Bun** 1.0+ (for CLI)
+- **Go** 1.23+ (for backend)
+- **Node.js** `^20.19.0 || >=22.12.0` (for frontend)
+- **pnpm** (for frontend)
+- **Rust** (stable) + Cargo (for CLI)
 - **MySQL** 8.0+
 - **Redis** 7.0+
 
@@ -37,7 +37,7 @@ Thank you for your interest in contributing to YFlow! This document provides gui
    cd admin-frontend && pnpm install
 
    # CLI
-   cd cli && bun install
+   cd cli && cargo build
    ```
 
 5. **Start development services**:
@@ -77,9 +77,9 @@ Follow the code standards defined in CLAUDE.md:
 - Follow component patterns in existing code
 - Run `pnpm lint` before committing
 
-**CLI (Bun):**
-- Use TypeScript
-- Follow existing command structure
+**CLI (Rust):**
+- Use `cargo fmt` for formatting (if available)
+- Keep commands and output backward-compatible when possible
 
 ### 3. Commit Your Changes
 
@@ -125,6 +125,10 @@ cd admin-frontend
 pnpm type-check         # Type checking
 pnpm lint               # Lint
 pnpm test:unit          # Run tests
+
+# CLI
+cd cli
+cargo test
 ```
 
 ### 5. Push and Create PR

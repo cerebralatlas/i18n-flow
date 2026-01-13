@@ -63,14 +63,20 @@ my-project/
 2. 在「语言」标签页添加/移除语言
 3. 设定默认语言
 
-### 语言配置示例
+### CLI 配置示例
+
+项目语言在管理后台配置；CLI 的 `.i18nrc.json` 用于指定本地翻译目录、项目 ID、API 地址和 API Key：
 
 ```json
-// .i18nrc.json
 {
+  "messagesDir": "./src/locales",
   "projectId": 1,
-  "languages": ["en", "zh-CN", "ja-JP"],
-  "defaultLanguage": "en"
+  "apiUrl": "http://localhost:8080/api",
+  "apiKey": "your-api-key-here",
+  "languageMapping": {
+    "zh_CN": "zh",
+    "zh_TW": "tw"
+  }
 }
 ```
 

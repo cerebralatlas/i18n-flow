@@ -6,199 +6,39 @@
 
 - Docker Engine 20.10+
 - Docker Compose V2
-- MySQL 8.0 (外部或容器内)
-- Redis 7.0 (外部或容器内)
 
 ### 使用 Docker Compose
 
 #### 1. 准备环境变量
 
-创建 `.env` 文件：
+项目根目录提供了可直接使用的 `docker-compose.yml`，先创建 `.env` 文件：
 
 ```env
-# 数据库
-MYSQL_ROOT_PASSWORD=your_root_password
-MYSQL_DATABASE=i18n_flow
-MYSQL_USER=i18n_flow
-MYSQL_PASSWORD=your_db_password
+# 复制 .env.template 为 .env，并至少修改以下值
 
-# Redis
-REDIS_PASSWORD=your_redis_password
+# MySQL
+DB_ROOT_PASSWORD=your_secure_password
+DB_NAME=yflow
+DB_USERNAME=yflow
+DB_PASSWORD=your_secure_password
 
-# 后端
-JWT_SECRET=your_jwt_secret
-API_KEY=your_api_key
+# JWT（至少 32 位）
+JWT_SECRET=your_jwt_secret_min_32_chars
+JWT_REFRESH_SECRET=your_refresh_secret_min_32_chars
 
-# 前端
-VITE_API_URL=http://localhost:8080/api
+# CLI API Key（至少 16 位）
+CLI_API_KEY=your_api_key_min_16_chars
+
+# 可选：部署域名（Caddy 反代使用）
+# DOMAIN=example.com
+
+# 可选：前端请求 API 的 baseURL（默认 /api，经 Caddy 反代到 backend）
+VITE_API_URL=/api
 ```
 
-#### 2. docker-compose.yml
+你也可以直接参考并编辑仓库内的 `.env.template`。
 
-```yaml
-version: '3.8'
-
-services:
-  # MySQL 数据库
-  mysql:
-    image: mysql:8.0
-    container_name: i18n-mysql
-    restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-    volumes:
-      - mysql_data:/var/lib/mysql
-    ports:
-      - "3306:3306"
-    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
-    healthcheck:
-      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis 缓存
-  redis:
-    image: redis:7-alpine
-    container_name: i18n-redis
-    restart: unless-stopped
-    command: redis-server --requirepass ${REDIS_PASSWORD}
-    volumes:
-      - redis_data:/data
-    ports:
-      - "6379:6379"
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # 后端 API
-  backend:
-    build:
-      context: ./admin-backend
-      dockerfile: Dockerfile
-    container_name: i18n-backend
-    restart: unless-stopped
-    environment:
-      DB_HOST: mysql
-      DB_PORT: 3306
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      DB_NAME: ${MYSQL_DATABASE}
-      REDIS_HOST: redis
-      REDIS_PORT: 6379
-      REDIS_PASSWORD: ${REDIS_PASSWORD}
-      JWT_SECRET: ${JWT_SECRET}
-      API_KEY: ${API_KEY}
-    ports:
-      - "8080:8080"
-    depends_on:
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-
-  # 前端
-  frontend:
-    build:
-      context: ./admin-frontend
-      dockerfile: Dockerfile
-    container_name: i18n-frontend
-    restart: unless-stopped
-    environment:
-      VITE_API_URL: /api
-    ports:
-      - "80:80"
-    depends_on:
-      - backend
-
-volumes:
-  mysql_data:
-  redis_data:
-```
-
-#### 3. 后端 Dockerfile
-
-```dockerfile
-# admin-backend/Dockerfile
-FROM golang:1.20-alpine AS builder
-
-WORKDIR /app
-
-COPY go.mod go.sum ./
-RUN go mod download
-
-COPY . .
-RUN CGO_ENABLED=0 GOOS=linux go build -o server ./cmd/server
-
-FROM alpine:latest
-
-RUN apk --no-cache add ca-certificates tzdata
-
-WORKDIR /app
-
-COPY --from=builder /app/server .
-COPY --from=builder /app/.env.example .env.example
-
-EXPOSE 8080
-
-CMD ["./server"]
-```
-
-#### 4. 前端 Dockerfile
-
-```dockerfile
-# admin-frontend/Dockerfile
-FROM node:18-alpine AS builder
-
-WORKDIR /app
-
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm install --frozen-lockfile
-
-COPY . .
-RUN pnpm build
-
-FROM nginx:alpine
-
-COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
-```
-
-#### 5. Nginx 配置
-
-```nginx
-# admin-frontend/nginx.conf
-server {
-    listen 80;
-    server_name localhost;
-    root /usr/share/nginx/html;
-    index index.html;
-
-    location / {
-        try_files $uri $uri/ /index.html;
-    }
-
-    location /api {
-        proxy_pass http://backend:8080;
-        proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection 'upgrade';
-        proxy_set_header Host $host;
-        proxy_cache_bypass $http_upgrade;
-    }
-}
-```
-
-#### 6. 启动服务
+#### 2. 启动服务
 
 ```bash
 # 构建并启动所有服务
@@ -213,6 +53,14 @@ docker compose down
 # 停止并删除数据卷
 docker compose down -v
 ```
+
+#### 3. 访问服务
+
+- 生产部署推荐通过反向代理访问（Compose 默认使用 Caddy，对外暴露 `80/443`）
+- 后端 API：`/api/*`（由 Caddy 转发到 `backend:8080`）
+- 前端站点：根路径（由 Caddy 转发到 `frontend:8080`）
+
+如果你在本地仅想快速体验（没有真实域名/证书），建议直接按开发模式运行前后端，或根据需要调整 `deploy/nginx/Caddyfile` 的 TLS 配置。
 
 ### 生产环境优化
 

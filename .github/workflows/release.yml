@@ -103,46 +103,69 @@ jobs:
   # ========================================
   cli:
     name: Build CLI Binaries
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
     needs: release
+    defaults:
+      run:
+        shell: bash
     strategy:
       matrix:
         include:
-          - goos: linux
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            goos: linux
             goarch: amd64
-          - goos: linux
+            ext: ""
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            goos: linux
             goarch: arm64
-          - goos: darwin
+            ext: ""
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            goos: darwin
             goarch: amd64
-          - goos: darwin
+            ext: ""
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            goos: darwin
             goarch: arm64
-          - goos: windows
+            ext: ""
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            goos: windows
             goarch: amd64
+            ext: ".exe"
 
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@stable
         with:
-          bun-version: latest
+          targets: ${{ matrix.target }}
 
-      - name: Install dependencies
-        working-directory: cli
-        run: bun install
+      - name: Rust cache
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: |
+            cli -> target
+
+      - name: Install Linux aarch64 linker
+        if: matrix.os == 'ubuntu-latest' && matrix.target == 'aarch64-unknown-linux-gnu'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc-aarch64-linux-gnu
+          echo "CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER=aarch64-linux-gnu-gcc" >> "$GITHUB_ENV"
 
       - name: Build binary
-        working-directory: cli
         run: |
-          OUTPUT_NAME="yflow-${{ matrix.goos }}-${{ matrix.goarch }}"
-          if [ "${{ matrix.goos }}" = "windows" ]; then
-            OUTPUT_NAME="${OUTPUT_NAME}.exe"
-          fi
-          bun build ./src/index.ts --outfile ./bin/$OUTPUT_NAME
-        env:
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
+          set -euo pipefail
+          cargo build --release --manifest-path cli/Cargo.toml --target "${{ matrix.target }}"
+          mkdir -p cli/bin
+          OUTPUT_NAME="yflow-${{ matrix.goos }}-${{ matrix.goarch }}${{ matrix.ext }}"
+          cp "cli/target/${{ matrix.target }}/release/yflow${{ matrix.ext }}" "cli/bin/${OUTPUT_NAME}"
 
       - name: Upload binary
         uses: softprops/action-gh-release@v1

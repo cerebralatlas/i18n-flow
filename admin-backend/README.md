@@ -236,7 +236,9 @@ POST /api/projects/1/auto-fill-language
 
 | 端点 | 方法 | 说明 |
 |------|------|------|
-| `/api/cli/scan` | POST | CLI 扫描接口（API Key 认证） |
+| `/api/cli/auth` | GET | CLI API Key 鉴权检查 |
+| `/api/cli/translations` | GET | 获取项目翻译（支持 `project_id`/`locale`） |
+| `/api/cli/keys` | POST | 推送翻译键/批量导入翻译（API Key 认证） |
 
 ### 监控接口
 
